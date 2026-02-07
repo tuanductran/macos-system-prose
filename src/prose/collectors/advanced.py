@@ -126,76 +126,274 @@ def collect_shell_customization() -> ShellCustomization:
     }
 
 
-def collect_opencore_patcher() -> OpenCorePatcherInfo:
-    """Detect OpenCore Patcher installation and configuration."""
-    oclp_installed = False
+def _get_mac_model_max_os() -> dict[str, str]:
+    """Database of Mac models and their officially supported maximum macOS versions.
+
+    Returns:
+        Dictionary mapping model identifiers to max supported macOS version.
+    """
+    # Based on Apple's official support documentation
+    return {
+        # MacBook Air
+        "MacBookAir2,1": "10.11",  # Late 2008
+        "MacBookAir3,1": "10.13",  # Late 2010
+        "MacBookAir3,2": "10.13",  # Late 2010
+        "MacBookAir4,1": "10.13",  # Mid 2011
+        "MacBookAir4,2": "10.13",  # Mid 2011
+        "MacBookAir5,1": "10.15",  # Mid 2012
+        "MacBookAir5,2": "10.15",  # Mid 2012
+        "MacBookAir6,1": "11",  # Mid 2013
+        "MacBookAir6,2": "11",  # Mid 2013
+        "MacBookAir7,1": "12",  # Early 2015
+        "MacBookAir7,2": "12",  # Early 2015
+        # MacBook Pro
+        "MacBookPro4,1": "10.11",  # Early 2008
+        "MacBookPro5,1": "10.11",  # Late 2008
+        "MacBookPro5,2": "10.11",  # Early 2009
+        "MacBookPro5,3": "10.11",  # Mid 2009
+        "MacBookPro5,4": "10.11",  # Mid 2009
+        "MacBookPro5,5": "10.11",  # Mid 2009
+        "MacBookPro6,1": "10.13",  # Mid 2010
+        "MacBookPro6,2": "10.13",  # Mid 2010
+        "MacBookPro7,1": "10.13",  # Mid 2010
+        "MacBookPro8,1": "10.13",  # Early 2011
+        "MacBookPro8,2": "10.13",  # Early 2011
+        "MacBookPro8,3": "10.13",  # Early 2011
+        "MacBookPro9,1": "10.15",  # Mid 2012
+        "MacBookPro9,2": "10.15",  # Mid 2012
+        "MacBookPro10,1": "10.15",  # Mid 2012
+        "MacBookPro10,2": "10.15",  # Late 2012
+        "MacBookPro11,1": "11",  # Late 2013
+        "MacBookPro11,2": "11",  # Late 2013
+        "MacBookPro11,3": "11",  # Late 2013
+        "MacBookPro11,4": "12",  # Mid 2015
+        "MacBookPro11,5": "12",  # Mid 2015
+        "MacBookPro12,1": "12",  # Early 2015
+        # iMac
+        "iMac8,1": "10.11",  # Early 2008
+        "iMac9,1": "10.11",  # Early 2009
+        "iMac10,1": "10.13",  # Late 2009
+        "iMac11,1": "10.13",  # Late 2009
+        "iMac11,2": "10.13",  # Mid 2010
+        "iMac11,3": "10.13",  # Mid 2010
+        "iMac12,1": "10.13",  # Mid 2011
+        "iMac12,2": "10.13",  # Mid 2011
+        "iMac13,1": "10.15",  # Late 2012
+        "iMac13,2": "10.15",  # Late 2012
+        "iMac14,1": "11",  # Late 2013
+        "iMac14,2": "11",  # Late 2013
+        "iMac14,3": "11",  # Late 2013
+        "iMac14,4": "11",  # Mid 2014
+        "iMac15,1": "12",  # Late 2014
+        "iMac16,1": "12",  # Late 2015
+        "iMac16,2": "12",  # Late 2015
+        # Mac mini
+        "Macmini3,1": "10.11",  # Early 2009
+        "Macmini4,1": "10.13",  # Mid 2010
+        "Macmini5,1": "10.13",  # Mid 2011
+        "Macmini5,2": "10.13",  # Mid 2011
+        "Macmini5,3": "10.13",  # Mid 2011
+        "Macmini6,1": "10.15",  # Late 2012
+        "Macmini6,2": "10.15",  # Late 2012
+        "Macmini7,1": "12",  # Late 2014
+        # Mac Pro
+        "MacPro3,1": "10.11",  # Early 2008
+        "MacPro4,1": "10.11",  # Early 2009
+        "MacPro5,1": "10.11",  # Mid 2010/2012
+        "MacPro6,1": "12",  # Late 2013
+    }
+
+
+def _parse_macos_version(version_str: str) -> tuple[int, int]:
+    """Parse macOS version string to major.minor tuple.
+
+    Args:
+        version_str: Version like "12.7.6" or "11" or "10.15"
+
+    Returns:
+        Tuple of (major, minor) version numbers.
+    """
+    try:
+        parts = version_str.split(".")
+        major = int(parts[0])
+        minor = int(parts[1]) if len(parts) > 1 else 0
+        return (major, minor)
+    except (ValueError, IndexError):
+        return (0, 0)
+
+
+def _is_unsupported_os(current_os: str, model: str) -> bool:
+    """Check if current macOS version is unsupported for this Mac model.
+
+    Args:
+        current_os: Current macOS version (e.g., "12.7.6")
+        model: Mac model identifier (e.g., "MacBookAir6,2")
+
+    Returns:
+        True if running unsupported OS (likely OCLP), False otherwise.
+    """
+    model_db = _get_mac_model_max_os()
+    max_supported = model_db.get(model)
+
+    if not max_supported:
+        # Unknown model, can't determine
+        return False
+
+    current_ver = _parse_macos_version(current_os)
+    max_ver = _parse_macos_version(max_supported)
+
+    # Compare versions
+    if current_ver[0] > max_ver[0]:
+        return True
+    if current_ver[0] == max_ver[0] and current_ver[1] > max_ver[1]:
+        return True
+
+    return False
+
+
+def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCorePatcherInfo:
+    """Detect OpenCore Patcher installation and configuration.
+
+    Enhanced detection with NVRAM, root patches, and AMFI configuration.
+
+    Args:
+        loaded_kexts: Optional list of currently loaded kexts from kextstat.
+                      If None, will be collected internally.
+    """
+    from prose.datasets.smbios import is_legacy_mac
+    from prose.iokit import get_boot_args, get_oclp_nvram_version, parse_amfi_boot_arg
+
+    detected = False
     version = None
-    root_patched = False
+    nvram_version = None
     patched_kexts: list[str] = []
     patched_frameworks: list[str] = []
-    smbios_spoofed = False
-    original_model = None
+    amfi_config = None
+    boot_args = None
 
-    # Check if OpenCore-Patcher.app exists
+    # Get current macOS version and model
+    current_os = utils.run(
+        ["bash", "-c", "sw_vers -productVersion"],
+        log_errors=False,
+    ).strip()
+
+    model_info = utils.run(
+        ["bash", "-c", "system_profiler SPHardwareDataType | grep 'Model Identifier'"],
+        log_errors=False,
+    )
+    current_model = ""
+    if model_info:
+        current_model = model_info.split(":")[-1].strip()
+
+    # Method 1: Check NVRAM for OCLP-Version (most reliable)
+    nvram_version = get_oclp_nvram_version()
+    if nvram_version:
+        detected = True
+        # Clean null bytes (\x00 and %00)
+        version = nvram_version.replace("\x00", "").replace("%00", "")
+        utils.verbose_log(f"OCLP detected via NVRAM: {version}")
+
+    # Method 2: Check if OpenCore-Patcher.app exists
     oclp_app = Path("/Applications/OpenCore-Patcher.app")
     if oclp_app.exists():
-        oclp_installed = True
-        # Try to get version
-        version_output = utils.run(
-            [
-                "bash",
-                "-c",
-                "defaults read /Applications/OpenCore-Patcher.app/Contents/Info.plist "
-                "CFBundleShortVersionString",
-            ],
-            log_errors=False,
-        )
-        if version_output:
-            version = version_output.strip()
+        detected = True
+        if not version:
+            # Try to get version from app bundle
+            version_output = utils.run(
+                [
+                    "bash",
+                    "-c",
+                    "defaults read /Applications/OpenCore-Patcher.app/Contents/Info.plist "
+                    "CFBundleShortVersionString",
+                ],
+                log_errors=False,
+            )
+            if version_output:
+                version = version_output.strip()
 
-    # Check for root patches (common OCLP indicator)
+    # Method 3: Check for root patches (OCLP indicator)
     root_patch_marker = Path("/System/Library/CoreServices/OpenCore-Legacy-Patcher.plist")
     if root_patch_marker.exists():
-        root_patched = True
+        detected = True
+        utils.verbose_log("OCLP root patch marker found")
 
-    # Check for patched kexts in /Library/Extensions
-    kext_dir = Path("/Library/Extensions")
-    if kext_dir.exists():
-        # Common OCLP kexts
-        oclp_kext_patterns = [
-            "AMFIPass",
-            "RestrictEvents",
-            "Lilu",
-            "WhateverGreen",
-            "FeatureUnlock",
-            "AutoPkgInstaller",
-            "RSRHelper",
-            "AirportBrcmFixup",
-        ]
+    # Get loaded kexts (either passed or collect them)
+    if loaded_kexts is None:
+        kextstat_output = utils.run(["kextstat", "-l"], log_errors=False)
+        loaded_kexts = []
+        for line in kextstat_output.splitlines():
+            if "com.apple" not in line and not line.startswith("Index"):
+                match = re.search(r"([a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+)\s\(([^)]+)\)", line)
+                if match:
+                    loaded_kexts.append(f"{match.group(1)} ({match.group(2)})")
+
+    # Check for OCLP signature kexts in loaded kexts
+    oclp_kext_patterns = [
+        "AMFIPass",
+        "RestrictEvents",
+        "Lilu",
+        "WhateverGreen",
+        "FeatureUnlock",
+        "AutoPkgInstaller",
+        "RSRHelper",
+        "AirportBrcmFixup",
+        "DebugEnhancer",
+        "CryptexFixup",
+    ]
+
+    for kext_info in loaded_kexts:
         for pattern in oclp_kext_patterns:
-            matching_kexts = list(kext_dir.glob(f"*{pattern}*.kext"))
-            if matching_kexts:
-                patched_kexts.extend([k.name for k in matching_kexts])
+            if pattern in kext_info:
+                patched_kexts.append(kext_info)
+                break
 
-    # Check for SMBIOS spoofing (RestrictEvents indicates this)
-    if any("RestrictEvents" in k for k in patched_kexts):
-        smbios_spoofed = True
-        # Try to detect original model from system_profiler
-        model_info = utils.run(
-            ["bash", "-c", "system_profiler SPHardwareDataType | grep 'Model Identifier'"],
-            log_errors=False,
-        )
-        if model_info:
-            original_model = model_info.split(":")[-1].strip()
+    # Method 4: Detect patched frameworks
+    patched_framework_paths = [
+        "/System/Library/Extensions/AppleIntelHDGraphics.kext",  # Gen6 GPU
+        "/System/Library/Extensions/AppleIntelHD3000Graphics.kext",  # Gen7 GPU
+        "/System/Library/Extensions/AppleIntelSNBGraphicsFB.kext",  # Sandy Bridge
+        "/System/Library/Extensions/IOBluetoothFamily.kext",  # Bluetooth patches
+    ]
+
+    for fw_path in patched_framework_paths:
+        if Path(fw_path).exists():
+            patched_frameworks.append(fw_path)
+            utils.verbose_log(f"Patched framework found: {fw_path}")
+
+    # Method 5: Check for unsupported OS (SMBIOS-based)
+    unsupported_os_detected = False
+    if current_os and current_model:
+        unsupported_os_detected = is_legacy_mac(current_model, current_os)
+        if unsupported_os_detected:
+            utils.verbose_log(
+                f"{current_model} running {current_os} (unsupported) - likely OCLP patched"
+            )
+
+    # Method 6: Get boot-args and parse AMFI configuration
+    boot_args = get_boot_args()
+    if boot_args:
+        amfi_config = parse_amfi_boot_arg(boot_args)
+        if amfi_config["amfi_value"]:
+            utils.verbose_log(f"AMFI configuration: {amfi_config['amfi_value']}")
+
+    # If unsupported OS + OCLP kexts present, highly likely OCLP is in use
+    if unsupported_os_detected and patched_kexts and not detected:
+        detected = True
+        version = version or "Detected (version unknown)"
+
+    clean_nvram_version = None
+    if nvram_version:
+        clean_nvram_version = nvram_version.replace("\x00", "").replace("%00", "")
 
     return {
-        "installed": oclp_installed,
+        "detected": detected,
         "version": version,
-        "root_patched": root_patched,
-        "patched_kexts": patched_kexts,
+        "nvram_version": clean_nvram_version,
+        "unsupported_os_detected": unsupported_os_detected,
+        "loaded_kexts": patched_kexts[:10],  # Limit to first 10 for brevity
         "patched_frameworks": patched_frameworks,
-        "smbios_spoofed": smbios_spoofed,
-        "original_model": original_model,
+        "amfi_configuration": amfi_config if amfi_config and amfi_config["amfi_value"] else None,
+        "boot_args": boot_args,
     }
 
 

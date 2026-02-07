@@ -394,7 +394,13 @@ def collect_code_signing_sample() -> list[CodeSigningInfo]:
 
             for app in apps:
                 try:
-                    output = run(["codesign", "-dvv", str(app)], timeout=5, log_errors=False)
+                    # codesign -dvv writes to stderr, not stdout
+                    output = run(
+                        ["codesign", "-dvv", str(app)],
+                        timeout=5,
+                        log_errors=False,
+                        capture_stderr=True,
+                    )
 
                     identifier = ""
                     authority = ""
@@ -402,20 +408,22 @@ def collect_code_signing_sample() -> list[CodeSigningInfo]:
                     valid = False
 
                     for line in output.splitlines():
-                        if "Identifier=" in line:
-                            identifier = line.split("=", 1)[1]
-                        elif "Authority=" in line:
-                            authority = line.split("=", 1)[1]
-                        elif "TeamIdentifier=" in line:
-                            team_id = line.split("=", 1)[1]
+                        line = line.strip()
+                        if line.startswith("Identifier="):
+                            identifier = line.split("=", 1)[1].strip()
+                        elif line.startswith("Authority="):
+                            authority = line.split("=", 1)[1].strip()
+                        elif line.startswith("TeamIdentifier="):
+                            team_id = line.split("=", 1)[1].strip()
 
-                    # Check if signature is valid
+                    # Check if signature is valid (also writes to stderr)
                     verify_output = run(
                         ["codesign", "--verify", "--verbose", str(app)],
                         timeout=5,
                         log_errors=False,
+                        capture_stderr=True,
                     )
-                    valid = "valid on disk" in verify_output.lower()
+                    valid = "valid on disk" in verify_output.lower() or verify_output.strip() == ""
 
                     signing_info.append(
                         {
@@ -455,7 +463,21 @@ def collect_cloud_sync() -> CloudInfo:
         # Try to get iCloud status via brctl (requires macOS 10.15+)
         brctl_output = run(["brctl", "status"], timeout=5, log_errors=False)
         if brctl_output:
-            if "logged in" in brctl_output.lower():
+            # Check for container count (indicates active sync)
+            if "container" in brctl_output.lower():
+                # Parse container count from first line
+                first_line = brctl_output.splitlines()[0] if brctl_output.splitlines() else ""
+                if "matching" in first_line:
+                    try:
+                        # Format: "N containers matching '*'"
+                        count = int(first_line.split()[0])
+                        if count > 0:
+                            sync_info["icloud_status"] = "Active"
+                        else:
+                            sync_info["icloud_status"] = "No containers"
+                    except (ValueError, IndexError):
+                        sync_info["icloud_status"] = "Unknown"
+            elif "logged in" in brctl_output.lower():
                 sync_info["icloud_status"] = "Active"
             elif "not logged in" in brctl_output.lower():
                 sync_info["icloud_status"] = "Not logged in"

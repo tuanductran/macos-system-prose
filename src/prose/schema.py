@@ -26,6 +26,10 @@ class SystemInfo(TypedDict):
     macos_name: str
     model_name: str
     model_identifier: str
+    marketing_name: Optional[str]  # SMBIOS: "MacBook Air (13-inch, Mid 2013)"
+    board_id: Optional[str]  # SMBIOS: "Mac-7DF21CB3ED6977E5"
+    cpu_generation: Optional[str]  # SMBIOS: "Haswell"
+    max_os_supported: Optional[str]  # SMBIOS: "Big Sur"
     kernel: str
     architecture: str
     uptime: str
@@ -304,14 +308,24 @@ class ShellCustomization(TypedDict):
     rc_size_kb: float
 
 
+class AMFIConfig(TypedDict):
+    """AMFI (AppleMobileFileIntegrity) configuration."""
+
+    amfi_value: Optional[str]
+    allow_task_for_pid: bool
+    allow_invalid_signature: bool
+    lv_enforce_third_party: bool
+
+
 class OpenCorePatcherInfo(TypedDict):
-    installed: bool
+    detected: bool
     version: Optional[str]
-    root_patched: bool
-    patched_kexts: list[str]
+    nvram_version: Optional[str]  # From NVRAM OCLP-Version
+    unsupported_os_detected: bool
+    loaded_kexts: list[str]
     patched_frameworks: list[str]
-    smbios_spoofed: bool
-    original_model: Optional[str]
+    amfi_configuration: Optional[AMFIConfig]
+    boot_args: Optional[str]
 
 
 class SystemPreferences(TypedDict):

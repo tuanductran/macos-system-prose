@@ -408,6 +408,11 @@ def collect_terminal_emulators() -> list[str]:
     verbose_log("Detecting terminal emulators...")
     terminals = []
 
+    # System Terminal.app (always present on macOS)
+    system_terminal = Path("/System/Applications/Utilities/Terminal.app")
+    if system_terminal.exists():
+        terminals.append("Terminal")
+
     terminal_apps = {
         "iTerm": "/Applications/iTerm.app",
         "Warp": "/Applications/Warp.app",

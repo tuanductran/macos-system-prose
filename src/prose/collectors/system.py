@@ -93,34 +93,13 @@ def collect_time_machine_info() -> TimeMachineInfo:
 
 def collect_system_info() -> SystemInfo:
     log("Collecting system information...")
-    # Get version and name directly from system
-    version = run(["sw_vers", "-productVersion"])
 
-    # Try to get marketing name from system license or profiler
-    macos_name = "macOS"
-    try:
-        # Method 1: Check the license file (usually contains the marketing name)
-        license_path = (
-            "/System/Library/CoreServices/Setup Assistant.app"
-            "/Contents/Resources/en.lproj/OSXSoftwareLicense.rtf"
-        )
-        if os.path.exists(license_path):
-            name_match = run(["grep", "-oE", "macOS [a-zA-Z ]+", license_path])
-            if name_match:
-                macos_name = name_match.splitlines()[0].strip()
+    # Use new macOS version detector
+    from prose.macos_versions import get_macos_version_info
 
-        # Method 2: Fallback to system_profiler if name still generic
-        if macos_name == "macOS":
-            sw_data = get_json_output(["system_profiler", "SPSoftwareDataType", "-json"])
-            if sw_data and isinstance(sw_data, dict) and "SPSoftwareDataType" in sw_data:
-                sp_soft = sw_data["SPSoftwareDataType"]
-                if isinstance(sp_soft, list) and len(sp_soft) > 0:
-                    os_ver_str = sp_soft[0].get("os_version", "")
-                    if "macOS" in str(os_ver_str):
-                        # Often looks like "macOS 12.7.6 (21H1320)"
-                        macos_name = str(os_ver_str).split("(")[0].strip()
-    except Exception:
-        pass
+    version_info = get_macos_version_info()
+    version = version_info["version"]
+    macos_name = version_info["marketing_name"]
 
     hw_data = get_json_output(["system_profiler", "SPHardwareDataType", "-json"])
     model_name, model_id = "Unknown Mac", "Unknown"
@@ -133,12 +112,31 @@ def collect_system_info() -> SystemInfo:
                 model_name = str(info.get("machine_name", "Mac"))
                 model_id = str(info.get("machine_model", "Unknown"))
 
+    # Enrich with SMBIOS data
+    from prose.datasets.smbios import get_smbios_data
+
+    smbios_data = get_smbios_data(model_id)
+    marketing_name = smbios_data.get("marketing_name") if smbios_data else None
+    board_id = smbios_data.get("board_id") if smbios_data else None
+    cpu_generation = smbios_data.get("cpu_generation") if smbios_data else None
+    max_os_supported = smbios_data.get("max_os_supported") if smbios_data else None
+
+    if smbios_data:
+        verbose_log(
+            f"SMBIOS: {marketing_name} (Board: {board_id}, "
+            f"CPU: {cpu_generation}, Max OS: {max_os_supported})"
+        )
+
     return {
         "os": "macOS",
         "macos_version": version,
         "macos_name": macos_name,
         "model_name": model_name,
         "model_identifier": model_id,
+        "marketing_name": marketing_name,
+        "board_id": board_id,
+        "cpu_generation": cpu_generation,
+        "max_os_supported": max_os_supported,
         "kernel": run(["uname", "-r"]),
         "architecture": platform.machine(),
         "uptime": run(["uptime"]).split("load")[0].strip(),
@@ -169,13 +167,26 @@ def collect_display_info() -> list[DisplayInfo]:
                                     resolution = str(
                                         display.get("_spdisplays_resolution", "Unknown")
                                     )
-                                    refresh = str(display.get("spdisplays_refresh_rate", "Unknown"))
+
+                                    # Get refresh rate (may be missing for internal displays)
+                                    refresh = display.get("spdisplays_refresh_rate")
+                                    if refresh:
+                                        refresh_str = str(refresh)
+                                    else:
+                                        # Internal displays often don't report refresh rate
+                                        # Check if it's an internal display
+                                        conn_type = display.get("spdisplays_connection_type", "")
+                                        if "internal" in str(conn_type).lower():
+                                            refresh_str = "60 Hz"  # Default for internal displays
+                                        else:
+                                            refresh_str = "Unknown"
+
                                     depth = str(display.get("spdisplays_depth", "Unknown"))
 
                                     displays.append(
                                         {
                                             "resolution": resolution,
-                                            "refresh_rate": refresh,
+                                            "refresh_rate": refresh_str,
                                             "color_depth": depth,
                                             "external_displays": 1 if "_name" in display else 0,
                                         }

@@ -59,7 +59,13 @@ def verbose_log(msg: str) -> None:
         print(f"{Colors.DIM}  -> {msg}{Colors.ENDC}")
 
 
-def run(cmd: list[str], description: str = "", timeout: int = 15, log_errors: bool = True) -> str:
+def run(
+    cmd: list[str],
+    description: str = "",
+    timeout: int = 15,
+    log_errors: bool = True,
+    capture_stderr: bool = False,
+) -> str:
     """Execute a system command and return its output.
 
     Args:
@@ -67,6 +73,7 @@ def run(cmd: list[str], description: str = "", timeout: int = 15, log_errors: bo
         description: Optional description for verbose logging.
         timeout: Maximum time in seconds to wait for command completion.
         log_errors: Whether to log errors to console.
+        capture_stderr: If True, return stderr instead of stdout (for tools like codesign).
 
     Returns:
         Command output as a string, or empty string on failure.
@@ -76,6 +83,8 @@ def run(cmd: list[str], description: str = "", timeout: int = 15, log_errors: bo
         '14.2.1'
         >>> run(["uname", "-m"])
         'arm64'
+        >>> run(["codesign", "-dvv", "/Applications/Safari.app"], capture_stderr=True)
+        'Identifier=com.apple.Safari...'
     """
     if description:
         verbose_log(description)
@@ -90,7 +99,13 @@ def run(cmd: list[str], description: str = "", timeout: int = 15, log_errors: bo
         if result.returncode != 0:
             if log_errors:
                 verbose_log(f"Command failed: {' '.join(cmd)}\nError: {result.stderr.strip()}")
+            # For commands that write to stderr (like codesign), return stderr even on error
+            if capture_stderr and result.stderr:
+                return result.stderr.strip()
             return ""
+        # Return stderr if requested (some tools write to stderr by design)
+        if capture_stderr:
+            return result.stderr.strip()
         return result.stdout.strip()
     except subprocess.TimeoutExpired:
         if log_errors:

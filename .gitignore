@@ -31,6 +31,9 @@ macos_system_report.txt
 *_report.json
 *_report.txt
 
+# Test fixtures should be committed
+!tests/fixtures/*.json
+
 # Testing
 .pytest_cache/
 .coverage

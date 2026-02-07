@@ -40,7 +40,7 @@ classifiers = [
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
-dependencies = []
+dependencies = []  # No external dependencies - uses stdlib only
 
 [project.urls]
 Homepage = "https://github.com/tuanductran/macos-system-prose"
