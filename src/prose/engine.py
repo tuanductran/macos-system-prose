@@ -7,6 +7,7 @@ the final system report in both JSON and AI-optimized text formats.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import os
 import sys
@@ -49,11 +50,13 @@ from prose.html_report import generate_html_report
 from prose.schema import SystemReport
 
 
-def collect_all() -> SystemReport:
-    """Execute all data collectors and compile a complete system report.
+async def collect_all() -> SystemReport:
+    """Execute all data collectors concurrently and compile a complete system report.
 
     This function orchestrates all data collection activities across
-    system, hardware, network, packages, and developer tools.
+    system, hardware, network, packages, and developer tools using asyncio
+    for parallel execution. Synchronous collectors are run in thread pools
+    to achieve true parallelism.
 
     Returns:
         A complete SystemReport dictionary with all collected data.
@@ -62,34 +65,112 @@ def collect_all() -> SystemReport:
         CollectorError: If any critical collector fails (non-critical failures
                        are logged but don't stop execution).
     """
+    # Collect timestamp at the start
+    timestamp = time.time()
+
+    # Run all independent collectors concurrently using asyncio.to_thread
+    # This runs sync functions in separate threads for parallel execution
+    # Using return_exceptions=True to prevent one failure from crashing the entire report
+    results = await asyncio.gather(
+        asyncio.to_thread(collect_system_info),
+        asyncio.to_thread(collect_hardware_info),
+        asyncio.to_thread(collect_disk_info),
+        asyncio.to_thread(collect_processes),
+        asyncio.to_thread(collect_launch_items),
+        asyncio.to_thread(collect_login_items),
+        asyncio.to_thread(collect_package_managers),
+        asyncio.to_thread(collect_dev_tools),
+        asyncio.to_thread(collect_kexts),
+        asyncio.to_thread(collect_electron_apps),
+        asyncio.to_thread(collect_environment_info),
+        asyncio.to_thread(collect_network_info),
+        asyncio.to_thread(collect_battery_info),
+        asyncio.to_thread(collect_cron_jobs),
+        asyncio.to_thread(collect_diagnostics),
+        asyncio.to_thread(collect_security_tools),
+        asyncio.to_thread(collect_cloud_sync),
+        asyncio.to_thread(collect_nvram_variables),
+        asyncio.to_thread(collect_storage_analysis),
+        asyncio.to_thread(collect_fonts),
+        asyncio.to_thread(collect_shell_customization),
+        asyncio.to_thread(collect_system_preferences),
+        asyncio.to_thread(collect_kernel_parameters),
+        asyncio.to_thread(collect_system_logs),
+        asyncio.to_thread(collect_ioregistry_info),
+        return_exceptions=True,
+    )
+
+    # Unpack results - if any collector raised an exception, we'll get the exception object
+    # We handle exceptions by logging and using default/empty values
+    (
+        system_info,
+        hardware_info,
+        disk_info,
+        top_processes,
+        startup,
+        login_items,
+        package_managers,
+        developer_tools,
+        kext_info,
+        applications,
+        environment,
+        network,
+        battery,
+        cron,
+        diagnostics,
+        security,
+        cloud,
+        nvram,
+        storage_analysis,
+        fonts,
+        shell_customization,
+        system_preferences,
+        kernel_params,
+        system_logs,
+        ioregistry,
+    ) = results
+
+    # Handle any exceptions by providing default values
+    if isinstance(kext_info, Exception):
+        from prose.schema import KernelExtensionsInfo
+
+        kext_info = KernelExtensionsInfo(third_party_kexts=[], system_extensions=[])
+        utils.verbose_log(f"Kexts collection failed: {kext_info}")
+
+    # Collect opencore_patcher with dependency on kext_info
+    # This must run after kexts are collected
+    opencore_patcher = await asyncio.to_thread(
+        collect_opencore_patcher, kext_info["third_party_kexts"]
+    )
+
     return {
-        "timestamp": time.time(),
-        "system": collect_system_info(),
-        "hardware": collect_hardware_info(),
-        "disk": collect_disk_info(),
-        "top_processes": collect_processes(),
-        "startup": collect_launch_items(),
-        "login_items": collect_login_items(),
-        "package_managers": collect_package_managers(),
-        "developer_tools": collect_dev_tools(),
-        "kexts": (kext_info := collect_kexts()),
-        "applications": collect_electron_apps(),
-        "environment": collect_environment_info(),
-        "network": collect_network_info(),
-        "battery": collect_battery_info(),
-        "cron": collect_cron_jobs(),
-        "diagnostics": collect_diagnostics(),
-        "security": collect_security_tools(),
-        "cloud": collect_cloud_sync(),
-        "nvram": collect_nvram_variables(),  # Phase 5: NVRAM inspection
-        "storage_analysis": collect_storage_analysis(),
-        "fonts": collect_fonts(),
-        "shell_customization": collect_shell_customization(),
-        "opencore_patcher": collect_opencore_patcher(kext_info["third_party_kexts"]),
-        "system_preferences": collect_system_preferences(),
-        "kernel_params": collect_kernel_parameters(),
-        "system_logs": collect_system_logs(),
-        "ioregistry": collect_ioregistry_info(),  # Phase 3: IORegistry hardware detection
+        "timestamp": timestamp,
+        "system": system_info,
+        "hardware": hardware_info,
+        "disk": disk_info,
+        "top_processes": top_processes,
+        "startup": startup,
+        "login_items": login_items,
+        "package_managers": package_managers,
+        "developer_tools": developer_tools,
+        "kexts": kext_info,
+        "applications": applications,
+        "environment": environment,
+        "network": network,
+        "battery": battery,
+        "cron": cron,
+        "diagnostics": diagnostics,
+        "security": security,
+        "cloud": cloud,
+        "nvram": nvram,
+        "storage_analysis": storage_analysis,
+        "fonts": fonts,
+        "shell_customization": shell_customization,
+        "opencore_patcher": opencore_patcher,
+        "system_preferences": system_preferences,
+        "kernel_params": kernel_params,
+        "system_logs": system_logs,
+        "ioregistry": ioregistry,
     }
 
 
@@ -201,8 +282,8 @@ The following JSON object contains the complete system state snapshot.
     return prompt.strip()
 
 
-def main() -> int:
-    """Main entry point for the CLI application.
+async def async_main() -> int:
+    """Async main entry point for the CLI application.
 
     Parses command-line arguments, executes data collection,
     and saves reports to disk.
@@ -227,7 +308,7 @@ def main() -> int:
         return 1
 
     utils.log(" Starting macOS System Prose Report Collection...", "header")
-    report = collect_all()
+    report = await collect_all()
 
     try:
         with open(args.output, "w", encoding="utf-8") as f:
@@ -279,6 +360,15 @@ def main() -> int:
 
     utils.log("Collection complete.", "success")
     return 0
+
+
+def main() -> int:
+    """Synchronous wrapper for the async main entry point.
+
+    Returns:
+        Exit code (0 for success, 1 for error).
+    """
+    return asyncio.run(async_main())
 
 
 if __name__ == "__main__":

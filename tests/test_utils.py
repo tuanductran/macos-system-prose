@@ -173,3 +173,62 @@ class TestUtilityFunctions:
         fake_app = Path("/nonexistent/Test.app")
         version = utils.get_app_version(fake_app)
         assert version == ""
+
+
+class TestAsyncUtilityFunctions:
+    """Test suite for async utility functions."""
+
+    async def async_test_async_run_command_success(self):
+        """Test async_run_command() with successful command."""
+        result = await utils.async_run_command(["echo", "test"])
+        assert result == "test"
+
+    async def async_test_async_run_command_timeout(self):
+        """Test async_run_command() with command timeout."""
+        result = await utils.async_run_command(["sleep", "10"], timeout=1)
+        assert result == ""
+
+    async def async_test_async_run_command_failure(self):
+        """Test async_run_command() with failing command."""
+        result = await utils.async_run_command(["false"])
+        assert result == ""
+
+    async def async_test_async_get_json_output_valid(self):
+        """Test async_get_json_output() with valid JSON."""
+        result = await utils.async_get_json_output(["echo", '{"key": "value"}'])
+        assert result == {"key": "value"}
+
+    async def async_test_async_get_json_output_invalid(self):
+        """Test async_get_json_output() with invalid JSON."""
+        result = await utils.async_get_json_output(["echo", "not json"])
+        assert result is None
+
+    def test_async_run_command_success(self):
+        """Wrapper to run async test."""
+        import asyncio
+
+        asyncio.run(self.async_test_async_run_command_success())
+
+    def test_async_run_command_timeout(self):
+        """Wrapper to run async test."""
+        import asyncio
+
+        asyncio.run(self.async_test_async_run_command_timeout())
+
+    def test_async_run_command_failure(self):
+        """Wrapper to run async test."""
+        import asyncio
+
+        asyncio.run(self.async_test_async_run_command_failure())
+
+    def test_async_get_json_output_valid(self):
+        """Wrapper to run async test."""
+        import asyncio
+
+        asyncio.run(self.async_test_async_get_json_output_valid())
+
+    def test_async_get_json_output_invalid(self):
+        """Wrapper to run async test."""
+        import asyncio
+
+        asyncio.run(self.async_test_async_get_json_output_invalid())

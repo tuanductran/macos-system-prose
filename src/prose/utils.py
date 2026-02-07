@@ -6,6 +6,7 @@ parsing output, logging, and file operations.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import shutil
 import subprocess
@@ -115,6 +116,100 @@ def run(
         if log_errors:
             verbose_log(f"Command execution error: {e}")
         return ""
+
+
+async def async_run_command(
+    cmd: list[str],
+    description: str = "",
+    timeout: int = 15,
+    log_errors: bool = True,
+    capture_stderr: bool = False,
+) -> str:
+    """Execute a system command asynchronously and return its output.
+
+    Args:
+        cmd: Command and arguments as a list.
+        description: Optional description for verbose logging.
+        timeout: Maximum time in seconds to wait for command completion.
+        log_errors: Whether to log errors to console.
+        capture_stderr: If True, return stderr instead of stdout (for tools like codesign).
+
+    Returns:
+        Command output as a string, or empty string on failure.
+
+    Examples:
+        >>> await async_run_command(["sw_vers", "-productVersion"])
+        '14.2.1'
+        >>> await async_run_command(["uname", "-m"])
+        'arm64'
+    """
+    if description:
+        verbose_log(description)
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        try:
+            stdout, stderr = await asyncio.wait_for(
+                process.communicate(),
+                timeout=timeout,
+            )
+        except asyncio.TimeoutError:
+            try:
+                process.kill()
+                await process.wait()
+            except Exception:
+                pass
+            if log_errors:
+                verbose_log(f"Command timed out: {' '.join(cmd)}")
+            return ""
+
+        stdout_text = stdout.decode("utf-8", errors="replace").strip()
+        stderr_text = stderr.decode("utf-8", errors="replace").strip()
+
+        if process.returncode != 0:
+            if log_errors:
+                verbose_log(f"Command failed: {' '.join(cmd)}\nError: {stderr_text}")
+            # For commands that write to stderr (like codesign), return stderr even on error
+            if capture_stderr and stderr_text:
+                return stderr_text
+            return ""
+
+        # Return stderr if requested (some tools write to stderr by design)
+        if capture_stderr:
+            return stderr_text
+        return stdout_text
+
+    except Exception as e:
+        if log_errors:
+            verbose_log(f"Command execution error: {e}")
+        return ""
+
+
+async def async_get_json_output(cmd: list[str]) -> Optional[Union[dict, list]]:
+    """Execute a command asynchronously and parse its JSON output.
+
+    Args:
+        cmd: Command that produces JSON output.
+
+    Returns:
+        Parsed JSON as dict or list, or None on failure.
+
+    Examples:
+        >>> await async_get_json_output(["npm", "list", "-g", "--json", "--depth=0"])
+        {'dependencies': {'npm': {'version': '10.2.3'}}}
+    """
+    try:
+        output = await async_run_command(cmd)
+        if output:
+            parsed = json.loads(output)
+            return parsed  # type: ignore[no-any-return]
+    except (json.JSONDecodeError, Exception):
+        pass
+    return None
 
 
 def get_json_output(cmd: list[str]) -> Optional[Union[dict, list]]:
