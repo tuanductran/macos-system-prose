@@ -80,6 +80,13 @@ pytest --cov=src/prose
 - `engine.py` orchestrates all collectors in `collect_all() -> SystemReport`
 - All schemas are defined in `schema.py` using `TypedDict`
 
+**Current Collectors (as of v1.1.0):**
+- **system.py**: System info, hardware (with memory pressure), disk, Time Machine
+- **network.py**: Network interfaces, VPN, DNS, firewall, Wi-Fi
+- **packages.py**: Package managers (Homebrew services, npm, yarn, pnpm, bun, pipx, MacPorts)
+- **developer.py**: Languages, SDKs, cloud tools, Docker (detailed), Git config, terminal emulators, shell frameworks, browsers, extensions
+- **environment.py**: Processes, launch items, launchd services, kexts, system extensions, applications, battery, cron, diagnostics, security tools, TCC permissions, code signing, iCloud sync
+
 **Best Practices:**
 - **Error Resilience**: Wrap external commands in try-except. One collector failure MUST NOT crash the entire report
 - **Direct System Access**: Prefer `system_profiler`, `scutil`, `sw_vers` over hardcoded mappings
@@ -230,7 +237,7 @@ ruff check . && ruff format --check . && pytest --cov=src/prose
 
 **Metadata:**
 - Package name: `macos-system-prose`
-- Version: 1.0.0
+- Version: 1.1.0 (Phase 2-4 features added)
 - License: MIT
 - Python: >=3.9
 - Platform: macOS only (Darwin)
@@ -240,16 +247,48 @@ ruff check . && ruff format --check . && pytest --cov=src/prose
 ### Schema Structure (src/prose/schema.py)
 
 All data types are defined as `TypedDict`:
-- `SystemReport` - Top-level report structure (15 sections)
-- `SystemInfo` - OS version, model, SIP/FileVault/Gatekeeper
-- `HardwareInfo` - CPU, memory, GPU, thermal pressure
-- `DiskInfo` - Disk usage, APFS volumes
-- `NetworkInfo` - IPs, interfaces, DNS, Wi-Fi, firewall
-- `PackageManagers` - Union types for installed/not installed
-- `DeveloperToolsInfo` - Languages, SDKs, cloud tools, extensions
-- `EnvironmentInfo` - Shell, PATH, listening ports
+
+**Core System (18 sections total):**
+- `SystemReport` - Top-level report structure
+- `SystemInfo` - OS version, model, SIP/FileVault/Gatekeeper, Time Machine
+- `HardwareInfo` - CPU, memory, GPU, thermal pressure, **memory pressure stats**
+- `DiskInfo` - Disk usage, APFS volumes, S.M.A.R.T. health
+- `NetworkInfo` - IPs, interfaces, DNS, Wi-Fi, firewall, VPN
+
+**Package Management:**
+- `PackageManagers` - Homebrew (**with services**), MacPorts, npm, yarn, pnpm, bun, pipx
+- `BrewService` - Homebrew service status (name, status, user, file)
+
+**Developer Tools:**
+- `DeveloperToolsInfo` - Languages, SDKs, cloud tools, extensions, **Git config, terminal emulators, shell frameworks**
+- `DockerInfo` - Docker daemon, **containers (DockerContainer)**, **images (DockerImage)**
+- `GitConfig` - Git global config (user, email, aliases, settings)
+- `BrowserInfo` - Browser detection with versions
+
+**System Activity:**
+- `EnvironmentInfo` - Shell, PATH, listening ports, **launchd services**
+- `LaunchdService` - Service status with PID and exit codes
+- `ProcessInfo` - Top processes (CPU/memory)
+- `LaunchItems` - Launch agents/daemons
 - `BatteryInfo` - Percentage, cycle count, condition
+
+**Kernel & Extensions:**
+- `KernelExtensionsInfo` - Third-party kexts, **system extensions (macOS 10.15+)**
+- `SystemExtension` - Extension identifier, version, state, team ID
+
+**Security & Privacy:**
+- `SecurityInfo` - Security tools, antivirus, **TCC permissions, code signing sample**
+- `TCCPermission` - Privacy permissions (camera, microphone, etc.)
+- `CodeSigningInfo` - App signing verification (authority, validity, team ID)
+
+**Cloud & Sync:**
+- `CloudInfo` - iCloud sync status
+- `CloudSyncInfo` - iCloud Drive, sync state, storage usage
+
+**Diagnostics:**
 - `DiagnosticsInfo` - Crash logs
+- `CronInfo` - Cron jobs
+- `ApplicationsInfo` - All apps (with version fallback support)
 
 ### Engine Flow (src/prose/engine.py)
 
@@ -258,13 +297,58 @@ All data types are defined as `TypedDict`:
 3. `generate_ai_prompt(data)` - Creates LLM-optimized text report
 4. Writes `macos_system_report.json` and `macos_system_report.txt`
 
-### Collector Organization
+### Collector Organization (v1.1.0)
 
-- **system.py**: `collect_system_info()`, `collect_hardware_info()`, `collect_disk_info()`
-- **network.py**: `collect_network_info()`
-- **packages.py**: `collect_package_managers()` (7 package managers)
-- **developer.py**: `collect_languages()`, `collect_sdks()`, `collect_cloud_devops()`, `collect_databases()`, `collect_version_managers()`, `collect_infra()`, `collect_extensions()`, `collect_editors()`, `collect_dev_tools()`
-- **environment.py**: `collect_processes()`, `collect_launch_items()`, `collect_login_items()`, `collect_kexts()`, `collect_electron_apps()`, `collect_environment_info()`, `collect_battery_info()`, `collect_cron_jobs()`, `collect_diagnostics()`
+**system.py** (172 lines):
+- `collect_time_machine_info()` - Time Machine backup status
+- `collect_display_info()` - Display specs (resolution, refresh rate)
+- `collect_memory_pressure()` - **NEW** Real-time memory stats
+- `collect_hardware_info()` - CPU, GPU, memory, thermal, **memory pressure**
+- `collect_disk_health()` - S.M.A.R.T. disk health
+- `collect_disk_info()` - Disk usage, APFS volumes, health
+- `collect_system_info()` - OS version, SIP, FileVault, Gatekeeper
+
+**network.py** (95 lines):
+- `collect_network_info()` - IPs, interfaces, DNS, Wi-Fi, firewall, VPN
+
+**packages.py** (104 lines):
+- `collect_homebrew_services()` - **NEW** Homebrew service status
+- `homebrew_info()`, `macports_info()`, `pipx_info()`
+- `npm_global_info()`, `yarn_global_info()`, `pnpm_global_info()`, `bun_global_info()`
+- `collect_package_managers()` - Aggregates all package managers
+
+**developer.py** (218 lines):
+- `collect_docker_info()` - **ENHANCED** Docker with container/image details
+- `collect_browsers()` - Browser detection with versions
+- `collect_languages()` - Node, Python, Go, Rust, Ruby, Java, PHP, Perl
+- `collect_sdks()` - Xcode, Android SDK, Flutter
+- `collect_cloud_devops()` - AWS, GCP, Terraform, kubectl, Helm
+- `collect_databases()` - Redis, MongoDB, MySQL, PostgreSQL, SQLite
+- `collect_version_managers()` - nvm, asdf, pyenv, rbenv, goenv, rustup
+- `collect_extensions()` - VS Code, Cursor, Windsurf, Zed extensions
+- `collect_editors()` - Detect installed code editors
+- `collect_git_config()` - **NEW** Git global configuration
+- `collect_terminal_emulators()` - **NEW** Terminal app detection
+- `collect_shell_frameworks()` - **NEW** oh-my-zsh, starship, etc.
+- `collect_dev_tools()` - Aggregates all developer tools
+
+**environment.py** (265 lines):
+- `collect_processes()` - Top 15 CPU/memory processes
+- `collect_launch_items()` - Launch agents/daemons
+- `collect_login_items()` - Login startup items
+- `collect_launchd_services()` - **NEW** User domain services (top 50)
+- `collect_environment_info()` - Shell, PATH, ports, **launchd services**
+- `collect_battery_info()` - Battery health and status
+- `collect_cron_jobs()` - User crontab
+- `collect_diagnostics()` - Recent crash logs
+- `collect_system_extensions()` - **NEW** macOS 10.15+ extensions
+- `collect_kexts()` - Kernel extensions + **system extensions**
+- `collect_all_applications()` - All apps with version detection
+- `collect_electron_apps()` - Electron-based apps
+- `collect_tcc_permissions()` - **NEW** TCC privacy permissions (requires FDA)
+- `collect_code_signing_sample()` - **NEW** Code signing verification (sample 10 apps)
+- `collect_cloud_sync()` - **NEW** iCloud Drive status
+- `collect_security_tools()` - Security apps, antivirus, **TCC, code signing**
 
 ## 🚨 Common Pitfalls & Solutions
 
@@ -272,7 +356,7 @@ All data types are defined as `TypedDict`:
 **Solution**: Always check with `which()` before running commands, use try-except blocks
 
 ### Problem: Command hangs indefinitely
-**Solution**: Use `timeout` parameter in `run()` (default: 30s)
+**Solution**: Use `timeout` parameter in `run()` (default: 15s, adjust for slow commands like codesign)
 
 ### Problem: JSON parsing fails
 **Solution**: Use `get_json_output()` which handles empty output and malformed JSON
@@ -282,6 +366,18 @@ All data types are defined as `TypedDict`:
 
 ### Problem: New field breaks schema
 **Solution**: Always update `TypedDict` in schema.py BEFORE implementing collector
+
+### Problem: App version detection fails (Phase 2 fix)
+**Solution**: Use fallback keys: CFBundleShortVersionString → CFBundleVersion → CFBundleGetInfoString
+
+### Problem: Memory pressure collection slow
+**Solution**: Already optimized with 5s timeout and error suppression
+
+### Problem: Code signing verification too slow
+**Solution**: Limit to 10 app samples with 5s timeout per app
+
+### Problem: TCC database requires Full Disk Access
+**Solution**: Returns empty list gracefully, document FDA requirement in logs
 
 ## 📚 Additional Resources
 
@@ -295,9 +391,32 @@ All data types are defined as `TypedDict`:
 When working on this repository, you are successful if:
 1. ✅ All collectors are properly typed and follow schema.py
 2. ✅ Code passes ruff linting and formatting checks
-3. ✅ All tests pass with good coverage
+3. ✅ All tests pass with good coverage (target: 30%+)
 4. ✅ No system modifications are made (read-only guarantee)
 5. ✅ Error handling is robust (one failure doesn't crash entire report)
 6. ✅ Changes are minimal and surgical
 7. ✅ Conventional commit format is used
 8. ✅ Documentation is updated if user-facing changes are made
+9. ✅ Performance is acceptable (<60s for full report, Phase 3/4 adds ~5-10s)
+10. ✅ Privacy considerations respected (no PII, FDA requirements documented)
+
+## 📊 Project Statistics (v1.1.0)
+
+- **Total Lines of Code**: ~1,231 (collectors: 854, utils: 89, schema: 224, engine: 50)
+- **Test Coverage**: 30% (25 tests passing)
+- **Schema Completeness**: 100% (all Typedicts defined)
+- **Collectors**: 5 modules, ~40 collection functions
+- **Features**: 18 data collection sections
+- **Platform**: macOS only (Darwin)
+- **Dependencies**: Zero runtime (pure stdlib)
+- **Python Support**: 3.9, 3.10, 3.11, 3.12
+
+## 🚀 Version History
+
+- **v1.0.0** (Initial): Basic system introspection (system, hardware, network, packages, developer tools)
+- **v1.1.0** (Current):
+  - **Phase 2**: Homebrew services, Docker details, Git config, Launchd services (+248 lines)
+  - **Phase 3**: Memory pressure, System extensions, Terminal emulators, Shell frameworks
+  - **Phase 4**: TCC permissions, Code signing verification, iCloud sync (+347 lines)
+  - Total additions: ~595 lines across 6 files
+  - New TypeDicts: BrewService, LaunchdService, DockerContainer, DockerImage, GitConfig, MemoryPressure, SystemExtension, TCCPermission, CodeSigningInfo, CloudSyncInfo, CloudInfo
