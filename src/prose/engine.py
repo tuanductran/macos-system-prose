@@ -109,7 +109,9 @@ def generate_ai_prompt(data: SystemReport) -> str:
     oclp_context = ""
     if is_oclp_user:
         kexts_str = ", ".join(oclp["loaded_kexts"][:3]) if oclp["loaded_kexts"] else "None"
-        amfi_str = oclp["amfi_configuration"]["amfi_value"] if oclp["amfi_configuration"] else "Unknown"
+        amfi_str = (
+            oclp["amfi_configuration"]["amfi_value"] if oclp["amfi_configuration"] else "Unknown"
+        )
         oclp_context = f"""
 ## OpenCore Legacy Patcher Detected
 

@@ -95,10 +95,10 @@ def get_version_name_from_number(version: str) -> str:
 
     # For macOS 11+, major version is the key
     if major >= 11:
-        return VERSION_NAMES.get(major, f"macOS {major}")
+        return VERSION_NAMES.get(str(major), f"macOS {major}")
 
     # For macOS 10.x, use major.minor as key
-    key = float(f"{major}.{minor}")
+    key = f"{major}.{minor}"
     return VERSION_NAMES.get(key, f"macOS {major}.{minor}")
 
 
@@ -215,7 +215,7 @@ def get_macos_version_info() -> MacOSVersion:
     }
 
 
-def get_all_macos_versions() -> list[dict[str, str | int | float]]:
+def get_all_macos_versions() -> list[dict[str, object]]:
     """
     Get list of all known macOS versions with metadata.
 

@@ -7,8 +7,7 @@ using only Python stdlib (ctypes + subprocess), avoiding pyobjc dependency.
 
 from __future__ import annotations
 
-from typing import Any
-
+from prose.schema import AMFIConfig
 from prose.utils import run, verbose_log
 
 
@@ -94,7 +93,7 @@ def get_csr_active_config() -> str | None:
     return read_nvram("csr-active-config")
 
 
-def parse_amfi_boot_arg(boot_args: str | None) -> dict[str, Any]:
+def parse_amfi_boot_arg(boot_args: str | None) -> AMFIConfig:
     """
     Parse AMFI (AppleMobileFileIntegrity) boot argument bitmask.
 
@@ -113,7 +112,7 @@ def parse_amfi_boot_arg(boot_args: str | None) -> dict[str, Any]:
         >>> parse_amfi_boot_arg("amfi=0x80")
         {'amfi_value': '0x80', 'allow_invalid_signature': True, ...}
     """
-    result: dict[str, Any] = {
+    result: AMFIConfig = {
         "amfi_value": None,
         "allow_task_for_pid": False,
         "allow_invalid_signature": False,

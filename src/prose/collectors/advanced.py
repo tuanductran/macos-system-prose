@@ -518,7 +518,7 @@ def collect_system_logs() -> SystemLogs:
             "bash",
             "-c",
             "log show --predicate 'messageType == \"Default\"' "
-            "--style syslog --last 1h 2>/dev/null | grep -i warning | tail -10",  # Reduced 24h→1h, 30→10
+            "--style syslog --last 1h 2>/dev/null | grep -i warning | tail -10",
         ],
         timeout=15,  # Reduced from 30s to 15s
         log_errors=False,
