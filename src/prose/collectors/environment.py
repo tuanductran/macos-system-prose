@@ -144,8 +144,8 @@ def collect_environment_info() -> EnvironmentInfo:
 
     return {
         "shell": os.environ.get("SHELL"),
-        "python_executable": run(["which", "python3"]),
-        "python_version": run(["python3", "--version"]),
+        "python_executable": "/usr/bin/python3",  # System Python, not venv
+        "python_version": run(["/usr/bin/python3", "--version"]),
         "path_entries": path_entries,
         "path_duplicates": list(set(dupes)),
         "listening_ports": sorted(ports),

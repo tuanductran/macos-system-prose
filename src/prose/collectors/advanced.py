@@ -201,7 +201,8 @@ def collect_system_preferences() -> SystemPreferences:
 
     # Trackpad tracking speed
     trackpad_output = utils.run(
-        "defaults read -g com.apple.trackpad.scaling 2>/dev/null", log_errors=False
+        ["bash", "-c", "defaults read -g com.apple.trackpad.scaling 2>/dev/null"],
+        log_errors=False,
     )
     if trackpad_output:
         try:
@@ -210,7 +211,9 @@ def collect_system_preferences() -> SystemPreferences:
             pass
 
     # Key repeat rate
-    key_repeat_output = utils.run("defaults read -g KeyRepeat 2>/dev/null", log_errors=False)
+    key_repeat_output = utils.run(
+        ["bash", "-c", "defaults read -g KeyRepeat 2>/dev/null"], log_errors=False
+    )
     if key_repeat_output:
         try:
             key_repeat_rate = int(key_repeat_output.strip())
@@ -219,7 +222,8 @@ def collect_system_preferences() -> SystemPreferences:
 
     # Mouse speed
     mouse_output = utils.run(
-        "defaults read -g com.apple.mouse.scaling 2>/dev/null", log_errors=False
+        ["bash", "-c", "defaults read -g com.apple.mouse.scaling 2>/dev/null"],
+        log_errors=False,
     )
     if mouse_output:
         try:
@@ -229,7 +233,8 @@ def collect_system_preferences() -> SystemPreferences:
 
     # Scroll direction
     scroll_output = utils.run(
-        "defaults read -g com.apple.swipescrolldirection 2>/dev/null", log_errors=False
+        ["bash", "-c", "defaults read -g com.apple.swipescrolldirection 2>/dev/null"],
+        log_errors=False,
     )
     if scroll_output and "0" in scroll_output:
         scroll_direction_natural = False
@@ -249,7 +254,7 @@ def collect_kernel_parameters() -> KernelParameters:
     max_vnodes = 0
 
     # Max files
-    output = utils.run("sysctl -n kern.maxfiles 2>/dev/null", log_errors=False)
+    output = utils.run(["sysctl", "-n", "kern.maxfiles"], log_errors=False)
     if output:
         try:
             max_files = int(output.strip())
@@ -257,7 +262,7 @@ def collect_kernel_parameters() -> KernelParameters:
             pass
 
     # Max processes
-    output = utils.run("sysctl -n kern.maxproc 2>/dev/null", log_errors=False)
+    output = utils.run(["sysctl", "-n", "kern.maxproc"], log_errors=False)
     if output:
         try:
             max_processes = int(output.strip())
@@ -265,7 +270,7 @@ def collect_kernel_parameters() -> KernelParameters:
             pass
 
     # Max vnodes
-    output = utils.run("sysctl -n kern.maxvnodes 2>/dev/null", log_errors=False)
+    output = utils.run(["sysctl", "-n", "kern.maxvnodes"], log_errors=False)
     if output:
         try:
             max_vnodes = int(output.strip())
@@ -282,8 +287,12 @@ def collect_system_logs() -> SystemLogs:
 
     # Get logs from last 24 hours using log command
     log_output = utils.run(
-        'log show --predicate \'messageType == "Error" OR messageType == "Fault"\' '
-        "--style syslog --last 24h 2>/dev/null | tail -50",
+        [
+            "bash",
+            "-c",
+            'log show --predicate \'messageType == "Error" OR messageType == "Fault"\' '
+            "--style syslog --last 24h 2>/dev/null | tail -50",
+        ],
         timeout=30,
         log_errors=False,
     )
@@ -299,8 +308,12 @@ def collect_system_logs() -> SystemLogs:
 
     # Get warnings
     warning_output = utils.run(
-        "log show --predicate 'messageType == \"Default\"' "
-        "--style syslog --last 24h 2>/dev/null | grep -i warning | tail -30",
+        [
+            "bash",
+            "-c",
+            "log show --predicate 'messageType == \"Default\"' "
+            "--style syslog --last 24h 2>/dev/null | grep -i warning | tail -30",
+        ],
         timeout=30,
         log_errors=False,
     )
