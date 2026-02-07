@@ -25,6 +25,7 @@ from prose.collectors.environment import (
     collect_launch_items,
     collect_login_items,
     collect_processes,
+    collect_security_tools,
 )
 from prose.collectors.network import collect_network_info
 from prose.collectors.packages import collect_package_managers
@@ -62,6 +63,7 @@ def collect_all() -> SystemReport:
         "battery": collect_battery_info(),
         "cron": collect_cron_jobs(),
         "diagnostics": collect_diagnostics(),
+        "security": collect_security_tools(),
     }
 
 

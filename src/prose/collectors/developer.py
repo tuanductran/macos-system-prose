@@ -4,8 +4,141 @@ import json
 import os
 from pathlib import Path
 
-from prose.schema import DeveloperToolsInfo
-from prose.utils import get_version, run, which
+from prose.schema import BrowserInfo, DeveloperToolsInfo, DockerInfo
+from prose.utils import get_json_output, get_version, run, which
+
+
+def collect_docker_info() -> DockerInfo:
+    """Collect Docker daemon status, containers, and images information."""
+    if not which("docker"):
+        return {
+            "installed": False,
+            "version": "Not Found",
+            "running": False,
+            "containers_total": 0,
+            "containers_running": 0,
+            "images_count": 0,
+        }
+    
+    version = get_version(["docker", "--version"])
+    
+    # Check if Docker daemon is running
+    running = False
+    containers_total = 0
+    containers_running = 0
+    images_count = 0
+    
+    try:
+        # Test if daemon is accessible
+        run(["docker", "info"], timeout=5, log_errors=False)
+        running = True
+        
+        # Get container counts
+        containers_data = get_json_output(["docker", "ps", "-a", "--format", "json"])
+        if containers_data:
+            if isinstance(containers_data, list):
+                containers_total = len(containers_data)
+            elif isinstance(containers_data, str):
+                # Count lines for newline-delimited JSON
+                containers_total = len([l for l in containers_data.splitlines() if l.strip()])
+        
+        running_data = get_json_output(["docker", "ps", "--format", "json"])
+        if running_data:
+            if isinstance(running_data, list):
+                containers_running = len(running_data)
+            elif isinstance(running_data, str):
+                containers_running = len([l for l in running_data.splitlines() if l.strip()])
+        
+        # Get image count
+        images_data = get_json_output(["docker", "images", "--format", "json"])
+        if images_data:
+            if isinstance(images_data, list):
+                images_count = len(images_data)
+            elif isinstance(images_data, str):
+                images_count = len([l for l in images_data.splitlines() if l.strip()])
+    except Exception:
+        pass
+    
+    return {
+        "installed": True,
+        "version": version,
+        "running": running,
+        "containers_total": containers_total,
+        "containers_running": containers_running,
+        "images_count": images_count,
+    }
+
+
+def collect_browsers() -> list[BrowserInfo]:
+    """Detect installed web browsers and their versions."""
+    browsers = []
+    
+    browser_configs = {
+        "Google Chrome": {
+            "path": "/Applications/Google Chrome.app",
+            "version_cmd": [
+                "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                "--version",
+            ],
+        },
+        "Firefox": {
+            "path": "/Applications/Firefox.app",
+            "version_cmd": ["/Applications/Firefox.app/Contents/MacOS/firefox", "--version"],
+        },
+        "Safari": {
+            "path": "/Applications/Safari.app",
+            "version_cmd": ["defaults", "read", "/Applications/Safari.app/Contents/Info.plist", "CFBundleShortVersionString"],
+        },
+        "Microsoft Edge": {
+            "path": "/Applications/Microsoft Edge.app",
+            "version_cmd": [
+                "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+                "--version",
+            ],
+        },
+        "Brave Browser": {
+            "path": "/Applications/Brave Browser.app",
+            "version_cmd": [
+                "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+                "--version",
+            ],
+        },
+        "Opera": {
+            "path": "/Applications/Opera.app",
+            "version_cmd": ["/Applications/Opera.app/Contents/MacOS/Opera", "--version"],
+        },
+        "Arc": {
+            "path": "/Applications/Arc.app",
+            "version_cmd": ["defaults", "read", "/Applications/Arc.app/Contents/Info.plist", "CFBundleShortVersionString"],
+        },
+        "Vivaldi": {
+            "path": "/Applications/Vivaldi.app",
+            "version_cmd": ["/Applications/Vivaldi.app/Contents/MacOS/Vivaldi", "--version"],
+        },
+    }
+    
+    for browser_name, config in browser_configs.items():
+        browser_path = config["path"]
+        installed = Path(browser_path).exists()
+        version = "Unknown"
+        
+        if installed:
+            try:
+                version_output = run(config["version_cmd"], timeout=3, log_errors=False)
+                if version_output:
+                    # Extract version number
+                    version = version_output.strip().split()[-1]
+            except Exception:
+                version = "Installed"
+        
+        browsers.append({
+            "name": browser_name,
+            "installed": installed,
+            "version": version if installed else "Not Installed",
+            "path": browser_path if installed else "",
+        })
+    
+    return browsers
 
 
 def collect_languages() -> dict[str, str]:
@@ -187,9 +320,10 @@ def collect_dev_tools() -> DeveloperToolsInfo:
         "databases": collect_databases(),
         "version_managers": collect_version_managers(),
         "infra": {
-            "docker": get_version(["docker", "--version"]) if which("docker") else "Not Found",
             "git": get_version(["git", "--version"]) if which("git") else "Not Found",
         },
         "extensions": collect_extensions(),
         "editors": collect_editors(),
+        "docker": collect_docker_info(),
+        "browsers": collect_browsers(),
     }

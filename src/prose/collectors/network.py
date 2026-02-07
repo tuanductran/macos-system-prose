@@ -3,7 +3,62 @@ from __future__ import annotations
 import os
 
 from prose.schema import NetworkInfo
-from prose.utils import log, run
+from prose.utils import log, run, verbose_log, which
+
+
+def collect_vpn_info() -> tuple[bool, list[str], list[str]]:
+    """Detect VPN connections and VPN applications."""
+    vpn_active = False
+    vpn_connections = []
+    vpn_apps = []
+    
+    try:
+        # Check for VPN interfaces (utun, ppp, ipsec)
+        ifconfig_output = run(["ifconfig"])
+        for line in ifconfig_output.splitlines():
+            if line.startswith(("utun", "ppp", "ipsec")):
+                interface = line.split(":")[0]
+                vpn_connections.append(interface)
+                vpn_active = True
+        
+        # Check scutil for VPN services
+        scutil_output = run(["scutil", "--nc", "list"], log_errors=False)
+        for line in scutil_output.splitlines():
+            if "Connected" in line or "Connecting" in line:
+                vpn_active = True
+                # Extract service name
+                parts = line.strip().split('"')
+                if len(parts) >= 2:
+                    vpn_connections.append(parts[1])
+        
+        # Check for common VPN apps
+        vpn_app_paths = {
+            "Tailscale": "/Applications/Tailscale.app",
+            "WireGuard": "/Applications/WireGuard.app",
+            "OpenVPN Connect": "/Applications/OpenVPN Connect.app",
+            "Cisco AnyConnect": "/Applications/Cisco/Cisco AnyConnect Secure Mobility Client.app",
+            "NordVPN": "/Applications/NordVPN.app",
+            "ExpressVPN": "/Applications/ExpressVPN.app",
+            "ProtonVPN": "/Applications/ProtonVPN.app",
+            "Tunnelblick": "/Applications/Tunnelblick.app",
+        }
+        
+        for vpn_name, vpn_path in vpn_app_paths.items():
+            if os.path.exists(vpn_path):
+                vpn_apps.append(vpn_name)
+        
+        # Check if tailscale daemon is running
+        if which("tailscale"):
+            status = run(["tailscale", "status"], timeout=5, log_errors=False)
+            if status and "Logged out" not in status:
+                vpn_active = True
+                if "Tailscale" not in vpn_apps:
+                    vpn_apps.append("Tailscale (CLI)")
+    
+    except Exception:
+        pass
+    
+    return vpn_active, list(set(vpn_connections)), vpn_apps
 
 
 def collect_network_info() -> NetworkInfo:
@@ -79,6 +134,9 @@ def collect_network_info() -> NetworkInfo:
     except Exception:
         pass
 
+    # VPN Information
+    vpn_status, vpn_conns, vpn_apps_list = collect_vpn_info()
+
     return {
         "hostname": run(["hostname"]),
         "primary_interface": interface,
@@ -93,4 +151,7 @@ def collect_network_info() -> NetworkInfo:
             ["/usr/libexec/ApplicationFirewall/socketfilterfw", "--getglobalstate"]
         ).strip(),
         "local_interfaces": local_interfaces,
+        "vpn_status": vpn_status,
+        "vpn_connections": vpn_conns,
+        "vpn_apps": vpn_apps_list,
     }

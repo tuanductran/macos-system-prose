@@ -13,6 +13,13 @@ class NotInstalled(TypedDict):
     installed: Literal[False]
 
 
+class TimeMachineInfo(TypedDict):
+    enabled: bool
+    last_backup: Optional[str]
+    destination: Optional[str]
+    auto_backup: bool
+
+
 class SystemInfo(TypedDict):
     os: str
     macos_version: str
@@ -25,6 +32,14 @@ class SystemInfo(TypedDict):
     sip_enabled: bool
     gatekeeper_enabled: bool
     filevault_enabled: bool
+    time_machine: TimeMachineInfo
+
+
+class DisplayInfo(TypedDict):
+    resolution: str
+    refresh_rate: str
+    color_depth: str
+    external_displays: int
 
 
 class HardwareInfo(TypedDict):
@@ -33,12 +48,21 @@ class HardwareInfo(TypedDict):
     memory_gb: Optional[float]
     thermal_pressure: list[str]
     gpu: list[str]
+    displays: list[DisplayInfo]
+
+
+class DiskHealthInfo(TypedDict):
+    disk_name: str
+    disk_type: str
+    smart_status: str
+    health_percentage: Optional[int]
 
 
 class DiskInfo(TypedDict):
     disk_total_gb: float
     disk_free_gb: float
     apfs_info: list[str]
+    disk_health: list[DiskHealthInfo]
 
 
 class ProcessInfo(TypedDict):
@@ -78,6 +102,7 @@ class PackageManagers(TypedDict):
 
 class ApplicationsInfo(TypedDict):
     electron_apps: list[str]
+    all_apps: list[str]
 
 
 class EnvironmentInfo(TypedDict):
@@ -101,6 +126,9 @@ class NetworkInfo(TypedDict):
     wifi_ssid: Optional[str]
     firewall_status: str
     local_interfaces: list[dict[str, str]]
+    vpn_status: bool
+    vpn_connections: list[str]
+    vpn_apps: list[str]
 
 
 class BatteryInfo(TypedDict):
@@ -119,6 +147,22 @@ class DiagnosticsInfo(TypedDict):
     recent_crashes: list[str]
 
 
+class DockerInfo(TypedDict):
+    installed: bool
+    version: str
+    running: bool
+    containers_total: int
+    containers_running: int
+    images_count: int
+
+
+class BrowserInfo(TypedDict):
+    name: str
+    installed: bool
+    version: str
+    path: str
+
+
 class DeveloperToolsInfo(TypedDict):
     languages: dict[str, str]
     sdks: dict[str, str]
@@ -128,10 +172,17 @@ class DeveloperToolsInfo(TypedDict):
     infra: dict[str, str]
     extensions: dict[str, list[str]]
     editors: list[str]
+    docker: DockerInfo
+    browsers: list[BrowserInfo]
 
 
 class KernelExtensionsInfo(TypedDict):
     third_party_kexts: list[str]
+
+
+class SecurityInfo(TypedDict):
+    security_tools: list[str]
+    antivirus: list[str]
 
 
 class SystemReport(TypedDict):
@@ -151,3 +202,4 @@ class SystemReport(TypedDict):
     battery: BatteryInfo
     cron: CronInfo
     diagnostics: DiagnosticsInfo
+    security: SecurityInfo

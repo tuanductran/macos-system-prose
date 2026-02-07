@@ -27,17 +27,22 @@ Perfect for:
 - macOS version with marketing name (Monterey, Ventura, Sonoma, etc.)
 - Hardware model, identifier, and architecture (Intel/Apple Silicon)
 - CPU, GPU, memory specifications
+- **Display information** (resolution, refresh rate, color depth)
 - Disk usage and APFS volume information
+- **S.M.A.R.T. disk health status**
 - System Integrity Protection (SIP) status
 - FileVault encryption status
 - Gatekeeper configuration
 - Thermal pressure monitoring
+- **Time Machine backup status**
 
 ### 🌐 Network & Connectivity
 - Public and local IP addresses
 - Network interface details (MAC, subnet, gateway)
 - DNS server configuration
 - Wi-Fi SSID and connection status
+- **VPN status and active connections**
+- **VPN applications detection**
 - Firewall status
 - Active network routes
 
@@ -48,7 +53,9 @@ Perfect for:
 - **SDKs & Tools**: Xcode, Android SDK, Flutter
 - **Cloud/DevOps**: AWS CLI, GCP SDK, Terraform, kubectl, Helm
 - **Databases**: Redis, MongoDB, MySQL, PostgreSQL, SQLite
-- **IDE Extensions**: VS Code, Cursor, Windsurf, Zed
+- **IDE Extensions**: VS Code, Antigravity, Cursor, Windsurf, Zed
+- **Browsers**: Chrome, Firefox, Safari, Edge, Brave, Opera, Arc, Vivaldi (with versions)
+- **Docker**: Container/image counts, daemon status
 
 ### 🔧 System Activity & Diagnostics
 - Top processes (CPU and memory usage)
@@ -57,9 +64,12 @@ Perfect for:
 - Listening network ports
 - Cron jobs
 - Third-party kernel extensions
+- **All installed applications** (not just Electron)
 - Electron-based applications
 - Recent crash logs (IPS files)
 - Battery health (cycle count, condition, power source)
+- **Security tools** (Little Snitch, Lulu, etc.)
+- **Antivirus software** detection
 
 ## 🚀 Getting Started
 
