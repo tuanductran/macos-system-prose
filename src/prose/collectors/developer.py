@@ -19,20 +19,20 @@ def collect_docker_info() -> DockerInfo:
             "containers_running": 0,
             "images_count": 0,
         }
-    
+
     version = get_version(["docker", "--version"])
-    
+
     # Check if Docker daemon is running
     running = False
     containers_total = 0
     containers_running = 0
     images_count = 0
-    
+
     try:
         # Test if daemon is accessible
         run(["docker", "info"], timeout=5, log_errors=False)
         running = True
-        
+
         # Get container counts
         containers_data = get_json_output(["docker", "ps", "-a", "--format", "json"])
         if containers_data:
@@ -40,25 +40,29 @@ def collect_docker_info() -> DockerInfo:
                 containers_total = len(containers_data)
             elif isinstance(containers_data, str):
                 # Count lines for newline-delimited JSON
-                containers_total = len([l for l in containers_data.splitlines() if l.strip()])
-        
+                containers_total = len(
+                    [line for line in containers_data.splitlines() if line.strip()]
+                )
+
         running_data = get_json_output(["docker", "ps", "--format", "json"])
         if running_data:
             if isinstance(running_data, list):
                 containers_running = len(running_data)
             elif isinstance(running_data, str):
-                containers_running = len([l for l in running_data.splitlines() if l.strip()])
-        
+                containers_running = len(
+                    [line for line in running_data.splitlines() if line.strip()]
+                )
+
         # Get image count
         images_data = get_json_output(["docker", "images", "--format", "json"])
         if images_data:
             if isinstance(images_data, list):
                 images_count = len(images_data)
             elif isinstance(images_data, str):
-                images_count = len([l for l in images_data.splitlines() if l.strip()])
+                images_count = len([line for line in images_data.splitlines() if line.strip()])
     except Exception:
         pass
-    
+
     return {
         "installed": True,
         "version": version,
@@ -72,8 +76,8 @@ def collect_docker_info() -> DockerInfo:
 def collect_browsers() -> list[BrowserInfo]:
     """Detect installed web browsers and their versions."""
     browsers = []
-    
-    browser_configs = {
+
+    browser_configs: dict[str, dict[str, str | list[str]]] = {
         "Google Chrome": {
             "path": "/Applications/Google Chrome.app",
             "version_cmd": [
@@ -87,7 +91,12 @@ def collect_browsers() -> list[BrowserInfo]:
         },
         "Safari": {
             "path": "/Applications/Safari.app",
-            "version_cmd": ["defaults", "read", "/Applications/Safari.app/Contents/Info.plist", "CFBundleShortVersionString"],
+            "version_cmd": [
+                "defaults",
+                "read",
+                "/Applications/Safari.app/Contents/Info.plist",
+                "CFBundleShortVersionString",
+            ],
         },
         "Microsoft Edge": {
             "path": "/Applications/Microsoft Edge.app",
@@ -109,19 +118,24 @@ def collect_browsers() -> list[BrowserInfo]:
         },
         "Arc": {
             "path": "/Applications/Arc.app",
-            "version_cmd": ["defaults", "read", "/Applications/Arc.app/Contents/Info.plist", "CFBundleShortVersionString"],
+            "version_cmd": [
+                "defaults",
+                "read",
+                "/Applications/Arc.app/Contents/Info.plist",
+                "CFBundleShortVersionString",
+            ],
         },
         "Vivaldi": {
             "path": "/Applications/Vivaldi.app",
             "version_cmd": ["/Applications/Vivaldi.app/Contents/MacOS/Vivaldi", "--version"],
         },
     }
-    
+
     for browser_name, config in browser_configs.items():
         browser_path = config["path"]
         installed = Path(browser_path).exists()
         version = "Unknown"
-        
+
         if installed:
             try:
                 version_output = run(config["version_cmd"], timeout=3, log_errors=False)
@@ -130,14 +144,16 @@ def collect_browsers() -> list[BrowserInfo]:
                     version = version_output.strip().split()[-1]
             except Exception:
                 version = "Installed"
-        
-        browsers.append({
-            "name": browser_name,
-            "installed": installed,
-            "version": version if installed else "Not Installed",
-            "path": browser_path if installed else "",
-        })
-    
+
+        browsers.append(
+            {
+                "name": browser_name,
+                "installed": installed,
+                "version": version if installed else "Not Installed",
+                "path": browser_path if installed else "",
+            }
+        )
+
     return browsers
 
 

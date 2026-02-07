@@ -66,7 +66,12 @@ def collect_environment_info() -> EnvironmentInfo:
     log("Collecting environment info...")
     path_entries = os.environ.get("PATH", "").split(":")
     seen = set()
-    dupes = [x for x in path_entries if x in seen or seen.add(x)]
+    dupes = []
+    for x in path_entries:
+        if x in seen:
+            dupes.append(x)
+        else:
+            seen.add(x)
 
     ports = []
     try:
@@ -154,7 +159,7 @@ def collect_kexts() -> KernelExtensionsInfo:
 def collect_all_applications() -> list[str]:
     """Collect all installed applications from /Applications and ~/Applications."""
     all_apps = []
-    
+
     # Scan /Applications
     app_dir = Path("/Applications")
     if app_dir.exists():
@@ -168,7 +173,7 @@ def collect_all_applications() -> list[str]:
                     all_apps.append(app_name)
             except Exception:
                 continue
-    
+
     # Scan ~/Applications
     user_app_dir = Path.home() / "Applications"
     if user_app_dir.exists():
@@ -182,7 +187,7 @@ def collect_all_applications() -> list[str]:
                     all_apps.append(app_name)
             except Exception:
                 continue
-    
+
     return sorted(list(set(all_apps)))
 
 
@@ -198,10 +203,10 @@ def collect_electron_apps() -> ApplicationsInfo:
                     electron_apps.append(f"{app.name}@{ver}" if ver else app.name)
             except Exception:
                 continue
-    
+
     verbose_log("Collecting all installed applications...")
     all_apps = collect_all_applications()
-    
+
     return {
         "electron_apps": sorted(electron_apps),
         "all_apps": all_apps,
@@ -213,7 +218,7 @@ def collect_security_tools() -> SecurityInfo:
     log("Detecting security tools...")
     security_tools = []
     antivirus = []
-    
+
     # Security/Privacy tools
     security_apps = {
         "Little Snitch": "/Applications/Little Snitch.app",
@@ -225,7 +230,7 @@ def collect_security_tools() -> SecurityInfo:
         "RansomWhere": "/Applications/RansomWhere.app",
         "NetiquetteApp": "/Applications/Netiquette.app",
     }
-    
+
     # Antivirus software
     antivirus_apps = {
         "Malwarebytes": "/Applications/Malwarebytes.app",
@@ -237,7 +242,7 @@ def collect_security_tools() -> SecurityInfo:
         "Sophos": "/Applications/Sophos/Sophos Home.app",
         "ESET": "/Applications/ESET Cybersecurity.app",
     }
-    
+
     # Check security tools
     for tool_name, tool_path in security_apps.items():
         if Path(tool_path).exists():
@@ -246,7 +251,7 @@ def collect_security_tools() -> SecurityInfo:
                 security_tools.append(f"{tool_name}@{ver}")
             else:
                 security_tools.append(tool_name)
-    
+
     # Check antivirus
     for av_name, av_path in antivirus_apps.items():
         if Path(av_path).exists():
@@ -255,7 +260,7 @@ def collect_security_tools() -> SecurityInfo:
                 antivirus.append(f"{av_name}@{ver}")
             else:
                 antivirus.append(av_name)
-    
+
     return {
         "security_tools": sorted(security_tools),
         "antivirus": sorted(antivirus),

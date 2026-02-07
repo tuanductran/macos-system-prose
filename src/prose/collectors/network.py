@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 
 from prose.schema import NetworkInfo
-from prose.utils import log, run, verbose_log, which
+from prose.utils import log, run, which
 
 
 def collect_vpn_info() -> tuple[bool, list[str], list[str]]:
@@ -11,7 +11,7 @@ def collect_vpn_info() -> tuple[bool, list[str], list[str]]:
     vpn_active = False
     vpn_connections = []
     vpn_apps = []
-    
+
     try:
         # Check for VPN interfaces (utun, ppp, ipsec)
         ifconfig_output = run(["ifconfig"])
@@ -20,7 +20,7 @@ def collect_vpn_info() -> tuple[bool, list[str], list[str]]:
                 interface = line.split(":")[0]
                 vpn_connections.append(interface)
                 vpn_active = True
-        
+
         # Check scutil for VPN services
         scutil_output = run(["scutil", "--nc", "list"], log_errors=False)
         for line in scutil_output.splitlines():
@@ -30,7 +30,7 @@ def collect_vpn_info() -> tuple[bool, list[str], list[str]]:
                 parts = line.strip().split('"')
                 if len(parts) >= 2:
                     vpn_connections.append(parts[1])
-        
+
         # Check for common VPN apps
         vpn_app_paths = {
             "Tailscale": "/Applications/Tailscale.app",
@@ -42,11 +42,11 @@ def collect_vpn_info() -> tuple[bool, list[str], list[str]]:
             "ProtonVPN": "/Applications/ProtonVPN.app",
             "Tunnelblick": "/Applications/Tunnelblick.app",
         }
-        
+
         for vpn_name, vpn_path in vpn_app_paths.items():
             if os.path.exists(vpn_path):
                 vpn_apps.append(vpn_name)
-        
+
         # Check if tailscale daemon is running
         if which("tailscale"):
             status = run(["tailscale", "status"], timeout=5, log_errors=False)
@@ -54,10 +54,10 @@ def collect_vpn_info() -> tuple[bool, list[str], list[str]]:
                 vpn_active = True
                 if "Tailscale" not in vpn_apps:
                     vpn_apps.append("Tailscale (CLI)")
-    
+
     except Exception:
         pass
-    
+
     return vpn_active, list(set(vpn_connections)), vpn_apps
 
 
