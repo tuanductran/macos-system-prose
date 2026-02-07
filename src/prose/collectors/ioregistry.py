@@ -24,7 +24,7 @@ def collect_pcie_devices() -> list[PCIeDevice]:
     try:
         # Get PCIe device tree in XML plist format
         output = run(
-            ["ioreg", "-l", "-w0", "-p", "IOService", "-c", "IOPCIDevice"],
+            ["ioreg", "-l", "-w0", "-r", "-a", "-c", "IOPCIDevice"],
             timeout=10,
             log_errors=False,
         )
@@ -32,8 +32,10 @@ def collect_pcie_devices() -> list[PCIeDevice]:
         if not output:
             return devices
 
-        # Parse XML plist
+        # Parse XML plist (returns a list)
         plist_data = plistlib.loads(output.encode("utf-8"))
+        if not isinstance(plist_data, list):
+            return devices
 
         # Recursively extract PCIe devices
         def extract_pcie_devices(node: dict) -> None:
@@ -83,7 +85,9 @@ def collect_pcie_devices() -> list[PCIeDevice]:
                 for child in node["IORegistryEntryChildren"]:
                     extract_pcie_devices(child)
 
-        extract_pcie_devices(plist_data)
+        # plist_data is a list, iterate through all root nodes
+        for node in plist_data:
+            extract_pcie_devices(node)
         verbose_log(f"Found {len(devices)} PCIe devices")
 
     except Exception as e:
@@ -104,7 +108,7 @@ def collect_usb_devices() -> list[USBDevice]:
     try:
         # Get USB device tree in XML plist format
         output = run(
-            ["ioreg", "-l", "-w0", "-p", "IOUSB"],
+            ["ioreg", "-l", "-w0", "-r", "-a", "-p", "IOUSB"],
             timeout=10,
             log_errors=False,
         )
@@ -112,8 +116,10 @@ def collect_usb_devices() -> list[USBDevice]:
         if not output:
             return devices
 
-        # Parse XML plist
+        # Parse XML plist (returns a list)
         plist_data = plistlib.loads(output.encode("utf-8"))
+        if not isinstance(plist_data, list):
+            return devices
 
         # Recursively extract USB devices
         def extract_usb_devices(node: dict) -> None:
@@ -173,7 +179,9 @@ def collect_usb_devices() -> list[USBDevice]:
                 for child in node["IORegistryEntryChildren"]:
                     extract_usb_devices(child)
 
-        extract_usb_devices(plist_data)
+        # plist_data is a list, iterate through all root nodes
+        for node in plist_data:
+            extract_usb_devices(node)
         verbose_log(f"Found {len(devices)} USB devices")
 
     except Exception as e:
@@ -194,7 +202,7 @@ def collect_audio_codecs() -> list[AudioCodec]:
     try:
         # Get audio devices from IORegistry
         output = run(
-            ["ioreg", "-l", "-w0", "-c", "IOHDACodecDevice"],
+            ["ioreg", "-l", "-w0", "-r", "-a", "-c", "IOHDACodecDevice"],
             timeout=10,
             log_errors=False,
         )
@@ -202,7 +210,7 @@ def collect_audio_codecs() -> list[AudioCodec]:
         if not output:
             # Try alternative audio device classes
             output = run(
-                ["ioreg", "-l", "-w0", "-c", "AppleHDACodec"],
+                ["ioreg", "-l", "-w0", "-r", "-a", "-c", "AppleHDACodec"],
                 timeout=10,
                 log_errors=False,
             )
@@ -210,8 +218,10 @@ def collect_audio_codecs() -> list[AudioCodec]:
         if not output:
             return codecs
 
-        # Parse XML plist
+        # Parse XML plist (returns a list)
         plist_data = plistlib.loads(output.encode("utf-8"))
+        if not isinstance(plist_data, list):
+            return codecs
 
         # Recursively extract audio codecs
         def extract_audio_codecs(node: dict) -> None:
@@ -260,7 +270,9 @@ def collect_audio_codecs() -> list[AudioCodec]:
                 for child in node["IORegistryEntryChildren"]:
                     extract_audio_codecs(child)
 
-        extract_audio_codecs(plist_data)
+        # plist_data is a list, iterate through all root nodes
+        for node in plist_data:
+            extract_audio_codecs(node)
         verbose_log(f"Found {len(codecs)} audio codecs")
 
     except Exception as e:

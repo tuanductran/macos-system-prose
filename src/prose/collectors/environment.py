@@ -385,21 +385,21 @@ def collect_tcc_permissions() -> list[TCCPermission]:
 
 
 def collect_code_signing_sample() -> list[CodeSigningInfo]:
-    """Sample code signing verification for installed apps (first 10 apps)."""
+    """Sample code signing verification for installed apps (first 5 apps)."""
     verbose_log("Sampling code signing verification...")
     signing_info: list[CodeSigningInfo] = []
 
     try:
         app_dir = Path("/Applications")
         if app_dir.exists():
-            apps = list(app_dir.glob("*.app"))[:10]  # Sample first 10 apps
+            apps = list(app_dir.glob("*.app"))[:5]  # Sample first 5 apps (reduced from 10)
 
             for app in apps:
                 try:
                     # codesign -dvv writes to stderr, not stdout
                     output = run(
                         ["codesign", "-dvv", str(app)],
-                        timeout=5,
+                        timeout=3,  # Reduced from 5s to 3s
                         log_errors=False,
                         capture_stderr=True,
                     )
@@ -421,7 +421,7 @@ def collect_code_signing_sample() -> list[CodeSigningInfo]:
                     # Check if signature is valid (also writes to stderr)
                     verify_output = run(
                         ["codesign", "--verify", "--verbose", str(app)],
-                        timeout=5,
+                        timeout=3,  # Reduced from 5s to 3s
                         log_errors=False,
                         capture_stderr=True,
                     )

@@ -103,12 +103,13 @@ def generate_ai_prompt(data: SystemReport) -> str:
         System prompt formatted for AI consumption.
     """
     oclp = data["opencore_patcher"]
-    is_oclp_user = oclp["installed"]
+    is_oclp_user = oclp["detected"]
 
     # OpenCore context
     oclp_context = ""
     if is_oclp_user:
-        kexts_str = ", ".join(oclp["patched_kexts"][:3]) if oclp["patched_kexts"] else "None"
+        kexts_str = ", ".join(oclp["loaded_kexts"][:3]) if oclp["loaded_kexts"] else "None"
+        amfi_str = oclp["amfi_configuration"]["amfi_value"] if oclp["amfi_configuration"] else "Unknown"
         oclp_context = f"""
 ## OpenCore Legacy Patcher Detected
 
@@ -116,10 +117,12 @@ This system is running **OpenCore Legacy Patcher v{oclp["version"]}**,
 which enables newer macOS versions on unsupported hardware.
 
 **OCLP Configuration:**
-- Root Patched: {"✓ Yes" if oclp["root_patched"] else "✗ No"}
-- SMBIOS Spoofed: {"✓ Yes" if oclp["smbios_spoofed"] else "✗ No"}
-- Original Model: {oclp["original_model"] or "Unknown"}
-- Patched Kexts: {len(oclp["patched_kexts"])} installed ({kexts_str})
+- NVRAM Version: {oclp["nvram_version"] or "Unknown"}
+- Unsupported OS: {"✓ Yes" if oclp["unsupported_os_detected"] else "✗ No"}
+- AMFI Config: {amfi_str}
+- Boot Args: {oclp["boot_args"] or "None"}
+- Loaded Kexts: {len(oclp["loaded_kexts"])} installed ({kexts_str})
+- Patched Frameworks: {len(oclp["patched_frameworks"])} detected
 
 **IMPORTANT - OCLP-Specific Recommendations:**
 - DO NOT recommend disabling SIP (required for OCLP root patches)

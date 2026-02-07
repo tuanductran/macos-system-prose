@@ -163,12 +163,14 @@ def collect_display_info() -> list[DisplayInfo]:
     edid_data_map: dict[str, dict[str, Optional[str]]] = {}
     try:
         output = run(
-            ["ioreg", "-l", "-w0", "-c", "IODisplayConnect"],
+            ["ioreg", "-l", "-w0", "-r", "-a", "-c", "IODisplayConnect"],
             timeout=10,
             log_errors=False,
         )
         if output:
             plist = plistlib.loads(output.encode("utf-8"))
+            if not isinstance(plist, list):
+                plist = [plist]
 
             def extract_edid(node: dict) -> None:
                 if not isinstance(node, dict):
@@ -204,7 +206,9 @@ def collect_display_info() -> list[DisplayInfo]:
                     for child in node["IORegistryEntryChildren"]:
                         extract_edid(child)
 
-            extract_edid(plist)
+            # plist is a list, iterate through all root nodes
+            for node in plist:
+                extract_edid(node)
             if edid_data_map:
                 verbose_log(f"Found EDID data for {len(edid_data_map)} displays")
     except Exception as e:
