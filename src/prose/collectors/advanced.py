@@ -142,8 +142,12 @@ def collect_opencore_patcher() -> OpenCorePatcherInfo:
         oclp_installed = True
         # Try to get version
         version_output = utils.run(
-            "defaults read /Applications/OpenCore-Patcher.app/Contents/Info.plist "
-            "CFBundleShortVersionString",
+            [
+                "bash",
+                "-c",
+                "defaults read /Applications/OpenCore-Patcher.app/Contents/Info.plist "
+                "CFBundleShortVersionString",
+            ],
             log_errors=False,
         )
         if version_output:
@@ -177,7 +181,10 @@ def collect_opencore_patcher() -> OpenCorePatcherInfo:
     if any("RestrictEvents" in k for k in patched_kexts):
         smbios_spoofed = True
         # Try to detect original model from system_profiler
-        model_info = utils.run("system_profiler SPHardwareDataType | grep 'Model Identifier'")
+        model_info = utils.run(
+            ["bash", "-c", "system_profiler SPHardwareDataType | grep 'Model Identifier'"],
+            log_errors=False,
+        )
         if model_info:
             original_model = model_info.split(":")[-1].strip()
 

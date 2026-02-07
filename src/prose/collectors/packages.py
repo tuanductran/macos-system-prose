@@ -163,7 +163,7 @@ def bun_global_info() -> Union[PackageVersionInfo, NotInstalled]:
 def collect_homebrew_services() -> list[BrewService]:
     """Collect Homebrew services status."""
     verbose_log("Checking Homebrew services...")
-    services = []
+    services: list[BrewService] = []
 
     if not which("brew"):
         return services
@@ -181,14 +181,13 @@ def collect_homebrew_services() -> list[BrewService]:
                 user = parts[2] if len(parts) > 2 and parts[2] != "none" else None
                 file_path = parts[3] if len(parts) > 3 else None
 
-                services.append(
-                    {
-                        "name": name,
-                        "status": status,
-                        "user": user,
-                        "file": file_path,
-                    }
-                )
+                service: BrewService = {
+                    "name": name,
+                    "status": status,
+                    "user": user,
+                    "file": file_path,
+                }
+                services.append(service)
     except Exception:
         pass
 

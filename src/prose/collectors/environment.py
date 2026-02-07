@@ -71,7 +71,7 @@ def collect_login_items() -> list[str]:
 def collect_launchd_services() -> list[LaunchdService]:
     """Collect launchd services status for user and system domains."""
     verbose_log("Collecting launchd services...")
-    services = []
+    services: list[LaunchdService] = []
 
     try:
         # Get user domain services
@@ -102,14 +102,13 @@ def collect_launchd_services() -> list[LaunchdService]:
                 else:
                     status = "error"
 
-                services.append(
-                    {
-                        "label": label,
-                        "pid": pid,
-                        "status": status,
-                        "last_exit_code": exit_code,
-                    }
-                )
+                service: LaunchdService = {
+                    "label": label,
+                    "pid": pid,
+                    "status": status,
+                    "last_exit_code": exit_code,
+                }
+                services.append(service)
 
         # Limit to top 50 services to avoid huge output
         services = services[:50]
@@ -202,7 +201,7 @@ def collect_diagnostics() -> DiagnosticsInfo:
 def collect_system_extensions() -> list[SystemExtension]:
     """Collect macOS 10.15+ system extensions."""
     verbose_log("Checking system extensions...")
-    extensions = []
+    extensions: list[SystemExtension] = []
 
     try:
         output = run(["systemextensionsctl", "list"], timeout=10, log_errors=False)
@@ -216,14 +215,13 @@ def collect_system_extensions() -> list[SystemExtension]:
                     bundle_info = " ".join(parts[2:])
                     match = re.search(r"([A-Z0-9]+)\s+([^\s]+)\s+\(([^)]+)\)", bundle_info)
                     if match:
-                        extensions.append(
-                            {
-                                "identifier": match.group(2),
-                                "version": match.group(3),
-                                "state": parts[0] if len(parts) > 0 else "unknown",
-                                "team_id": match.group(1),
-                            }
-                        )
+                        ext: SystemExtension = {
+                            "identifier": match.group(2),
+                            "version": match.group(3),
+                            "state": parts[0] if len(parts) > 0 else "unknown",
+                            "team_id": match.group(1),
+                        }
+                        extensions.append(ext)
     except Exception:
         pass
 
