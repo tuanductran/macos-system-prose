@@ -47,6 +47,10 @@ class DisplayInfo(TypedDict):
     refresh_rate: str
     color_depth: str
     external_displays: int
+    edid_manufacturer: Optional[str]
+    edid_product_code: Optional[str]
+    edid_serial: Optional[str]
+    connector_type: Optional[str]
 
 
 class MemoryPressure(TypedDict):
@@ -74,6 +78,35 @@ class DiskHealthInfo(TypedDict):
     disk_type: str
     smart_status: str
     health_percentage: Optional[int]
+
+
+class PCIeDevice(TypedDict):
+    name: str
+    vendor_id: Optional[str]
+    device_id: Optional[str]
+    class_code: Optional[str]
+    pci_address: Optional[str]
+
+
+class USBDevice(TypedDict):
+    name: str
+    vendor_id: Optional[str]
+    product_id: Optional[str]
+    location_id: Optional[str]
+    speed: Optional[str]
+
+
+class AudioCodec(TypedDict):
+    name: str
+    codec_id: Optional[str]
+    layout_id: Optional[int]
+    vendor: Optional[str]
+
+
+class IORegistryInfo(TypedDict):
+    pcie_devices: list[PCIeDevice]
+    usb_devices: list[USBDevice]
+    audio_codecs: list[AudioCodec]
 
 
 class DiskInfo(TypedDict):
@@ -285,6 +318,19 @@ class CloudInfo(TypedDict):
     sync_status: CloudSyncInfo
 
 
+class NVRAMInfo(TypedDict):
+    """NVRAM (Non-Volatile RAM) boot configuration and system variables."""
+
+    boot_args: str  # kernel boot arguments
+    csr_active_config: str  # System Integrity Protection config (hex)
+    sip_disabled: bool  # SIP disabled via csr-active-config
+    oclp_version: Optional[str]  # OpenCore Patcher version from NVRAM
+    oclp_settings: Optional[str]  # OCLP-Settings bitmask
+    secure_boot_model: Optional[str]  # SecureBootModel for Apple Silicon
+    hardware_model: Optional[str]  # HardwareModel identifier
+    nvram_variables_count: int  # Total NVRAM variable count
+
+
 class StorageAnalysis(TypedDict):
     documents_gb: float
     downloads_gb: float
@@ -366,6 +412,7 @@ class SystemReport(TypedDict):
     diagnostics: DiagnosticsInfo
     security: SecurityInfo
     cloud: CloudInfo
+    nvram: NVRAMInfo  # Phase 5: NVRAM inspection
     storage_analysis: StorageAnalysis
     fonts: FontInfo
     shell_customization: ShellCustomization
@@ -373,3 +420,4 @@ class SystemReport(TypedDict):
     system_preferences: SystemPreferences
     kernel_params: KernelParameters
     system_logs: SystemLogs
+    ioregistry: IORegistryInfo  # Phase 3: IORegistry hardware detection

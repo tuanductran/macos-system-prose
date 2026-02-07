@@ -4,6 +4,7 @@ import os
 import re
 from pathlib import Path
 
+from prose.iokit import get_boot_args, get_csr_active_config, read_nvram  # Phase 5
 from prose.schema import (
     ApplicationsInfo,
     BatteryInfo,
@@ -16,6 +17,7 @@ from prose.schema import (
     KernelExtensionsInfo,
     LaunchdService,
     LaunchItems,
+    NVRAMInfo,  # Phase 5
     ProcessInfo,
     SecurityInfo,
     SystemExtension,
@@ -495,3 +497,84 @@ def collect_cloud_sync() -> CloudInfo:
         pass
 
     return {"sync_status": sync_info}
+
+
+def collect_nvram_variables() -> NVRAMInfo:
+    """
+    Collect NVRAM (Non-Volatile RAM) variables for boot configuration analysis.
+
+    Phase 5: NVRAM Inspection
+
+    Returns:
+        NVRAMInfo with boot args, SIP status, OCLP version, etc.
+    """
+    verbose_log("Collecting NVRAM variables...")
+
+    nvram_info: NVRAMInfo = {
+        "boot_args": "",
+        "csr_active_config": "",
+        "sip_disabled": False,
+        "oclp_version": None,
+        "oclp_settings": None,
+        "secure_boot_model": None,
+        "hardware_model": None,
+        "nvram_variables_count": 0,
+    }
+
+    try:
+        # Get boot arguments (e.g., "amfi=0x80 ipc_control_port_options=0")
+        boot_args = get_boot_args()
+        if boot_args:
+            nvram_info["boot_args"] = boot_args
+            verbose_log(f"Boot args: {boot_args}")
+
+        # Get CSR (System Integrity Protection) configuration
+        csr_config = get_csr_active_config()
+        if csr_config:
+            nvram_info["csr_active_config"] = csr_config
+            # SIP is disabled if csr-active-config is non-zero
+            # Common values: 0x0 (enabled), 0x3 (disabled), 0x67 (partially disabled)
+            if csr_config.lower() not in ["0x0", "0x00"]:
+                nvram_info["sip_disabled"] = True
+            verbose_log(f"CSR config: {csr_config} (SIP disabled: {nvram_info['sip_disabled']})")
+
+        # Get OpenCore Patcher version from NVRAM
+        from prose.iokit import OCLP_NVRAM_UUID
+
+        oclp_version = read_nvram("OCLP-Version", OCLP_NVRAM_UUID)
+        if oclp_version:
+            # Clean null bytes (OCLP returns "2.4.1%00")
+            oclp_version = oclp_version.replace("%00", "").replace("\x00", "")
+            nvram_info["oclp_version"] = oclp_version
+            verbose_log(f"OCLP version (NVRAM): {oclp_version}")
+
+        # Get OCLP settings bitmask
+        oclp_settings = read_nvram("OCLP-Settings")
+        if oclp_settings:
+            nvram_info["oclp_settings"] = oclp_settings
+            verbose_log(f"OCLP settings: {oclp_settings}")
+
+        # Get SecureBootModel (Apple Silicon)
+        secure_boot_model = read_nvram("SecureBootModel")
+        if secure_boot_model:
+            nvram_info["secure_boot_model"] = secure_boot_model
+            verbose_log(f"SecureBootModel: {secure_boot_model}")
+
+        # Get HardwareModel (T2 / Apple Silicon)
+        hardware_model = read_nvram("HardwareModel")
+        if hardware_model:
+            nvram_info["hardware_model"] = hardware_model
+            verbose_log(f"HardwareModel: {hardware_model}")
+
+        # Count total NVRAM variables
+        nvram_all = run(["nvram", "-p"], timeout=5, log_errors=False)
+        if nvram_all:
+            # Count lines that look like "key\tvalue"
+            count = len([line for line in nvram_all.splitlines() if "\t" in line])
+            nvram_info["nvram_variables_count"] = count
+            verbose_log(f"Total NVRAM variables: {count}")
+
+    except Exception as e:
+        verbose_log(f"NVRAM collection error: {e}")
+
+    return nvram_info

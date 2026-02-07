@@ -151,8 +151,66 @@ def collect_system_info() -> SystemInfo:
 
 
 def collect_display_info() -> list[DisplayInfo]:
-    """Collect display information including resolution and refresh rate."""
+    """Collect display information including resolution, refresh rate, and EDID data."""
+    import plistlib
+    from typing import Optional
+
+    from prose.utils import parse_edid
+
     displays: list[DisplayInfo] = []
+
+    # First, try to get EDID data from IORegistry
+    edid_data_map: dict[str, dict[str, Optional[str]]] = {}
+    try:
+        output = run(
+            ["ioreg", "-l", "-w0", "-c", "IODisplayConnect"],
+            timeout=10,
+            log_errors=False,
+        )
+        if output:
+            plist = plistlib.loads(output.encode("utf-8"))
+
+            def extract_edid(node: dict) -> None:
+                if not isinstance(node, dict):
+                    return
+
+                # Check for EDID data
+                if "IODisplayEDID" in node:
+                    edid_bytes = node["IODisplayEDID"]
+                    if isinstance(edid_bytes, bytes):
+                        edid_parsed = parse_edid(edid_bytes)
+
+                        # Get connector type if available
+                        connector = None
+                        io_display_location = node.get("IODisplayLocation")
+                        if io_display_location:
+                            loc_str = str(io_display_location)
+                            if "LVDS" in loc_str:
+                                connector = "LVDS (Internal)"
+                            elif "HDMI" in loc_str:
+                                connector = "HDMI"
+                            elif "DisplayPort" in loc_str or "DP" in loc_str:
+                                connector = "DisplayPort"
+
+                        # Use display name as key
+                        display_name = node.get("IODisplayPrefsKey", "Unknown")
+                        edid_data_map[str(display_name)] = {
+                            **edid_parsed,
+                            "connector_type": connector,
+                        }
+
+                # Recurse into children
+                if "IORegistryEntryChildren" in node:
+                    for child in node["IORegistryEntryChildren"]:
+                        extract_edid(child)
+
+            extract_edid(plist)
+            if edid_data_map:
+                verbose_log(f"Found EDID data for {len(edid_data_map)} displays")
+    except Exception as e:
+        verbose_log(f"Error collecting EDID data: {e}")
+
+    # Now collect display info from system_profiler
     try:
         data = get_json_output(["system_profiler", "SPDisplaysDataType", "-json"])
         if data and isinstance(data, dict) and "SPDisplaysDataType" in data:
@@ -183,12 +241,44 @@ def collect_display_info() -> list[DisplayInfo]:
 
                                     depth = str(display.get("spdisplays_depth", "Unknown"))
 
+                                    # Try to match with EDID data
+                                    edid_info: dict[str, Optional[str]] = {
+                                        "edid_manufacturer": None,
+                                        "edid_product_code": None,
+                                        "edid_serial": None,
+                                        "connector_type": None,
+                                    }
+
+                                    # Try to find matching EDID data
+                                    display_name = display.get("_name", "")
+                                    for key, data_dict in edid_data_map.items():
+                                        if display_name in key or key in display_name:
+                                            mfg = data_dict.get("manufacturer_id")
+                                            edid_info["edid_manufacturer"] = mfg
+                                            prod = data_dict.get("product_code")
+                                            edid_info["edid_product_code"] = prod
+                                            serial = data_dict.get("serial_number")
+                                            edid_info["edid_serial"] = serial
+                                            conn = data_dict.get("connector_type")
+                                            edid_info["connector_type"] = conn
+                                            break
+
+                                    # Fallback: detect connector from system_profiler
+                                    if not edid_info["connector_type"]:
+                                        conn_type = display.get("spdisplays_connection_type", "")
+                                        if conn_type:
+                                            edid_info["connector_type"] = str(conn_type)
+
                                     displays.append(
                                         {
                                             "resolution": resolution,
                                             "refresh_rate": refresh_str,
                                             "color_depth": depth,
                                             "external_displays": 1 if "_name" in display else 0,
+                                            "edid_manufacturer": edid_info["edid_manufacturer"],
+                                            "edid_product_code": edid_info["edid_product_code"],
+                                            "edid_serial": edid_info["edid_serial"],
+                                            "connector_type": edid_info["connector_type"],
                                         }
                                     )
 
@@ -200,6 +290,10 @@ def collect_display_info() -> list[DisplayInfo]:
                     "refresh_rate": "Unknown",
                     "color_depth": "Unknown",
                     "external_displays": 0,
+                    "edid_manufacturer": None,
+                    "edid_product_code": None,
+                    "edid_serial": None,
+                    "connector_type": None,
                 }
             )
     except Exception:
@@ -209,6 +303,10 @@ def collect_display_info() -> list[DisplayInfo]:
                 "refresh_rate": "Unknown",
                 "color_depth": "Unknown",
                 "external_displays": 0,
+                "edid_manufacturer": None,
+                "edid_product_code": None,
+                "edid_serial": None,
+                "connector_type": None,
             }
         )
 

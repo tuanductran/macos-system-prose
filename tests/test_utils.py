@@ -49,6 +49,38 @@ class TestUtilityFunctions:
         result = utils.get_json_output(["echo", "test"])
         assert result is None
 
+    def test_parse_edid_basic(self):
+        """Test parse_edid() with basic valid data."""
+        # Create minimal valid EDID (128 bytes)
+        edid = bytearray(128)
+        # Set manufacturer ID to "APP" (Apple) at bytes 8-9
+        edid[8] = 0x06  # First part of packed manufacturer ID
+        edid[9] = 0x10  # Second part
+        # Set product code at bytes 10-11
+        edid[10] = 0x26
+        edid[11] = 0x92
+        # Set serial at bytes 12-15
+        edid[12] = 0x01
+        edid[13] = 0x00
+        edid[14] = 0x00
+        edid[15] = 0x00
+        # Set manufacture week/year at bytes 16-17
+        edid[16] = 26  # Week 26
+        edid[17] = 24  # Year 2014 (1990+24)
+
+        result = utils.parse_edid(bytes(edid))
+
+        assert isinstance(result, dict)
+        assert "manufacturer_id" in result
+        assert "product_code" in result
+        assert result["product_code"] == "0x9226"
+
+    def test_parse_edid_empty(self):
+        """Test parse_edid() with empty data."""
+        result = utils.parse_edid(b"")
+        assert isinstance(result, dict)
+        assert result["manufacturer_id"] is None
+
     def test_safe_glob_existing_dir(self):
         """Test safe_glob() with existing directory."""
         result = utils.safe_glob("/Applications", "*.app")

@@ -1,0 +1,1265 @@
+{
+  "timestamp": 1735689900.0,
+  "system": {
+    "os": "macOS",
+    "macos_version": "15.1.0",
+    "macos_name": "macOS Sequoia",
+    "model_name": "MacBook Pro",
+    "model_identifier": "MacBookPro18,1",
+    "marketing_name": "MacBook Pro (16-inch, 2021)",
+    "board_id": "Mac-7BA5B2D1E45DCA35",
+    "cpu_generation": "Apple Silicon M1 Pro",
+    "max_os_supported": "Sequoia",
+    "kernel": "24.1.0",
+    "architecture": "arm64",
+    "uptime": "14:32  up 8 days, 6:15, 3 users,",
+    "uptime_seconds": 713700,
+    "boot_time": "{ sec = 1734976200, usec = 820456 } Mon Dec 23 20:56:40 2024",
+    "load_average": "{ 6.45 5.87 5.23 }",
+    "sip_enabled": true,
+    "gatekeeper_enabled": true,
+    "filevault_enabled": true,
+    "time_machine": {
+      "enabled": true,
+      "last_backup": "2025-01-01 13:45:22",
+      "destination": "/Volumes/TimeCapsule",
+      "auto_backup": true
+    }
+  },
+  "hardware": {
+    "cpu": "Apple M1 Pro",
+    "cpu_cores": 10,
+    "gpu": [
+      "Apple M1 Pro (16-core GPU)"
+    ],
+    "memory_gb": 16.0,
+    "thermal_pressure": [
+      "CPU Power: High (Performance mode)",
+      "Thermal Warning: Level 1",
+      "Note: Heavy compilation and Docker workload"
+    ],
+    "displays": [
+      {
+        "resolution": "3456 x 2234",
+        "refresh_rate": "120 Hz (ProMotion)",
+        "color_depth": "10-bit",
+        "external_displays": 0
+      }
+    ],
+    "memory_pressure": {
+      "level": "warn",
+      "pages_free": 2000,
+      "pages_active": 1843200,
+      "pages_inactive": 921600,
+      "pages_wired": 409600,
+      "swap_used": 12288,
+      "swap_free": 4096
+    }
+  },
+  "disk": {
+    "disk_total_gb": 476.94,
+    "disk_free_gb": 128.45,
+    "apfs_info": [
+      "APFS Container (1 found)",
+      "|",
+      "+-- Container disk3 F8E29D48-D9BC-6FD8-A729-BFF9FA7E9B83",
+      "    ====================================================",
+      "    APFS Container Reference:     disk3",
+      "    Size (Capacity Ceiling):      512110190592 B (512.1 GB)",
+      "    Capacity In Use By Volumes:   374458368000 B (374.5 GB) (73.1% used)",
+      "    Capacity Not Allocated:       137651822592 B (137.7 GB) (26.9% free)",
+      "    |",
+      "    +-< Physical Store disk0s2 B984258F-G463-7F26-BF0F-96D396B53G11",
+      "    |   -----------------------------------------------------------",
+      "    |   APFS Physical Store Disk:   disk0s2",
+      "    |   Size:                       512110190592 B (512.1 GB)",
+      "    |",
+      "    +-> Volume disk3s1 EC9973BG-8951-5F7E-C97A-1AD48F15428B",
+      "    |   ---------------------------------------------------",
+      "    |   APFS Volume Disk (Role):   disk3s1 (System)",
+      "    |   Name:                      Macintosh HD (Case-insensitive)",
+      "    |   Mount Point:               /",
+      "    |   Capacity Consumed:         18432000000 B (18.4 GB)",
+      "    |   Sealed:                    Yes",
+      "    |   FileVault:                 Yes",
+      "    |",
+      "    +-> Volume disk3s2 H3433B87-G8B2-6C59-B839-13C878342956",
+      "    |   ---------------------------------------------------",
+      "    |   APFS Volume Disk (Role):   disk3s2 (Data)",
+      "    |   Name:                      Macintosh HD - Data (Case-insensitive)",
+      "    |   Mount Point:               /System/Volumes/Data",
+      "    |   Capacity Consumed:         348234567680 B (348.2 GB)",
+      "    |   Sealed:                    No",
+      "    |   FileVault:                 Yes",
+      "    |",
+      "    +-> Volume disk3s3 9F1411B6-4216-6AG1-CD3A-0G17EE41C4G6",
+      "    |   ---------------------------------------------------",
+      "    |   APFS Volume Disk (Role):   disk3s3 (Preboot)",
+      "    |   Name:                      Preboot (Case-insensitive)",
+      "    |   Mount Point:               /System/Volumes/Preboot",
+      "    |   Capacity Consumed:         512192000 B (512.2 MB)",
+      "    |   Sealed:                    No",
+      "    |   FileVault:                 Yes",
+      "    |",
+      "    +-> Volume disk3s4 D252G679-91EG-74CE-C7G9-GBE978B545G9",
+      "    |   ---------------------------------------------------",
+      "    |   APFS Volume Disk (Role):   disk3s4 (Recovery)",
+      "    |   Name:                      Recovery (Case-insensitive)",
+      "    |   Mount Point:               Not Mounted",
+      "    |   Capacity Consumed:         1348729984 B (1.3 GB)",
+      "    |   Sealed:                    No",
+      "    |   FileVault:                 Yes",
+      "    |",
+      "    +-> Volume disk3s5 8C52G780-A1FG-85DF-D8GA-GCF089C656GA",
+      "    |   ---------------------------------------------------",
+      "    |   APFS Volume Disk (Role):   disk3s5 (VM)",
+      "    |   Name:                      VM (Case-insensitive)",
+      "    |   Mount Point:               /System/Volumes/VM",
+      "    |   Capacity Consumed:         5930606592 B (5.9 GB)",
+      "    |   Sealed:                    No",
+      "    |   FileVault:                 Yes"
+    ],
+    "disk_health": "PASSED - No errors detected"
+  },
+  "top_processes": [
+    {
+      "name": "Code Helper (Renderer)",
+      "cpu_percent": 34.5,
+      "memory_mb": 2840.3
+    },
+    {
+      "name": "Docker Desktop",
+      "cpu_percent": 18.2,
+      "memory_mb": 1650.8
+    },
+    {
+      "name": "node",
+      "cpu_percent": 15.7,
+      "memory_mb": 1280.5
+    },
+    {
+      "name": "rust-analyzer",
+      "cpu_percent": 12.3,
+      "memory_mb": 980.2
+    },
+    {
+      "name": "TypeScript",
+      "cpu_percent": 9.8,
+      "memory_mb": 740.6
+    },
+    {
+      "name": "Chrome Helper",
+      "cpu_percent": 8.4,
+      "memory_mb": 1120.9
+    },
+    {
+      "name": "WindowServer",
+      "cpu_percent": 6.2,
+      "memory_mb": 425.3
+    },
+    {
+      "name": "Safari",
+      "cpu_percent": 4.5,
+      "memory_mb": 890.1
+    },
+    {
+      "name": "Spotlight",
+      "cpu_percent": 3.1,
+      "memory_mb": 180.4
+    },
+    {
+      "name": "systemstats",
+      "cpu_percent": 2.8,
+      "memory_mb": 68.7
+    },
+    {
+      "name": "com.apple.WebKit.WebContent",
+      "cpu_percent": 2.5,
+      "memory_mb": 520.3
+    },
+    {
+      "name": "Slack Helper",
+      "cpu_percent": 2.1,
+      "memory_mb": 480.2
+    },
+    {
+      "name": "kernel_task",
+      "cpu_percent": 1.9,
+      "memory_mb": 320.5
+    },
+    {
+      "name": "Finder",
+      "cpu_percent": 1.2,
+      "memory_mb": 240.8
+    },
+    {
+      "name": "iTerm2",
+      "cpu_percent": 0.8,
+      "memory_mb": 180.2
+    }
+  ],
+  "startup": {
+    "launch_agents": [
+      "~/Library/LaunchAgents/com.docker.helper.plist",
+      "~/Library/LaunchAgents/com.microsoft.VSCode.ShipIt.plist",
+      "~/Library/LaunchAgents/com.google.keystone.agent.plist"
+    ],
+    "launch_daemons": [
+      "/Library/LaunchDaemons/com.docker.dockerd.plist",
+      "/Library/LaunchDaemons/com.microsoft.autoupdate.helper.plist"
+    ],
+    "launchd_services": [
+      {
+        "name": "docker.dockerd",
+        "status": "running",
+        "pid": 2456,
+        "exit_code": null
+      },
+      {
+        "name": "com.apple.MobileFileIntegrity",
+        "status": "running",
+        "pid": 189,
+        "exit_code": null
+      },
+      {
+        "name": "com.apple.xpc.launchd.domain.user.501",
+        "status": "running",
+        "pid": 501,
+        "exit_code": null
+      }
+    ]
+  },
+  "login_items": [
+    {
+      "name": "Docker",
+      "path": "/Applications/Docker.app",
+      "hidden": false
+    },
+    {
+      "name": "Alfred 5",
+      "path": "/Applications/Alfred 5.app",
+      "hidden": false
+    },
+    {
+      "name": "Rectangle",
+      "path": "/Applications/Rectangle.app",
+      "hidden": true
+    },
+    {
+      "name": "Bartender 5",
+      "path": "/Applications/Bartender 5.app",
+      "hidden": true
+    }
+  ],
+  "package_managers": {
+    "homebrew": {
+      "installed": true,
+      "version": "4.2.3",
+      "package_count": 142,
+      "cask_count": 28,
+      "tap_count": 8,
+      "packages": [
+        "node@20",
+        "python@3.12",
+        "go",
+        "rust",
+        "ruby",
+        "openjdk@21",
+        "docker",
+        "docker-compose",
+        "kubectl",
+        "helm",
+        "terraform",
+        "git",
+        "git-lfs",
+        "gh",
+        "jq",
+        "yq",
+        "ripgrep",
+        "fd",
+        "bat",
+        "exa",
+        "fzf",
+        "tmux",
+        "neovim",
+        "zsh-autosuggestions",
+        "zsh-syntax-highlighting"
+      ],
+      "services": [
+        {
+          "name": "docker",
+          "status": "started",
+          "user": "devuser",
+          "file": "~/Library/LaunchAgents/homebrew.mxcl.docker.plist"
+        }
+      ]
+    },
+    "macports": {
+      "installed": false
+    },
+    "npm": {
+      "installed": true,
+      "version": "10.3.0",
+      "global_packages": [
+        "typescript@5.3.3",
+        "eslint@8.56.0",
+        "prettier@3.1.1",
+        "vite@5.0.11",
+        "nodemon@3.0.3",
+        "pnpm@8.14.1",
+        "yarn@1.22.21"
+      ]
+    },
+    "yarn": {
+      "installed": true,
+      "version": "1.22.21",
+      "global_packages": []
+    },
+    "pnpm": {
+      "installed": true,
+      "version": "8.14.1",
+      "global_packages": []
+    },
+    "bun": {
+      "installed": true,
+      "version": "1.0.21",
+      "global_packages": []
+    },
+    "pipx": {
+      "installed": true,
+      "version": "1.4.2",
+      "global_packages": [
+        "black 23.12.1",
+        "ruff 0.1.11",
+        "mypy 1.8.0",
+        "poetry 1.7.1",
+        "httpie 3.2.2",
+        "pipenv 2023.12.1"
+      ]
+    }
+  },
+  "developer_tools": {
+    "languages": {
+      "node": {
+        "installed": true,
+        "version": "v20.11.0",
+        "path": "/opt/homebrew/bin/node"
+      },
+      "python": {
+        "installed": true,
+        "version": "3.12.1",
+        "path": "/opt/homebrew/bin/python3"
+      },
+      "go": {
+        "installed": true,
+        "version": "go1.21.6",
+        "path": "/opt/homebrew/bin/go"
+      },
+      "rust": {
+        "installed": true,
+        "version": "1.75.0",
+        "path": "/Users/devuser/.cargo/bin/rustc"
+      },
+      "ruby": {
+        "installed": true,
+        "version": "3.2.2",
+        "path": "/opt/homebrew/bin/ruby"
+      },
+      "java": {
+        "installed": true,
+        "version": "openjdk 21.0.1",
+        "path": "/opt/homebrew/bin/java"
+      },
+      "php": {
+        "installed": true,
+        "version": "8.3.0",
+        "path": "/usr/bin/php"
+      },
+      "perl": {
+        "installed": true,
+        "version": "v5.38.2",
+        "path": "/usr/bin/perl"
+      }
+    },
+    "sdks": {
+      "xcode": {
+        "installed": true,
+        "version": "15.1",
+        "path": "/Applications/Xcode.app"
+      },
+      "android_sdk": {
+        "installed": true,
+        "version": "34.0.0",
+        "path": "/Users/devuser/Library/Android/sdk"
+      },
+      "flutter": {
+        "installed": true,
+        "version": "3.16.5",
+        "path": "/Users/devuser/flutter"
+      }
+    },
+    "cloud_devops": {
+      "aws_cli": {
+        "installed": true,
+        "version": "2.15.12"
+      },
+      "gcloud": {
+        "installed": true,
+        "version": "460.0.0"
+      },
+      "azure_cli": {
+        "installed": true,
+        "version": "2.56.0"
+      },
+      "terraform": {
+        "installed": true,
+        "version": "1.6.6"
+      },
+      "kubectl": {
+        "installed": true,
+        "version": "v1.29.0"
+      },
+      "helm": {
+        "installed": true,
+        "version": "v3.13.3"
+      },
+      "docker": {
+        "installed": true,
+        "version": "24.0.7",
+        "compose_version": "v2.24.0",
+        "containers": [
+          {
+            "id": "x1y2z3a4b5c6",
+            "name": "postgres-dev",
+            "image": "postgres:16-alpine",
+            "status": "Up 8 days",
+            "ports": "5432:5432"
+          },
+          {
+            "id": "y2z3a4b5c6d7",
+            "name": "redis-dev",
+            "image": "redis:7-alpine",
+            "status": "Up 8 days",
+            "ports": "6379:6379"
+          },
+          {
+            "id": "z3a4b5c6d7e8",
+            "name": "nodejs-api",
+            "image": "node:20-alpine",
+            "status": "Up 3 hours",
+            "ports": "3000:3000"
+          },
+          {
+            "id": "a4b5c6d7e8f9",
+            "name": "react-frontend",
+            "image": "nginx:alpine",
+            "status": "Up 3 hours",
+            "ports": "8080:80"
+          }
+        ],
+        "images": [
+          {
+            "repository": "postgres",
+            "tag": "16-alpine",
+            "size": "248MB",
+            "created": "1 month ago"
+          },
+          {
+            "repository": "redis",
+            "tag": "7-alpine",
+            "size": "41.2MB",
+            "created": "3 weeks ago"
+          },
+          {
+            "repository": "node",
+            "tag": "20-alpine",
+            "size": "126MB",
+            "created": "2 weeks ago"
+          },
+          {
+            "repository": "nginx",
+            "tag": "alpine",
+            "size": "42.6MB",
+            "created": "2 weeks ago"
+          },
+          {
+            "repository": "python",
+            "tag": "3.12-slim",
+            "size": "187MB",
+            "created": "1 month ago"
+          },
+          {
+            "repository": "rust",
+            "tag": "1.75-alpine",
+            "size": "534MB",
+            "created": "1 week ago"
+          }
+        ]
+      }
+    },
+    "databases": {
+      "redis": {
+        "installed": true,
+        "version": "7.2.4"
+      },
+      "mongodb": {
+        "installed": false
+      },
+      "mysql": {
+        "installed": false
+      },
+      "postgresql": {
+        "installed": true,
+        "version": "16.1"
+      },
+      "sqlite": {
+        "installed": true,
+        "version": "3.44.2"
+      }
+    },
+    "version_managers": {
+      "nvm": {
+        "installed": true,
+        "version": "v0.39.7"
+      },
+      "asdf": {
+        "installed": true,
+        "version": "v0.14.0"
+      },
+      "pyenv": {
+        "installed": true,
+        "version": "2.3.36"
+      },
+      "rbenv": {
+        "installed": true,
+        "version": "1.2.0"
+      },
+      "goenv": {
+        "installed": false
+      },
+      "rustup": {
+        "installed": true,
+        "version": "1.26.0"
+      }
+    },
+    "editors": [
+      {
+        "name": "Visual Studio Code",
+        "installed": true,
+        "version": "1.85.2"
+      },
+      {
+        "name": "Xcode",
+        "installed": true,
+        "version": "15.1"
+      },
+      {
+        "name": "Neovim",
+        "installed": true,
+        "version": "0.9.5"
+      }
+    ],
+    "extensions": {
+      "vscode": [
+        "ms-python.python",
+        "rust-lang.rust-analyzer",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "eamodio.gitlens",
+        "ms-azuretools.vscode-docker",
+        "HashiCorp.terraform",
+        "ms-vscode.vscode-typescript-next",
+        "golang.go",
+        "Dart-Code.flutter",
+        "redhat.vscode-yaml",
+        "PKief.material-icon-theme"
+      ],
+      "cursor": [],
+      "windsurf": [],
+      "zed": []
+    },
+    "git_config": {
+      "user_name": "Dev User",
+      "user_email": "dev@example.com",
+      "aliases": {
+        "co": "checkout",
+        "br": "branch",
+        "ci": "commit",
+        "st": "status",
+        "unstage": "reset HEAD --",
+        "last": "log -1 HEAD",
+        "graph": "log --graph --oneline --all"
+      },
+      "settings": {
+        "core.editor": "nvim",
+        "pull.rebase": "true",
+        "init.defaultBranch": "main",
+        "credential.helper": "osxkeychain"
+      }
+    },
+    "terminal_emulators": [
+      {
+        "name": "iTerm2",
+        "version": "3.5.0",
+        "path": "/Applications/iTerm.app"
+      },
+      {
+        "name": "Terminal",
+        "version": "2.14",
+        "path": "/System/Applications/Utilities/Terminal.app"
+      },
+      {
+        "name": "Warp",
+        "version": "0.2023.12.12",
+        "path": "/Applications/Warp.app"
+      }
+    ],
+    "shell_frameworks": {
+      "oh_my_zsh": {
+        "installed": true,
+        "version": "master (9e6fa7b)"
+      },
+      "starship": {
+        "installed": false
+      },
+      "powerlevel10k": {
+        "installed": false
+      },
+      "fish_plugins": []
+    },
+    "browsers": [
+      {
+        "name": "Google Chrome",
+        "version": "120.0.6099.234",
+        "path": "/Applications/Google Chrome.app"
+      },
+      {
+        "name": "Safari",
+        "version": "18.1",
+        "path": "/Applications/Safari.app"
+      },
+      {
+        "name": "Firefox",
+        "version": "121.0",
+        "path": "/Applications/Firefox.app"
+      },
+      {
+        "name": "Arc",
+        "version": "1.23.0",
+        "path": "/Applications/Arc.app"
+      }
+    ],
+    "docker": {
+      "installed": true,
+      "version": "4.27.2",
+      "running": true,
+      "containers_total": 12,
+      "containers_running": 9,
+      "images_count": 24,
+      "containers": [
+        {
+          "id": "abc111def222",
+          "name": "postgres-dev",
+          "image": "postgres:16-alpine",
+          "status": "running",
+          "ports": "5432:5432",
+          "created": "2024-12-15"
+        },
+        {
+          "id": "def333ghi444",
+          "name": "redis-dev",
+          "image": "redis:7.2-alpine",
+          "status": "running",
+          "ports": "6379:6379",
+          "created": "2024-12-15"
+        },
+        {
+          "id": "ghi555jkl666",
+          "name": "mongodb-dev",
+          "image": "mongo:7.0",
+          "status": "running",
+          "ports": "27017:27017",
+          "created": "2024-12-12"
+        },
+        {
+          "id": "jkl777mno888",
+          "name": "mysql-test",
+          "image": "mysql:8.2",
+          "status": "running",
+          "ports": "3306:3306",
+          "created": "2024-12-10"
+        },
+        {
+          "id": "mno999pqr000",
+          "name": "node-app",
+          "image": "node:20-alpine",
+          "status": "running",
+          "ports": "3000:3000",
+          "created": "2024-12-08"
+        },
+        {
+          "id": "pqr111stu222",
+          "name": "nextjs-app",
+          "image": "node:20",
+          "status": "running",
+          "ports": "3001:3000",
+          "created": "2024-12-05"
+        },
+        {
+          "id": "stu333vwx444",
+          "name": "python-api",
+          "image": "python:3.12-slim",
+          "status": "running",
+          "ports": "8000:8000",
+          "created": "2024-12-03"
+        },
+        {
+          "id": "vwx555yza666",
+          "name": "nginx-dev",
+          "image": "nginx:alpine",
+          "status": "running",
+          "ports": "8080:80",
+          "created": "2024-12-01"
+        },
+        {
+          "id": "yza777bcd888",
+          "name": "rabbitmq",
+          "image": "rabbitmq:3.12-management",
+          "status": "running",
+          "ports": "5672:5672,15672:15672",
+          "created": "2024-11-28"
+        },
+        {
+          "id": "bcd999efg000",
+          "name": "elasticsearch-test",
+          "image": "elasticsearch:8.11",
+          "status": "exited",
+          "ports": "9200:9200",
+          "created": "2024-11-25"
+        },
+        {
+          "id": "efg111hij222",
+          "name": "go-microservice",
+          "image": "golang:1.21-alpine",
+          "status": "exited",
+          "ports": "8081:8080",
+          "created": "2024-11-20"
+        },
+        {
+          "id": "hij333klm444",
+          "name": "rust-service",
+          "image": "rust:1.75-alpine",
+          "status": "exited",
+          "ports": "8082:8080",
+          "created": "2024-11-15"
+        }
+      ],
+      "images": [
+        {
+          "repository": "postgres",
+          "tag": "16-alpine",
+          "id": "sha256:aaa111",
+          "size": "238MB",
+          "created": "2024-12-10"
+        },
+        {
+          "repository": "redis",
+          "tag": "7.2-alpine",
+          "id": "sha256:bbb222",
+          "size": "43MB",
+          "created": "2024-12-10"
+        },
+        {
+          "repository": "mongo",
+          "tag": "7.0",
+          "id": "sha256:ccc333",
+          "size": "712MB",
+          "created": "2024-12-08"
+        },
+        {
+          "repository": "mysql",
+          "tag": "8.2",
+          "id": "sha256:ddd444",
+          "size": "587MB",
+          "created": "2024-12-08"
+        },
+        {
+          "repository": "node",
+          "tag": "20-alpine",
+          "id": "sha256:eee555",
+          "size": "171MB",
+          "created": "2024-12-05"
+        },
+        {
+          "repository": "node",
+          "tag": "20",
+          "id": "sha256:fff666",
+          "size": "1.1GB",
+          "created": "2024-12-05"
+        },
+        {
+          "repository": "python",
+          "tag": "3.12-slim",
+          "id": "sha256:ggg777",
+          "size": "192MB",
+          "created": "2024-12-03"
+        },
+        {
+          "repository": "nginx",
+          "tag": "alpine",
+          "id": "sha256:hhh888",
+          "size": "42MB",
+          "created": "2024-12-01"
+        },
+        {
+          "repository": "rabbitmq",
+          "tag": "3.12-management",
+          "id": "sha256:iii999",
+          "size": "234MB",
+          "created": "2024-11-28"
+        },
+        {
+          "repository": "elasticsearch",
+          "tag": "8.11",
+          "id": "sha256:jjj000",
+          "size": "1.3GB",
+          "created": "2024-11-25"
+        },
+        {
+          "repository": "golang",
+          "tag": "1.21-alpine",
+          "id": "sha256:kkk111",
+          "size": "276MB",
+          "created": "2024-11-20"
+        },
+        {
+          "repository": "rust",
+          "tag": "1.75-alpine",
+          "id": "sha256:lll222",
+          "size": "893MB",
+          "created": "2024-11-15"
+        },
+        {
+          "repository": "alpine",
+          "tag": "3.19",
+          "id": "sha256:mmm333",
+          "size": "7.3MB",
+          "created": "2024-11-10"
+        },
+        {
+          "repository": "ubuntu",
+          "tag": "23.10",
+          "id": "sha256:nnn444",
+          "size": "82MB",
+          "created": "2024-11-08"
+        },
+        {
+          "repository": "debian",
+          "tag": "bookworm-slim",
+          "id": "sha256:ooo555",
+          "size": "74MB",
+          "created": "2024-11-05"
+        },
+        {
+          "repository": "nextjs",
+          "tag": "canary",
+          "id": "sha256:ppp666",
+          "size": "1.2GB",
+          "created": "2024-11-01"
+        },
+        {
+          "repository": "typescript",
+          "tag": "5.3",
+          "id": "sha256:qqq777",
+          "size": "892MB",
+          "created": "2024-10-28"
+        },
+        {
+          "repository": "postgres",
+          "tag": "15",
+          "id": "sha256:rrr888",
+          "size": "376MB",
+          "created": "2024-10-25"
+        },
+        {
+          "repository": "redis",
+          "tag": "7.0-alpine",
+          "id": "sha256:sss999",
+          "size": "40MB",
+          "created": "2024-10-20"
+        },
+        {
+          "repository": "grafana/grafana",
+          "tag": "10.2",
+          "id": "sha256:ttt000",
+          "size": "315MB",
+          "created": "2024-10-18"
+        },
+        {
+          "repository": "prometheus",
+          "tag": "v2.48",
+          "id": "sha256:uuu111",
+          "size": "229MB",
+          "created": "2024-10-15"
+        },
+        {
+          "repository": "traefik",
+          "tag": "v2.10",
+          "id": "sha256:vvv222",
+          "size": "96MB",
+          "created": "2024-10-12"
+        },
+        {
+          "repository": "caddy",
+          "tag": "2.7-alpine",
+          "id": "sha256:www333",
+          "size": "53MB",
+          "created": "2024-10-08"
+        },
+        {
+          "repository": "minio/minio",
+          "tag": "latest",
+          "id": "sha256:xxx444",
+          "size": "278MB",
+          "created": "2024-10-05"
+        }
+      ]
+    },
+    "infra": {
+      "git": "git version 2.44.0",
+      "docker": "Docker version 4.27.2",
+      "kubectl": "v1.29.2",
+      "terraform": "v1.7.0",
+      "helm": "v3.14.0",
+      "aws-cli": "aws-cli/2.15.15"
+    }
+  },
+  "kexts": {
+    "third_party": [],
+    "system_extensions": [
+      {
+        "identifier": "com.docker.vmnetd",
+        "version": "24.0.7",
+        "state": "activated_enabled",
+        "team_id": "9BNSXJN65R"
+      }
+    ]
+  },
+  "applications": [
+    {
+      "name": "Visual Studio Code",
+      "version": "1.85.2",
+      "path": "/Applications/Visual Studio Code.app"
+    },
+    {
+      "name": "Docker",
+      "version": "4.26.1",
+      "path": "/Applications/Docker.app"
+    },
+    {
+      "name": "iTerm",
+      "version": "3.5.0",
+      "path": "/Applications/iTerm.app"
+    },
+    {
+      "name": "Xcode",
+      "version": "15.1",
+      "path": "/Applications/Xcode.app"
+    },
+    {
+      "name": "Google Chrome",
+      "version": "120.0.6099.234",
+      "path": "/Applications/Google Chrome.app"
+    },
+    {
+      "name": "Safari",
+      "version": "18.1",
+      "path": "/Applications/Safari.app"
+    },
+    {
+      "name": "Firefox",
+      "version": "121.0",
+      "path": "/Applications/Firefox.app"
+    },
+    {
+      "name": "Slack",
+      "version": "4.36.140",
+      "path": "/Applications/Slack.app"
+    },
+    {
+      "name": "Notion",
+      "version": "3.0.0",
+      "path": "/Applications/Notion.app"
+    },
+    {
+      "name": "Postman",
+      "version": "10.21.0",
+      "path": "/Applications/Postman.app"
+    },
+    {
+      "name": "Alfred 5",
+      "version": "5.1.4",
+      "path": "/Applications/Alfred 5.app"
+    },
+    {
+      "name": "Rectangle",
+      "version": "0.73",
+      "path": "/Applications/Rectangle.app"
+    },
+    {
+      "name": "Bartender 5",
+      "version": "5.0.52",
+      "path": "/Applications/Bartender 5.app"
+    },
+    {
+      "name": "Warp",
+      "version": "0.2023.12.12",
+      "path": "/Applications/Warp.app"
+    },
+    {
+      "name": "Arc",
+      "version": "1.23.0",
+      "path": "/Applications/Arc.app"
+    },
+    {
+      "name": "Figma",
+      "version": "116.16.8",
+      "path": "/Applications/Figma.app"
+    }
+  ],
+  "environment": {
+    "shell": "/bin/zsh",
+    "path": "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/devuser/.cargo/bin:/Users/devuser/flutter/bin:/Users/devuser/Library/Android/sdk/platform-tools",
+    "listening_ports": [
+      {
+        "port": 3000,
+        "process": "node",
+        "pid": 4567
+      },
+      {
+        "port": 5432,
+        "process": "postgres",
+        "pid": 2458
+      },
+      {
+        "port": 6379,
+        "process": "redis-server",
+        "pid": 2459
+      },
+      {
+        "port": 8080,
+        "process": "nginx",
+        "pid": 4589
+      }
+    ]
+  },
+  "network": {
+    "public_ip": "203.0.113.89",
+    "local_ips": [
+      "192.168.1.42",
+      "10.0.0.2"
+    ],
+    "gateway": "192.168.1.1",
+    "dns_servers": [
+      "192.168.1.1",
+      "8.8.8.8"
+    ],
+    "wifi_ssid": "DevNetwork-5G",
+    "interfaces": [
+      {
+        "name": "en0",
+        "type": "Wi-Fi",
+        "mac": "f0:18:98:ab:cd:ef",
+        "ip": "192.168.1.42",
+        "status": "active"
+      },
+      {
+        "name": "bridge0",
+        "type": "Bridge",
+        "mac": "f2:18:98:ab:cd:ef",
+        "ip": "10.0.0.1",
+        "status": "active"
+      }
+    ],
+    "vpn_active": false,
+    "firewall_enabled": true
+  },
+  "battery": {
+    "percentage": 67,
+    "charging": false,
+    "time_remaining": "4:23",
+    "cycle_count": 124,
+    "condition": "Normal",
+    "max_capacity_percent": 96
+  },
+  "cron": {
+    "user_crontab": []
+  },
+  "diagnostics": {
+    "recent_crashes": [
+      {
+        "app": "Code Helper",
+        "timestamp": "2024-12-30 18:45:32",
+        "reason": "EXC_BAD_ACCESS (SIGSEGV)"
+      }
+    ]
+  },
+  "security": {
+    "security_tools": [],
+    "tcc_permissions": [
+      {
+        "service": "kTCCServiceCamera",
+        "app": "com.google.Chrome",
+        "allowed": true
+      },
+      {
+        "service": "kTCCServiceMicrophone",
+        "app": "com.google.Chrome",
+        "allowed": true
+      },
+      {
+        "service": "kTCCServiceMicrophone",
+        "app": "com.tinyspeck.slackmacgap",
+        "allowed": true
+      },
+      {
+        "service": "kTCCServiceScreenCapture",
+        "app": "com.tinyspeck.slackmacgap",
+        "allowed": true
+      },
+      {
+        "service": "kTCCServiceSystemPolicyAllFiles",
+        "app": "com.microsoft.VSCode",
+        "allowed": true
+      }
+    ],
+    "code_signing_sample": [
+      {
+        "app_name": "Docker",
+        "identifier": "com.docker.docker",
+        "authority": "Developer ID Application: Docker Inc (9BNSXJN65R)",
+        "valid": true,
+        "team_id": "9BNSXJN65R"
+      },
+      {
+        "app_name": "Visual Studio Code",
+        "identifier": "com.microsoft.VSCode",
+        "authority": "Developer ID Application: Microsoft Corporation (UBF8T346G9)",
+        "valid": true,
+        "team_id": "UBF8T346G9"
+      },
+      {
+        "app_name": "Cursor",
+        "identifier": "com.todesktop.230313mzl4w4u92",
+        "authority": "Developer ID Application: Anysphere Inc. (8VNV7RXHZ8)",
+        "valid": true,
+        "team_id": "8VNV7RXHZ8"
+      },
+      {
+        "app_name": "Slack",
+        "identifier": "com.tinyspeck.slackmacgap",
+        "authority": "Developer ID Application: Slack Technologies, Inc. (BQR82RBBHL)",
+        "valid": true,
+        "team_id": "BQR82RBBHL"
+      },
+      {
+        "app_name": "iTerm",
+        "identifier": "com.googlecode.iterm2",
+        "authority": "Developer ID Application: George Nachman (H7V7XYVQ7D)",
+        "valid": true,
+        "team_id": "H7V7XYVQ7D"
+      }
+    ]
+  },
+  "cloud": {
+    "icloud_drive": {
+      "enabled": true,
+      "syncing": true,
+      "storage_gb": 42.3,
+      "available_gb": 7.7
+    }
+  },
+  "storage_analysis": {
+    "largest_files": [
+      {
+        "path": "~/Library/Developer/Xcode",
+        "size_gb": 62.4
+      },
+      {
+        "path": "~/Library/Caches",
+        "size_gb": 38.2
+      },
+      {
+        "path": "~/Library/Application Support/Code",
+        "size_gb": 12.8
+      },
+      {
+        "path": "~/Library/Application Support/Docker",
+        "size_gb": 28.5
+      },
+      {
+        "path": "~/.cargo",
+        "size_gb": 15.3
+      }
+    ],
+    "system_cache_gb": 22.4,
+    "user_cache_gb": 38.2
+  },
+  "fonts": {
+    "total_count": 412,
+    "user_fonts": 87,
+    "system_fonts": 325
+  },
+  "shell_customization": {
+    "zsh_plugins": [
+      "git",
+      "docker",
+      "kubectl",
+      "npm",
+      "node",
+      "brew",
+      "vscode",
+      "macos",
+      "terraform",
+      "rust",
+      "golang"
+    ],
+    "bash_profile_exists": true,
+    "zshrc_exists": true,
+    "custom_aliases": 45
+  },
+  "opencore_patcher": {
+    "installed": false,
+    "version": null,
+    "patches_applied": [],
+    "patched_kexts": [],
+    "root_patched": false,
+    "smbios_spoofed": false
+  },
+  "system_preferences": {
+    "auto_update": true,
+    "sleep_settings": {
+      "display_sleep": 10,
+      "system_sleep": 30
+    },
+    "screensaver": true
+  },
+  "kernel_params": {
+    "vm_compressor_mode": "4",
+    "vm_pressure_level": "2",
+    "kern_boottime": "{ sec = 1734976200, usec = 820456 }"
+  },
+  "system_logs": {
+    "error_count_24h": 45,
+    "warning_count_24h": 178,
+    "recent_errors": [
+      "Code Helper: Memory allocation failed",
+      "Docker: Container memory limit exceeded",
+      "kernel: VM pageout scan timeout"
+    ]
+  },
+  "_fixture_type": "macbookpro18-1_sequoia_m1pro"
+}

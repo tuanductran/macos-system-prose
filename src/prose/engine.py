@@ -34,9 +34,11 @@ from prose.collectors.environment import (
     collect_kexts,
     collect_launch_items,
     collect_login_items,
+    collect_nvram_variables,  # Phase 5
     collect_processes,
     collect_security_tools,
 )
+from prose.collectors.ioregistry import collect_ioregistry_info  # Phase 3
 from prose.collectors.network import collect_network_info
 from prose.collectors.packages import collect_package_managers
 from prose.collectors.system import collect_disk_info, collect_hardware_info, collect_system_info
@@ -75,6 +77,7 @@ def collect_all() -> SystemReport:
         "diagnostics": collect_diagnostics(),
         "security": collect_security_tools(),
         "cloud": collect_cloud_sync(),
+        "nvram": collect_nvram_variables(),  # Phase 5: NVRAM inspection
         "storage_analysis": collect_storage_analysis(),
         "fonts": collect_fonts(),
         "shell_customization": collect_shell_customization(),
@@ -82,6 +85,7 @@ def collect_all() -> SystemReport:
         "system_preferences": collect_system_preferences(),
         "kernel_params": collect_kernel_parameters(),
         "system_logs": collect_system_logs(),
+        "ioregistry": collect_ioregistry_info(),  # Phase 3: IORegistry hardware detection
     }
 
 
