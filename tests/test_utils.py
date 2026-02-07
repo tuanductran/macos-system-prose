@@ -97,3 +97,48 @@ class TestUtilityFunctions:
         """Test run() with failing command."""
         result = utils.run(["false"])
         assert result == ""
+
+    @patch("prose.utils.run")
+    def test_get_app_version_short_version(self, mock_run):
+        """Test get_app_version() with CFBundleShortVersionString."""
+        mock_run.return_value = "1.2.3"
+        fake_app = Path("/Applications/Test.app")
+        with patch.object(Path, "exists", return_value=True):
+            version = utils.get_app_version(fake_app)
+            assert version == "1.2.3"
+
+    @patch("prose.utils.run")
+    def test_get_app_version_fallback_keys(self, mock_run):
+        """Test get_app_version() falls back to CFBundleVersion and CFBundleGetInfoString."""
+        # Simulate CFBundleShortVersionString missing, CFBundleVersion found
+        mock_run.side_effect = ["", "1.0.0", ""]
+        fake_app = Path("/Applications/Test.app")
+        with patch.object(Path, "exists", return_value=True):
+            version = utils.get_app_version(fake_app)
+            assert version == "1.0.0"
+
+    @patch("prose.utils.run")
+    def test_get_app_version_legacy_key(self, mock_run):
+        """Test get_app_version() uses CFBundleGetInfoString as last resort."""
+        # Simulate only CFBundleGetInfoString available
+        mock_run.side_effect = ["", "", "20250001"]
+        fake_app = Path("/Applications/Test.app")
+        with patch.object(Path, "exists", return_value=True):
+            version = utils.get_app_version(fake_app)
+            assert version == "20250001"
+
+    @patch("prose.utils.run")
+    def test_get_app_version_no_version(self, mock_run):
+        """Test get_app_version() returns empty string when no version found."""
+        mock_run.return_value = ""
+        fake_app = Path("/Applications/Test.app")
+        with patch.object(Path, "exists", return_value=True):
+            version = utils.get_app_version(fake_app)
+            assert version == ""
+
+    def test_get_app_version_no_plist(self):
+        """Test get_app_version() with missing Info.plist."""
+        fake_app = Path("/nonexistent/Test.app")
+        version = utils.get_app_version(fake_app)
+        assert version == ""
+

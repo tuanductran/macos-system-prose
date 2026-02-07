@@ -173,6 +173,11 @@ def get_version(cmd: list[str]) -> str:
 def get_app_version(app_path: Path) -> str:
     """Extract version from a macOS .app bundle.
 
+    Tries multiple common version keys in order of preference:
+    1. CFBundleShortVersionString (most common, user-facing version)
+    2. CFBundleVersion (build version)
+    3. CFBundleGetInfoString (legacy version string)
+
     Args:
         app_path: Path to the .app bundle.
 
@@ -187,8 +192,23 @@ def get_app_version(app_path: Path) -> str:
         plist_path = app_path / "Contents/Info.plist"
         if not plist_path.exists():
             return ""
-        ver = run(["defaults", "read", str(plist_path.absolute()), "CFBundleShortVersionString"])
-        return ver.strip()
+
+        # Try multiple version keys in order of preference
+        version_keys = [
+            "CFBundleShortVersionString",  # Standard user-facing version
+            "CFBundleVersion",  # Build version (fallback)
+            "CFBundleGetInfoString",  # Legacy version info
+        ]
+
+        for key in version_keys:
+            ver = run(
+                ["defaults", "read", str(plist_path.absolute()), key],
+                log_errors=False,
+            )
+            if ver.strip():
+                return ver.strip()
+
+        return ""
     except Exception:
         return ""
 
