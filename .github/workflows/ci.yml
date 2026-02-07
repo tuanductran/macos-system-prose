@@ -12,7 +12,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ["3.9.25", "3.10.19", "3.11.14", "3.12.12"]
+        python-version: ["3.9.25", "3.10.19", "3.11.14", "3.12.x", "3.13.x"]
     
     steps:
     - name: Checkout code
@@ -63,7 +63,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.12.12"
+        python-version: "3.12.x"
     
     - name: Install dependencies
       run: |
