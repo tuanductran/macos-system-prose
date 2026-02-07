@@ -17,6 +17,7 @@ from prose import utils
 from prose.collectors.developer import collect_dev_tools
 from prose.collectors.environment import (
     collect_battery_info,
+    collect_cloud_sync,
     collect_cron_jobs,
     collect_diagnostics,
     collect_electron_apps,
@@ -64,6 +65,7 @@ def collect_all() -> SystemReport:
         "cron": collect_cron_jobs(),
         "diagnostics": collect_diagnostics(),
         "security": collect_security_tools(),
+        "cloud": collect_cloud_sync(),
     }
 
 

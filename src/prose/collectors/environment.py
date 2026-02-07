@@ -7,6 +7,9 @@ from pathlib import Path
 from prose.schema import (
     ApplicationsInfo,
     BatteryInfo,
+    CloudInfo,
+    CloudSyncInfo,
+    CodeSigningInfo,
     CronInfo,
     DiagnosticsInfo,
     EnvironmentInfo,
@@ -15,6 +18,8 @@ from prose.schema import (
     LaunchItems,
     ProcessInfo,
     SecurityInfo,
+    SystemExtension,
+    TCCPermission,
 )
 from prose.utils import get_app_version, log, run, verbose_log
 
@@ -194,6 +199,37 @@ def collect_diagnostics() -> DiagnosticsInfo:
     return {"recent_crashes": crashes}
 
 
+def collect_system_extensions() -> list[SystemExtension]:
+    """Collect macOS 10.15+ system extensions."""
+    verbose_log("Checking system extensions...")
+    extensions = []
+
+    try:
+        output = run(["systemextensionsctl", "list"], timeout=10, log_errors=False)
+        # Parse output which has format like:
+        # enabled	active	teamID	bundleID (version)	name	[state]
+        for line in output.splitlines():
+            if line.strip() and not line.startswith("---") and not line.startswith("enabled"):
+                parts = line.split()
+                if len(parts) >= 3:
+                    # Try to extract bundle ID and version
+                    bundle_info = " ".join(parts[2:])
+                    match = re.search(r"([A-Z0-9]+)\s+([^\s]+)\s+\(([^)]+)\)", bundle_info)
+                    if match:
+                        extensions.append(
+                            {
+                                "identifier": match.group(2),
+                                "version": match.group(3),
+                                "state": parts[0] if len(parts) > 0 else "unknown",
+                                "team_id": match.group(1),
+                            }
+                        )
+    except Exception:
+        pass
+
+    return extensions
+
+
 def collect_kexts() -> KernelExtensionsInfo:
     log("Checking kernel extensions...")
     kexts = []
@@ -206,7 +242,10 @@ def collect_kexts() -> KernelExtensionsInfo:
                     kexts.append(f"{match.group(1)} ({match.group(2)})")
     except Exception:
         pass
-    return {"third_party_kexts": kexts}
+    return {
+        "third_party_kexts": kexts,
+        "system_extensions": collect_system_extensions(),
+    }
 
 
 def collect_all_applications() -> list[str]:
@@ -317,4 +356,122 @@ def collect_security_tools() -> SecurityInfo:
     return {
         "security_tools": sorted(security_tools),
         "antivirus": sorted(antivirus),
+        "tcc_permissions": collect_tcc_permissions(),
+        "code_signing_sample": collect_code_signing_sample(),
     }
+
+
+def collect_tcc_permissions() -> list[TCCPermission]:
+    """Collect TCC (Transparency, Consent, Control) privacy permissions."""
+    verbose_log("Checking TCC privacy permissions...")
+    permissions: list[TCCPermission] = []
+
+    # Note: Reading TCC database requires Full Disk Access permission
+    # We'll try common services via tccutil if available
+    try:
+        # Alternative: Check if we can read the TCC database (requires FDA)
+        tcc_db = Path.home() / "Library/Application Support/com.apple.TCC/TCC.db"
+        if tcc_db.exists():
+            verbose_log("TCC database found but requires Full Disk Access to read")
+            # We can't reliably read this without FDA, so skip
+        else:
+            verbose_log("TCC database not accessible")
+    except Exception:
+        pass
+
+    # Return empty list as we can't reliably get this without FDA
+    # Users can enable this manually if needed
+    return permissions
+
+
+def collect_code_signing_sample() -> list[CodeSigningInfo]:
+    """Sample code signing verification for installed apps (first 10 apps)."""
+    verbose_log("Sampling code signing verification...")
+    signing_info: list[CodeSigningInfo] = []
+
+    try:
+        app_dir = Path("/Applications")
+        if app_dir.exists():
+            apps = list(app_dir.glob("*.app"))[:10]  # Sample first 10 apps
+
+            for app in apps:
+                try:
+                    output = run(["codesign", "-dvv", str(app)], timeout=5, log_errors=False)
+
+                    identifier = ""
+                    authority = ""
+                    team_id = None
+                    valid = False
+
+                    for line in output.splitlines():
+                        if "Identifier=" in line:
+                            identifier = line.split("=", 1)[1]
+                        elif "Authority=" in line:
+                            authority = line.split("=", 1)[1]
+                        elif "TeamIdentifier=" in line:
+                            team_id = line.split("=", 1)[1]
+
+                    # Check if signature is valid
+                    verify_output = run(
+                        ["codesign", "--verify", "--verbose", str(app)],
+                        timeout=5,
+                        log_errors=False,
+                    )
+                    valid = "valid on disk" in verify_output.lower()
+
+                    signing_info.append(
+                        {
+                            "app_name": app.name.replace(".app", ""),
+                            "identifier": identifier,
+                            "authority": authority,
+                            "valid": valid,
+                            "team_id": team_id,
+                        }
+                    )
+                except Exception:
+                    continue
+    except Exception:
+        pass
+
+    return signing_info
+
+
+def collect_cloud_sync() -> CloudInfo:
+    """Collect iCloud and cloud sync status."""
+    verbose_log("Checking cloud sync status...")
+
+    sync_info: CloudSyncInfo = {
+        "icloud_enabled": False,
+        "icloud_status": "Unknown",
+        "drive_enabled": False,
+        "storage_used": None,
+    }
+
+    try:
+        # Check if iCloud Drive is enabled
+        icloud_dir = Path.home() / "Library/Mobile Documents/com~apple~CloudDocs"
+        if icloud_dir.exists():
+            sync_info["icloud_enabled"] = True
+            sync_info["drive_enabled"] = True
+
+        # Try to get iCloud status via brctl (requires macOS 10.15+)
+        brctl_output = run(["brctl", "status"], timeout=5, log_errors=False)
+        if brctl_output:
+            if "logged in" in brctl_output.lower():
+                sync_info["icloud_status"] = "Active"
+            elif "not logged in" in brctl_output.lower():
+                sync_info["icloud_status"] = "Not logged in"
+            else:
+                sync_info["icloud_status"] = "Unknown"
+
+            # Try to extract storage info
+            for line in brctl_output.splitlines():
+                if "storage" in line.lower() or "used" in line.lower():
+                    parts = line.split()
+                    if len(parts) > 1:
+                        sync_info["storage_used"] = " ".join(parts[1:])
+                        break
+    except Exception:
+        pass
+
+    return {"sync_status": sync_info}

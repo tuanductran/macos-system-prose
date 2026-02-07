@@ -2,16 +2,18 @@ from __future__ import annotations
 
 import os
 import platform
+import re
 
 from prose.schema import (
     DiskHealthInfo,
     DiskInfo,
     DisplayInfo,
     HardwareInfo,
+    MemoryPressure,
     SystemInfo,
     TimeMachineInfo,
 )
-from prose.utils import get_json_output, log, run
+from prose.utils import get_json_output, log, run, verbose_log
 
 
 def collect_time_machine_info() -> TimeMachineInfo:
@@ -183,6 +185,58 @@ def collect_display_info() -> list[DisplayInfo]:
     return displays
 
 
+def collect_memory_pressure() -> MemoryPressure:
+    """Collect real-time memory pressure statistics."""
+    verbose_log("Collecting memory pressure stats...")
+
+    pressure: MemoryPressure = {
+        "level": "normal",
+        "pages_free": 0,
+        "pages_active": 0,
+        "pages_inactive": 0,
+        "pages_wired": 0,
+        "swap_used": 0,
+        "swap_free": 0,
+    }
+
+    try:
+        # Get memory pressure level
+        mp_output = run(["memory_pressure"], timeout=5, log_errors=False)
+        if "warn" in mp_output.lower():
+            pressure["level"] = "warn"
+        elif "critical" in mp_output.lower():
+            pressure["level"] = "critical"
+
+        # Get vm_stat for detailed page statistics
+        vm_output = run(["vm_stat"], log_errors=False)
+        for line in vm_output.splitlines():
+            if "Pages free:" in line:
+                pressure["pages_free"] = int(re.sub(r"\D", "", line))
+            elif "Pages active:" in line:
+                pressure["pages_active"] = int(re.sub(r"\D", "", line))
+            elif "Pages inactive:" in line:
+                pressure["pages_inactive"] = int(re.sub(r"\D", "", line))
+            elif "Pages wired down:" in line:
+                pressure["pages_wired"] = int(re.sub(r"\D", "", line))
+
+        # Get swap usage
+        sysctl_output = run(["sysctl", "vm.swapusage"], log_errors=False)
+        if "used" in sysctl_output:
+            # Example: vm.swapusage: total = 1024.00M  used = 512.00M  free = 512.00M
+            parts = sysctl_output.split()
+            for i, part in enumerate(parts):
+                if part == "used" and i + 2 < len(parts):
+                    used_str = parts[i + 2].replace("M", "").replace("G", "000")
+                    pressure["swap_used"] = int(float(used_str))
+                elif part == "free" and i + 2 < len(parts):
+                    free_str = parts[i + 2].replace("M", "").replace("G", "000")
+                    pressure["swap_free"] = int(float(free_str))
+    except Exception:
+        pass
+
+    return pressure
+
+
 def collect_hardware_info() -> HardwareInfo:
     log("Collecting hardware information...")
     mem = run(["sysctl", "-n", "hw.memsize"])
@@ -209,6 +263,7 @@ def collect_hardware_info() -> HardwareInfo:
         "memory_gb": round(int(mem) / 1024**3, 2) if mem.isdigit() else None,
         "thermal_pressure": run(["pmset", "-g", "therm"]).splitlines(),
         "displays": collect_display_info(),
+        "memory_pressure": collect_memory_pressure(),
     }
 
 

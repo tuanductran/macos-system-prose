@@ -27,6 +27,7 @@ Perfect for:
 - macOS version with marketing name (Monterey, Ventura, Sonoma, etc.)
 - Hardware model, identifier, and architecture (Intel/Apple Silicon)
 - CPU, GPU, memory specifications
+- **Memory Pressure**: Real-time stats (pages free/active/inactive/wired, swap usage)
 - **Display information** (resolution, refresh rate, color depth)
 - Disk usage and APFS volume information
 - **S.M.A.R.T. disk health status**
@@ -57,21 +58,32 @@ Perfect for:
 - **Browsers**: Chrome, Firefox, Safari, Edge, Brave, Opera, Arc, Vivaldi (with versions)
 - **Docker**: Container/image counts, daemon status, **detailed container & image info**
 - **Git**: **Global configuration** (user, email, aliases, settings)
+- **Terminal Emulators**: iTerm2, Warp, Hyper, Alacritty, Kitty, Ghostty, WezTerm, Rio
+- **Shell Frameworks**: oh-my-zsh, oh-my-bash, starship, powerlevel10k, zinit, antigen, Fig
 
 ### 🔧 System Activity & Diagnostics
 - **Top Processes**: CPU/memory usage for resource-heavy processes
 - **Launch Agents**: User agents, system agents/daemons
-- **Launchd Services**: System services status with PID and exit codes (user domain)
+- **Launchd Services**: System services status with PID and exit codes (user domain, top 50)
 - **Login Items**: Applications that launch at startup
 - **Listening Ports**: Network ports with active listeners
 - **Cron Jobs**: User crontab entries
-- Third-party kernel extensions
-- **All installed applications** (not just Electron)
+- **Third-party kernel extensions** (kexts)
+- **System Extensions** (macOS 10.15+ security extensions)
+- **All installed applications** with version detection (3 fallback keys)
 - Electron-based applications
 - Recent crash logs (IPS files)
 - Battery health (cycle count, condition, power source)
-- **Security tools** (Little Snitch, Lulu, etc.)
+
+### 🔒 Security & Privacy
+- **Security tools** (Little Snitch, Lulu, BlockBlock, OverSight, etc.)
 - **Antivirus software** detection
+- **Code Signing Verification**: Sample of installed apps (signatures, authorities, validity)
+- **TCC Permissions**: Privacy permissions (requires Full Disk Access)
+
+### ☁️ Cloud & Sync
+- **iCloud Status**: Drive enabled, sync status, storage usage
+- Cloud sync detection (iCloud Drive)
 
 ## 🚀 Getting Started
 

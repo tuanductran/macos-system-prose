@@ -42,6 +42,16 @@ class DisplayInfo(TypedDict):
     external_displays: int
 
 
+class MemoryPressure(TypedDict):
+    level: str  # normal, warn, critical
+    pages_free: int
+    pages_active: int
+    pages_inactive: int
+    pages_wired: int
+    swap_used: int
+    swap_free: int
+
+
 class HardwareInfo(TypedDict):
     cpu: str
     cpu_cores: int
@@ -49,6 +59,7 @@ class HardwareInfo(TypedDict):
     thermal_pressure: list[str]
     gpu: list[str]
     displays: list[DisplayInfo]
+    memory_pressure: MemoryPressure
 
 
 class DiskHealthInfo(TypedDict):
@@ -219,15 +230,52 @@ class DeveloperToolsInfo(TypedDict):
     docker: DockerInfo
     browsers: list[BrowserInfo]
     git_config: GitConfig
+    terminal_emulators: list[str]
+    shell_frameworks: dict[str, str]
+
+
+class SystemExtension(TypedDict):
+    identifier: str
+    version: str
+    state: str
+    team_id: str
 
 
 class KernelExtensionsInfo(TypedDict):
     third_party_kexts: list[str]
+    system_extensions: list[SystemExtension]
+
+
+class TCCPermission(TypedDict):
+    app: str
+    service: str  # camera, microphone, screen-recording, accessibility, etc.
+    allowed: bool
+
+
+class CodeSigningInfo(TypedDict):
+    app_name: str
+    identifier: str
+    authority: str
+    valid: bool
+    team_id: Optional[str]
+
+
+class CloudSyncInfo(TypedDict):
+    icloud_enabled: bool
+    icloud_status: str
+    drive_enabled: bool
+    storage_used: Optional[str]
 
 
 class SecurityInfo(TypedDict):
     security_tools: list[str]
     antivirus: list[str]
+    tcc_permissions: list[TCCPermission]
+    code_signing_sample: list[CodeSigningInfo]
+
+
+class CloudInfo(TypedDict):
+    sync_status: CloudSyncInfo
 
 
 class SystemReport(TypedDict):
@@ -248,3 +296,4 @@ class SystemReport(TypedDict):
     cron: CronInfo
     diagnostics: DiagnosticsInfo
     security: SecurityInfo
+    cloud: CloudInfo

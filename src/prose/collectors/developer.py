@@ -403,6 +403,70 @@ def collect_git_config() -> GitConfig:
     return config
 
 
+def collect_terminal_emulators() -> list[str]:
+    """Detect installed terminal emulator applications."""
+    verbose_log("Detecting terminal emulators...")
+    terminals = []
+
+    terminal_apps = {
+        "iTerm": "/Applications/iTerm.app",
+        "Warp": "/Applications/Warp.app",
+        "Hyper": "/Applications/Hyper.app",
+        "Alacritty": "/Applications/Alacritty.app",
+        "Kitty": "/Applications/kitty.app",
+        "Ghostty": "/Applications/Ghostty.app",
+        "WezTerm": "/Applications/WezTerm.app",
+        "Rio": "/Applications/Rio.app",
+    }
+
+    for name, path in terminal_apps.items():
+        if Path(path).exists():
+            terminals.append(name)
+
+    return sorted(terminals)
+
+
+def collect_shell_frameworks() -> dict[str, str]:
+    """Detect installed shell frameworks and enhancements."""
+    verbose_log("Detecting shell frameworks...")
+    frameworks: dict[str, str] = {}
+
+    # oh-my-zsh
+    omz_path = Path.home() / ".oh-my-zsh"
+    if omz_path.exists():
+        frameworks["oh-my-zsh"] = "Installed"
+
+    # oh-my-bash
+    omb_path = Path.home() / ".oh-my-bash"
+    if omb_path.exists():
+        frameworks["oh-my-bash"] = "Installed"
+
+    # Starship prompt
+    if which("starship"):
+        frameworks["starship"] = get_version(["starship", "--version"])
+
+    # Powerlevel10k
+    p10k_path = Path.home() / ".p10k.zsh"
+    if p10k_path.exists():
+        frameworks["powerlevel10k"] = "Installed"
+
+    # zinit
+    zinit_path = Path.home() / ".local/share/zinit"
+    if zinit_path.exists():
+        frameworks["zinit"] = "Installed"
+
+    # antigen
+    antigen_path = Path.home() / ".antigen"
+    if antigen_path.exists():
+        frameworks["antigen"] = "Installed"
+
+    # Fig (now Amazon Q)
+    if which("fig"):
+        frameworks["fig"] = get_version(["fig", "--version"])
+
+    return frameworks
+
+
 def collect_dev_tools() -> DeveloperToolsInfo:
     return {
         "languages": collect_languages(),
@@ -418,4 +482,6 @@ def collect_dev_tools() -> DeveloperToolsInfo:
         "docker": collect_docker_info(),
         "browsers": collect_browsers(),
         "git_config": collect_git_config(),
+        "terminal_emulators": collect_terminal_emulators(),
+        "shell_frameworks": collect_shell_frameworks(),
     }
