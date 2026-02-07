@@ -29,6 +29,9 @@ class SystemInfo(TypedDict):
     kernel: str
     architecture: str
     uptime: str
+    uptime_seconds: int
+    boot_time: str
+    load_average: str
     sip_enabled: bool
     gatekeeper_enabled: bool
     filevault_enabled: bool
@@ -278,6 +281,58 @@ class CloudInfo(TypedDict):
     sync_status: CloudSyncInfo
 
 
+class StorageAnalysis(TypedDict):
+    documents_gb: float
+    downloads_gb: float
+    desktop_gb: float
+    library_gb: float
+    caches_gb: float
+    logs_gb: float
+    total_user_data_gb: float
+
+
+class FontInfo(TypedDict):
+    system_fonts: int
+    user_fonts: int
+    total_fonts: int
+
+
+class ShellCustomization(TypedDict):
+    aliases_count: int
+    functions_count: int
+    rc_file: str
+    rc_size_kb: float
+
+
+class OpenCorePatcherInfo(TypedDict):
+    installed: bool
+    version: Optional[str]
+    root_patched: bool
+    patched_kexts: list[str]
+    patched_frameworks: list[str]
+    smbios_spoofed: bool
+    original_model: Optional[str]
+
+
+class SystemPreferences(TypedDict):
+    trackpad_speed: Optional[float]
+    key_repeat_rate: Optional[int]
+    mouse_speed: Optional[float]
+    scroll_direction_natural: bool
+
+
+class KernelParameters(TypedDict):
+    max_files: int
+    max_processes: int
+    max_vnodes: int
+
+
+class SystemLogs(TypedDict):
+    critical_errors: list[str]
+    warnings: list[str]
+    log_period: str  # "last 24 hours"
+
+
 class SystemReport(TypedDict):
     timestamp: float
     system: SystemInfo
@@ -297,3 +352,10 @@ class SystemReport(TypedDict):
     diagnostics: DiagnosticsInfo
     security: SecurityInfo
     cloud: CloudInfo
+    storage_analysis: StorageAnalysis
+    fonts: FontInfo
+    shell_customization: ShellCustomization
+    opencore_patcher: OpenCorePatcherInfo
+    system_preferences: SystemPreferences
+    kernel_params: KernelParameters
+    system_logs: SystemLogs

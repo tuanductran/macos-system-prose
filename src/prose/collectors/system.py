@@ -16,6 +16,22 @@ from prose.schema import (
 from prose.utils import get_json_output, log, run, verbose_log
 
 
+def _get_uptime_seconds() -> int:
+    """Get system uptime in seconds."""
+    try:
+        import time
+
+        boot_time_output = run(["sysctl", "-n", "kern.boottime"]).strip()
+        # Parse boot time string: { sec = 1770357120, usec = 0 }
+        match = re.search(r"sec = (\d+)", boot_time_output)
+        if match:
+            boot_timestamp = int(match.group(1))
+            return int(time.time()) - boot_timestamp
+    except Exception:
+        pass
+    return 0
+
+
 def collect_time_machine_info() -> TimeMachineInfo:
     """Collect Time Machine backup status and configuration."""
     try:
@@ -126,6 +142,9 @@ def collect_system_info() -> SystemInfo:
         "kernel": run(["uname", "-r"]),
         "architecture": platform.machine(),
         "uptime": run(["uptime"]).split("load")[0].strip(),
+        "uptime_seconds": _get_uptime_seconds(),
+        "boot_time": run(["sysctl", "-n", "kern.boottime"]).strip(),
+        "load_average": run(["sysctl", "-n", "vm.loadavg"]).strip(),
         "sip_enabled": "enabled" in run(["csrutil", "status"]).lower(),
         "gatekeeper_enabled": "enabled" in run(["spctl", "--status"]).lower(),
         "filevault_enabled": "on" in run(["fdesetup", "status"]).lower(),
