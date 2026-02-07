@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import platform
 import plistlib
@@ -19,15 +20,22 @@ from prose.schema import (
     SystemInfo,
     TimeMachineInfo,
 )
-from prose.utils import get_json_output, log, run, verbose_log
+from prose.utils import (
+    async_get_json_output,
+    async_run_command,
+    log,
+    run,
+    verbose_log,
+)
 
 
-def _get_uptime_seconds() -> int:
+async def _get_uptime_seconds() -> int:
     """Get system uptime in seconds."""
     try:
         import time
 
-        boot_time_output = run(["sysctl", "-n", "kern.boottime"]).strip()
+        boot_time_output = await async_run_command(["sysctl", "-n", "kern.boottime"])
+        boot_time_output = boot_time_output.strip()
         # Parse boot time string: { sec = 1770357120, usec = 0 }
         match = re.search(r"sec = (\d+)", boot_time_output)
         if match:
@@ -38,38 +46,15 @@ def _get_uptime_seconds() -> int:
     return 0
 
 
-def collect_time_machine_info() -> TimeMachineInfo:
+async def collect_time_machine_info() -> TimeMachineInfo:
     """Collect Time Machine backup status and configuration."""
     try:
-        # Check if Time Machine is enabled
-        status_output = run(["tmutil", "status"], log_errors=False)
-        enabled = "Running" in status_output or "BackupPhase" in status_output
-
-        # Get last backup date
-        last_backup = None
-        try:
-            latest = run(["tmutil", "latestbackup"], log_errors=False).strip()
-            if latest and latest != "No" and not latest.startswith("Unable"):
-                last_backup = latest
-        except Exception:
-            pass
-
-        # Get destination info
-        destination = None
-        try:
-            dest_info = run(["tmutil", "destinationinfo"], log_errors=False)
-            if dest_info and "Name" in dest_info:
-                for line in dest_info.splitlines():
-                    if line.strip().startswith("Name"):
-                        destination = line.split(":", 1)[1].strip()
-                        break
-        except Exception:
-            pass
-
-        # Check if auto backup is enabled
-        auto_backup = False
-        try:
-            prefs = run(
+        # Run all Time Machine commands concurrently
+        status_output, latest_backup, dest_info, prefs = await asyncio.gather(
+            async_run_command(["tmutil", "status"], log_errors=False),
+            async_run_command(["tmutil", "latestbackup"], log_errors=False),
+            async_run_command(["tmutil", "destinationinfo"], log_errors=False),
+            async_run_command(
                 [
                     "defaults",
                     "read",
@@ -77,10 +62,28 @@ def collect_time_machine_info() -> TimeMachineInfo:
                     "AutoBackup",
                 ],
                 log_errors=False,
-            )
-            auto_backup = prefs.strip() == "1"
-        except Exception:
-            pass
+            ),
+        )
+
+        # Check if Time Machine is enabled
+        enabled = "Running" in status_output or "BackupPhase" in status_output
+
+        # Get last backup date
+        last_backup = None
+        latest_backup = latest_backup.strip()
+        if latest_backup and latest_backup != "No" and not latest_backup.startswith("Unable"):
+            last_backup = latest_backup
+
+        # Get destination info
+        destination = None
+        if dest_info and "Name" in dest_info:
+            for line in dest_info.splitlines():
+                if line.strip().startswith("Name"):
+                    destination = line.split(":", 1)[1].strip()
+                    break
+
+        # Check if auto backup is enabled
+        auto_backup = prefs.strip() == "1"
 
         return {
             "enabled": enabled,
@@ -166,7 +169,7 @@ def _humanize_connector_type(raw: str) -> str:
     return _CONNECTOR_TYPE_MAP.get(raw, raw)
 
 
-def _check_sip_enabled() -> bool:
+async def _check_sip_enabled() -> bool:
     """Check SIP status from the first line of csrutil output only.
 
     csrutil status output can contain 'enabled' in sub-field descriptions
@@ -175,14 +178,14 @@ def _check_sip_enabled() -> bool:
       "System Integrity Protection status: disabled."
       "System Integrity Protection status: unknown (Custom Configuration)."
     """
-    output = run(["csrutil", "status"])
+    output = await async_run_command(["csrutil", "status"])
     if not output:
         return False
     first_line = output.splitlines()[0].lower()
     return "enabled" in first_line and "unknown" not in first_line
 
 
-def _get_marketing_name_from_system() -> str | None:
+async def _get_marketing_name_from_system() -> str | None:
     """Get the exact marketing name from macOS SystemProfiler preferences.
 
     macOS stores the precise model name (e.g., "MacBook Air (13-inch, Early 2014)")
@@ -190,7 +193,7 @@ def _get_marketing_name_from_system() -> str | None:
     the same model identifier but were released in different years.
     """
     try:
-        output = run(
+        output = await async_run_command(
             ["defaults", "read", "com.apple.SystemProfiler", "CPU Names"],
             log_errors=False,
         )
@@ -203,14 +206,14 @@ def _get_marketing_name_from_system() -> str | None:
     return None
 
 
-def _get_board_id_from_ioreg() -> str | None:
+async def _get_board_id_from_ioreg() -> str | None:
     """Get the board-id directly from IORegistry hardware.
 
     Reads IOPlatformExpertDevice to get the actual board-id burned into firmware,
     rather than relying on a static database lookup.
     """
     try:
-        output = run(
+        output = await async_run_command(
             ["ioreg", "-c", "IOPlatformExpertDevice", "-d2"],
             log_errors=False,
         )
@@ -223,16 +226,45 @@ def _get_board_id_from_ioreg() -> str | None:
     return None
 
 
-def collect_system_info() -> SystemInfo:
+async def collect_system_info() -> SystemInfo:
     log("Collecting system information...")
 
     version_info = get_macos_version_info()
     version = version_info["version"]
     macos_name = f"macOS {version_info['name']}"
 
-    hw_data = get_json_output(["system_profiler", "SPHardwareDataType", "-json"])
-    model_name, model_id = "Unknown Mac", "Unknown"
+    # Run all independent commands concurrently
+    (
+        hw_data,
+        system_marketing_name,
+        system_board_id,
+        kernel,
+        uptime_raw,
+        uptime_seconds,
+        boot_time_raw,
+        load_avg_raw,
+        sip_enabled,
+        gatekeeper_raw,
+        filevault_raw,
+        time_machine,
+    ) = await asyncio.gather(  # type: ignore[misc]
+        # Mypy struggles with complex asyncio.gather type inference
+        async_get_json_output(["system_profiler", "SPHardwareDataType", "-json"]),
+        _get_marketing_name_from_system(),
+        _get_board_id_from_ioreg(),
+        async_run_command(["uname", "-r"]),
+        async_run_command(["uptime"]),
+        _get_uptime_seconds(),
+        async_run_command(["sysctl", "-n", "kern.boottime"]),
+        async_run_command(["sysctl", "-n", "vm.loadavg"]),
+        _check_sip_enabled(),
+        async_run_command(["spctl", "--status"]),
+        async_run_command(["fdesetup", "status"]),
+        collect_time_machine_info(),
+    )
 
+    # Parse hardware data
+    model_name, model_id = "Unknown Mac", "Unknown"
     if hw_data and isinstance(hw_data, dict) and "SPHardwareDataType" in hw_data:
         sp_hard = hw_data["SPHardwareDataType"]
         if isinstance(sp_hard, list) and len(sp_hard) > 0:
@@ -240,10 +272,6 @@ def collect_system_info() -> SystemInfo:
             if isinstance(info, dict):
                 model_name = str(info.get("machine_name", "Mac"))
                 model_id = str(info.get("machine_model", "Unknown"))
-
-    # Get real marketing name and board-id from system APIs first
-    system_marketing_name = _get_marketing_name_from_system()
-    system_board_id = _get_board_id_from_ioreg()
 
     # Fall back to SMBIOS database for fields the system doesn't provide
     smbios_data = get_smbios_data(model_id)
@@ -261,6 +289,9 @@ def collect_system_info() -> SystemInfo:
             f"CPU gen: {cpu_generation}, Max OS: {max_os_supported})"
         )
 
+    # Non-blocking operation
+    architecture = platform.machine()
+
     return {
         "os": "Darwin",
         "macos_version": version,
@@ -271,20 +302,20 @@ def collect_system_info() -> SystemInfo:
         "board_id": board_id,
         "cpu_generation": cpu_generation,
         "max_os_supported": max_os_supported,
-        "kernel": run(["uname", "-r"]),
-        "architecture": platform.machine(),
-        "uptime": _parse_uptime(run(["uptime"]).split("load")[0]),
-        "uptime_seconds": _get_uptime_seconds(),
-        "boot_time": _parse_boot_time(run(["sysctl", "-n", "kern.boottime"])),
-        "load_average": _parse_load_average(run(["sysctl", "-n", "vm.loadavg"])),
-        "sip_enabled": _check_sip_enabled(),
-        "gatekeeper_enabled": "enabled" in run(["spctl", "--status"]).lower(),
-        "filevault_enabled": "on" in run(["fdesetup", "status"]).lower(),
-        "time_machine": collect_time_machine_info(),
+        "kernel": kernel,
+        "architecture": architecture,
+        "uptime": _parse_uptime(uptime_raw.split("load")[0]),
+        "uptime_seconds": uptime_seconds,
+        "boot_time": _parse_boot_time(boot_time_raw),
+        "load_average": _parse_load_average(load_avg_raw),
+        "sip_enabled": sip_enabled,
+        "gatekeeper_enabled": "enabled" in gatekeeper_raw.lower(),
+        "filevault_enabled": "on" in filevault_raw.lower(),
+        "time_machine": time_machine,
     }
 
 
-def collect_display_info() -> list[DisplayInfo]:
+async def collect_display_info() -> list[DisplayInfo]:
     """Collect display information including resolution, refresh rate, and EDID data."""
     import plistlib
     from typing import Optional
@@ -293,16 +324,21 @@ def collect_display_info() -> list[DisplayInfo]:
 
     displays: list[DisplayInfo] = []
 
-    # First, try to get EDID data from IORegistry
-    edid_data_map: dict[str, dict[str, Optional[str]]] = {}
-    try:
-        output = run(
+    # Run both IORegistry and system_profiler concurrently
+    ioreg_output, sp_data = await asyncio.gather(
+        async_run_command(
             ["ioreg", "-l", "-w0", "-r", "-a", "-c", "IODisplayConnect"],
             timeout=10,
             log_errors=False,
-        )
-        if output:
-            plist = plistlib.loads(output.encode("utf-8"))
+        ),
+        async_get_json_output(["system_profiler", "SPDisplaysDataType", "-json"]),
+    )
+
+    # First, parse EDID data from IORegistry
+    edid_data_map: dict[str, dict[str, Optional[str]]] = {}
+    try:
+        if ioreg_output:
+            plist = plistlib.loads(ioreg_output.encode("utf-8"))
             if not isinstance(plist, list):
                 plist = [plist]
 
@@ -348,11 +384,10 @@ def collect_display_info() -> list[DisplayInfo]:
     except Exception as e:
         verbose_log(f"Error collecting EDID data: {e}")
 
-    # Now collect display info from system_profiler
+    # Now process display info from system_profiler
     try:
-        data = get_json_output(["system_profiler", "SPDisplaysDataType", "-json"])
-        if data and isinstance(data, dict) and "SPDisplaysDataType" in data:
-            sp_displays = data["SPDisplaysDataType"]
+        if sp_data and isinstance(sp_data, dict) and "SPDisplaysDataType" in sp_data:
+            sp_displays = sp_data["SPDisplaysDataType"]
             if isinstance(sp_displays, list):
                 for card in sp_displays:
                     if isinstance(card, dict):
@@ -462,7 +497,7 @@ def collect_display_info() -> list[DisplayInfo]:
     return displays
 
 
-def collect_memory_pressure() -> MemoryPressure:
+async def collect_memory_pressure() -> MemoryPressure:
     """Collect real-time memory pressure statistics."""
     verbose_log("Collecting memory pressure stats...")
 
@@ -477,15 +512,20 @@ def collect_memory_pressure() -> MemoryPressure:
     }
 
     try:
+        # Run all memory commands concurrently
+        mp_output, vm_output, sysctl_output = await asyncio.gather(
+            async_run_command(["memory_pressure"], timeout=5, log_errors=False),
+            async_run_command(["vm_stat"], log_errors=False),
+            async_run_command(["sysctl", "vm.swapusage"], log_errors=False),
+        )
+
         # Get memory pressure level
-        mp_output = run(["memory_pressure"], timeout=5, log_errors=False)
         if "warn" in mp_output.lower():
             pressure["level"] = "warn"
         elif "critical" in mp_output.lower():
             pressure["level"] = "critical"
 
         # Get vm_stat for detailed page statistics
-        vm_output = run(["vm_stat"], log_errors=False)
         for line in vm_output.splitlines():
             if "Pages free:" in line:
                 pressure["pages_free"] = int(re.sub(r"\D", "", line))
@@ -497,7 +537,6 @@ def collect_memory_pressure() -> MemoryPressure:
                 pressure["pages_wired"] = int(re.sub(r"\D", "", line))
 
         # Get swap usage
-        sysctl_output = run(["sysctl", "vm.swapusage"], log_errors=False)
         if "used" in sysctl_output:
             # Example: vm.swapusage: total = 1024.00M  used = 512.00M  free = 512.00M
             parts = sysctl_output.split()
@@ -520,13 +559,12 @@ def collect_memory_pressure() -> MemoryPressure:
     return pressure
 
 
-def collect_hardware_info() -> HardwareInfo:
+async def collect_hardware_info() -> HardwareInfo:
     log("Collecting hardware information...")
-    mem = run(["sysctl", "-n", "hw.memsize"])
 
-    def _get_gpu_info():
+    async def _get_gpu_info():
         try:
-            data = get_json_output(["system_profiler", "SPDisplaysDataType", "-json"])
+            data = await async_get_json_output(["system_profiler", "SPDisplaysDataType", "-json"])
             gpus = []
             if data and isinstance(data, dict):
                 for card in data.get("SPDisplaysDataType", []):
@@ -539,14 +577,25 @@ def collect_hardware_info() -> HardwareInfo:
         except Exception:
             return ["Unknown"]
 
+    # Run all independent commands concurrently
+    mem, cpu, cpu_cores_raw, gpu_info, thermal, displays, memory_pressure = await asyncio.gather(
+        async_run_command(["sysctl", "-n", "hw.memsize"]),
+        async_run_command(["sysctl", "-n", "machdep.cpu.brand_string"]),
+        async_run_command(["sysctl", "-n", "hw.ncpu"]),
+        _get_gpu_info(),
+        async_run_command(["pmset", "-g", "therm"]),
+        collect_display_info(),
+        collect_memory_pressure(),
+    )
+
     return {
-        "cpu": run(["sysctl", "-n", "machdep.cpu.brand_string"]),
-        "cpu_cores": int(run(["sysctl", "-n", "hw.ncpu"]) or 0),
-        "gpu": _get_gpu_info(),
+        "cpu": cpu,
+        "cpu_cores": int(cpu_cores_raw) if cpu_cores_raw else 0,
+        "gpu": gpu_info,
         "memory_gb": round(int(mem) / 1024**3, 2) if mem.isdigit() else None,
-        "thermal_pressure": run(["pmset", "-g", "therm"]).splitlines(),
-        "displays": collect_display_info(),
-        "memory_pressure": collect_memory_pressure(),
+        "thermal_pressure": thermal.splitlines(),
+        "displays": displays,
+        "memory_pressure": memory_pressure,
     }
 
 

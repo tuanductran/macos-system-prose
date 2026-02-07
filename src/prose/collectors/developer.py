@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 from pathlib import Path
@@ -472,21 +473,56 @@ def collect_shell_frameworks() -> dict[str, str]:
     return frameworks
 
 
-def collect_dev_tools() -> DeveloperToolsInfo:
-    return {
-        "languages": collect_languages(),
-        "sdks": collect_sdks(),
-        "cloud_devops": collect_cloud_devops(),
-        "databases": collect_databases(),
-        "version_managers": collect_version_managers(),
+async def collect_dev_tools() -> DeveloperToolsInfo:
+    """Collect developer tools information asynchronously."""
+    # Run all subcollectors concurrently for maximum performance
+    (
+        languages,
+        sdks,
+        cloud_devops,
+        databases,
+        version_managers,
+        git_version,
+        extensions,
+        editors,
+        docker_info,
+        browsers,
+        git_config,
+        terminal_emulators,
+        shell_frameworks,
+    ) = await asyncio.gather(
+        asyncio.to_thread(collect_languages),
+        asyncio.to_thread(collect_sdks),
+        asyncio.to_thread(collect_cloud_devops),
+        asyncio.to_thread(collect_databases),
+        asyncio.to_thread(collect_version_managers),
+        asyncio.to_thread(
+            lambda: get_version(["git", "--version"]) if which("git") else "Not Found"
+        ),
+        asyncio.to_thread(collect_extensions),
+        asyncio.to_thread(collect_editors),
+        asyncio.to_thread(collect_docker_info),
+        asyncio.to_thread(collect_browsers),
+        asyncio.to_thread(collect_git_config),
+        asyncio.to_thread(collect_terminal_emulators),
+        asyncio.to_thread(collect_shell_frameworks),
+    )
+
+    return {  # type: ignore[typeddict-item]
+        # Mypy can't infer types through asyncio.gather with asyncio.to_thread
+        "languages": languages,
+        "sdks": sdks,
+        "cloud_devops": cloud_devops,
+        "databases": databases,
+        "version_managers": version_managers,
         "infra": {
-            "git": get_version(["git", "--version"]) if which("git") else "Not Found",
+            "git": git_version,
         },
-        "extensions": collect_extensions(),
-        "editors": collect_editors(),
-        "docker": collect_docker_info(),
-        "browsers": collect_browsers(),
-        "git_config": collect_git_config(),
-        "terminal_emulators": collect_terminal_emulators(),
-        "shell_frameworks": collect_shell_frameworks(),
+        "extensions": extensions,
+        "editors": editors,
+        "docker": docker_info,
+        "browsers": browsers,
+        "git_config": git_config,
+        "terminal_emulators": terminal_emulators,
+        "shell_frameworks": shell_frameworks,
     }

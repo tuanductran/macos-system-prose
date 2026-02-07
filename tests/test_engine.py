@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from prose.engine import collect_all, generate_ai_prompt
 
@@ -11,14 +11,14 @@ from prose.engine import collect_all, generate_ai_prompt
 async def async_test_collect_all_structure():
     """Test that collect_all returns the expected structure with async execution."""
     patches = {
-        "collect_system_info": MagicMock(return_value={}),
-        "collect_hardware_info": MagicMock(return_value={}),
+        "collect_system_info": AsyncMock(return_value={}),  # Now async
+        "collect_hardware_info": AsyncMock(return_value={}),  # Now async
         "collect_disk_info": MagicMock(return_value={}),
         "collect_processes": MagicMock(return_value=[]),
         "collect_launch_items": MagicMock(return_value={}),
         "collect_login_items": MagicMock(return_value=[]),
         "collect_package_managers": MagicMock(return_value={}),
-        "collect_dev_tools": MagicMock(return_value={}),
+        "collect_dev_tools": AsyncMock(return_value={}),  # Now async
         "collect_kexts": MagicMock(return_value={"third_party_kexts": []}),
         "collect_electron_apps": MagicMock(return_value={}),
         "collect_environment_info": MagicMock(return_value={}),
@@ -59,14 +59,14 @@ def test_collect_all_structure():
 def test_collect_all_structure_old():
     """Test that collect_all returns the expected structure (old test - now async)."""
     patches = {
-        "collect_system_info": MagicMock(return_value={}),
-        "collect_hardware_info": MagicMock(return_value={}),
+        "collect_system_info": AsyncMock(return_value={}),  # Now async
+        "collect_hardware_info": AsyncMock(return_value={}),  # Now async
         "collect_disk_info": MagicMock(return_value={}),
         "collect_processes": MagicMock(return_value=[]),
         "collect_launch_items": MagicMock(return_value={}),
         "collect_login_items": MagicMock(return_value=[]),
         "collect_package_managers": MagicMock(return_value={}),
-        "collect_dev_tools": MagicMock(return_value={}),
+        "collect_dev_tools": AsyncMock(return_value={}),  # Now async
         "collect_kexts": MagicMock(return_value={"third_party_kexts": []}),
         "collect_electron_apps": MagicMock(return_value={}),
         "collect_environment_info": MagicMock(return_value={}),

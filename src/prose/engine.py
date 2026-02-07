@@ -68,18 +68,19 @@ async def collect_all() -> SystemReport:
     # Collect timestamp at the start
     timestamp = time.time()
 
-    # Run all independent collectors concurrently using asyncio.to_thread
-    # This runs sync functions in separate threads for parallel execution
+    # Run all independent collectors concurrently
+    # Native async collectors run directly without thread overhead
+    # Sync collectors still use asyncio.to_thread for backward compatibility
     # Using return_exceptions=True to prevent one failure from crashing the entire report
     results = await asyncio.gather(
-        asyncio.to_thread(collect_system_info),
-        asyncio.to_thread(collect_hardware_info),
+        collect_system_info(),  # Native async - no thread wrapper
+        collect_hardware_info(),  # Native async - no thread wrapper
         asyncio.to_thread(collect_disk_info),
         asyncio.to_thread(collect_processes),
         asyncio.to_thread(collect_launch_items),
         asyncio.to_thread(collect_login_items),
         asyncio.to_thread(collect_package_managers),
-        asyncio.to_thread(collect_dev_tools),
+        collect_dev_tools(),  # Native async - no thread wrapper
         asyncio.to_thread(collect_kexts),
         asyncio.to_thread(collect_electron_apps),
         asyncio.to_thread(collect_environment_info),
