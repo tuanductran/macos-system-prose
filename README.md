@@ -14,12 +14,24 @@ A **read-only** macOS system introspection tool that generates comprehensive, AI
 1. **`macos_system_report.json`** - Structured data for programmatic analysis
 2. **`macos_system_report.txt`** - AI-optimized prompt for LLM consumption
 
+### ✨ Focused AI Prompt
+
+The text report focuses on **actionable insights** with clean hierarchy:
+
+- **Security Analysis** 🔒 - Critical issues highlighted first (SIP, FileVault, Firewall, Code Signing)
+- **Performance Analysis** ⚡️ - Memory pressure, disk usage, high CPU processes
+- **Developer Environment** 💻 - Git config, Docker status, PATH issues
+- **Cloud & Backup** ☁️ - iCloud, Time Machine status
+- **Recommended Actions** 🎯 - Priority-based (Critical → Important → Optional)
+
+**Visual indicators**: 🔴 Critical | 🟡 Warning | 🟢 Healthy | ℹ️ Info
+
 Perfect for:
-- 🔍 System health checks and auditing
-- 🛠️ Developer environment debugging
-- 🤖 AI-powered optimization recommendations
-- 📊 Configuration inventory and compliance
-- 🔒 Security posture assessment
+- 🔍 Quick security posture assessment (no manual filtering)
+- 🛠️ Instant performance bottleneck identification
+- 🤖 LLM-ready insights for optimization recommendations
+- 📊 Human-readable system status at a glance
+- 🔒 Security auditing with clear priorities
 
 ## ✨ Features
 
