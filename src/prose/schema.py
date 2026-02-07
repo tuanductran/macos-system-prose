@@ -90,6 +90,13 @@ class PackageVersionInfo(TypedDict):
     packages: Optional[list[str]]
 
 
+class BrewService(TypedDict):
+    name: str
+    status: str  # started, stopped, error
+    user: Optional[str]
+    file: Optional[str]
+
+
 class PackageManagers(TypedDict):
     homebrew: Union[PackageVersionInfo, NotInstalled]
     macports: Union[PackageVersionInfo, NotInstalled]
@@ -98,11 +105,19 @@ class PackageManagers(TypedDict):
     yarn: Union[PackageVersionInfo, NotInstalled]
     pnpm: Union[PackageVersionInfo, NotInstalled]
     bun: Union[PackageVersionInfo, NotInstalled]
+    homebrew_services: list[BrewService]
 
 
 class ApplicationsInfo(TypedDict):
     electron_apps: list[str]
     all_apps: list[str]
+
+
+class LaunchdService(TypedDict):
+    label: str
+    pid: Optional[int]
+    status: str
+    last_exit_code: Optional[int]
 
 
 class EnvironmentInfo(TypedDict):
@@ -112,6 +127,7 @@ class EnvironmentInfo(TypedDict):
     path_entries: list[str]
     path_duplicates: list[str]
     listening_ports: list[str]
+    launchd_services: list[LaunchdService]
 
 
 class NetworkInfo(TypedDict):
@@ -147,6 +163,23 @@ class DiagnosticsInfo(TypedDict):
     recent_crashes: list[str]
 
 
+class DockerContainer(TypedDict):
+    id: str
+    name: str
+    image: str
+    status: str
+    ports: str
+    created: str
+
+
+class DockerImage(TypedDict):
+    repository: str
+    tag: str
+    id: str
+    size: str
+    created: str
+
+
 class DockerInfo(TypedDict):
     installed: bool
     version: str
@@ -154,6 +187,17 @@ class DockerInfo(TypedDict):
     containers_total: int
     containers_running: int
     images_count: int
+    containers: list[DockerContainer]
+    images: list[DockerImage]
+
+
+class GitConfig(TypedDict):
+    user_name: Optional[str]
+    user_email: Optional[str]
+    core_editor: Optional[str]
+    credential_helper: Optional[str]
+    aliases: dict[str, str]
+    other_settings: dict[str, str]
 
 
 class BrowserInfo(TypedDict):
@@ -174,6 +218,7 @@ class DeveloperToolsInfo(TypedDict):
     editors: list[str]
     docker: DockerInfo
     browsers: list[BrowserInfo]
+    git_config: GitConfig
 
 
 class KernelExtensionsInfo(TypedDict):

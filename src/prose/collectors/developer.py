@@ -4,8 +4,15 @@ import json
 import os
 from pathlib import Path
 
-from prose.schema import BrowserInfo, DeveloperToolsInfo, DockerInfo
-from prose.utils import get_json_output, get_version, run, which
+from prose.schema import (
+    BrowserInfo,
+    DeveloperToolsInfo,
+    DockerContainer,
+    DockerImage,
+    DockerInfo,
+    GitConfig,
+)
+from prose.utils import get_version, run, verbose_log, which
 
 
 def collect_docker_info() -> DockerInfo:
@@ -18,6 +25,8 @@ def collect_docker_info() -> DockerInfo:
             "containers_total": 0,
             "containers_running": 0,
             "images_count": 0,
+            "containers": [],
+            "images": [],
         }
 
     version = get_version(["docker", "--version"])
@@ -27,39 +36,58 @@ def collect_docker_info() -> DockerInfo:
     containers_total = 0
     containers_running = 0
     images_count = 0
+    containers_list: list[DockerContainer] = []
+    images_list: list[DockerImage] = []
 
     try:
         # Test if daemon is accessible
         run(["docker", "info"], timeout=5, log_errors=False)
         running = True
 
-        # Get container counts
-        containers_data = get_json_output(["docker", "ps", "-a", "--format", "json"])
-        if containers_data:
-            if isinstance(containers_data, list):
-                containers_total = len(containers_data)
-            elif isinstance(containers_data, str):
-                # Count lines for newline-delimited JSON
-                containers_total = len(
-                    [line for line in containers_data.splitlines() if line.strip()]
-                )
+        # Get detailed containers info
+        containers_output = run(["docker", "ps", "-a", "--format", "json"], log_errors=False)
+        if containers_output:
+            for line in containers_output.splitlines():
+                if line.strip():
+                    try:
+                        container_data = json.loads(line)
+                        containers_list.append(
+                            {
+                                "id": container_data.get("ID", "")[:12],
+                                "name": container_data.get("Names", ""),
+                                "image": container_data.get("Image", ""),
+                                "status": container_data.get("Status", ""),
+                                "ports": container_data.get("Ports", ""),
+                                "created": container_data.get("CreatedAt", ""),
+                            }
+                        )
+                    except json.JSONDecodeError:
+                        pass
+            containers_total = len(containers_list)
 
-        running_data = get_json_output(["docker", "ps", "--format", "json"])
-        if running_data:
-            if isinstance(running_data, list):
-                containers_running = len(running_data)
-            elif isinstance(running_data, str):
-                containers_running = len(
-                    [line for line in running_data.splitlines() if line.strip()]
-                )
+        running_output = run(["docker", "ps", "--format", "json"], log_errors=False)
+        if running_output:
+            containers_running = len([line for line in running_output.splitlines() if line.strip()])
 
-        # Get image count
-        images_data = get_json_output(["docker", "images", "--format", "json"])
-        if images_data:
-            if isinstance(images_data, list):
-                images_count = len(images_data)
-            elif isinstance(images_data, str):
-                images_count = len([line for line in images_data.splitlines() if line.strip()])
+        # Get detailed images info
+        images_output = run(["docker", "images", "--format", "json"], log_errors=False)
+        if images_output:
+            for line in images_output.splitlines():
+                if line.strip():
+                    try:
+                        image_data = json.loads(line)
+                        images_list.append(
+                            {
+                                "repository": image_data.get("Repository", ""),
+                                "tag": image_data.get("Tag", ""),
+                                "id": image_data.get("ID", "")[:12],
+                                "size": image_data.get("Size", ""),
+                                "created": image_data.get("CreatedAt", ""),
+                            }
+                        )
+                    except json.JSONDecodeError:
+                        pass
+            images_count = len(images_list)
     except Exception:
         pass
 
@@ -70,6 +98,8 @@ def collect_docker_info() -> DockerInfo:
         "containers_total": containers_total,
         "containers_running": containers_running,
         "images_count": images_count,
+        "containers": containers_list,
+        "images": images_list,
     }
 
 
@@ -330,6 +360,49 @@ def collect_editors() -> list[str]:
     return sorted(list(set(editors)))
 
 
+def collect_git_config() -> GitConfig:
+    """Collect Git global configuration."""
+    verbose_log("Collecting Git configuration...")
+
+    config: GitConfig = {
+        "user_name": None,
+        "user_email": None,
+        "core_editor": None,
+        "credential_helper": None,
+        "aliases": {},
+        "other_settings": {},
+    }
+
+    if not which("git"):
+        return config
+
+    try:
+        output = run(["git", "config", "--list", "--global"], log_errors=False)
+        for line in output.splitlines():
+            if "=" not in line:
+                continue
+
+            key, value = line.split("=", 1)
+
+            if key == "user.name":
+                config["user_name"] = value
+            elif key == "user.email":
+                config["user_email"] = value
+            elif key == "core.editor":
+                config["core_editor"] = value
+            elif key == "credential.helper":
+                config["credential_helper"] = value
+            elif key.startswith("alias."):
+                alias_name = key.replace("alias.", "")
+                config["aliases"][alias_name] = value
+            else:
+                config["other_settings"][key] = value
+    except Exception:
+        pass
+
+    return config
+
+
 def collect_dev_tools() -> DeveloperToolsInfo:
     return {
         "languages": collect_languages(),
@@ -344,4 +417,5 @@ def collect_dev_tools() -> DeveloperToolsInfo:
         "editors": collect_editors(),
         "docker": collect_docker_info(),
         "browsers": collect_browsers(),
+        "git_config": collect_git_config(),
     }

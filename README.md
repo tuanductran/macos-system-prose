@@ -48,21 +48,23 @@ Perfect for:
 
 ### 💻 Developer Environment
 - **Languages**: Node.js, Python, Go, Rust, Ruby, Java, PHP, Perl
-- **Package Managers**: Homebrew (formula + casks), MacPorts, npm, yarn, pnpm, bun, pipx
+- **Package Managers**: Homebrew (formula + casks + **services**), MacPorts, npm, yarn, pnpm, bun, pipx
 - **Version Managers**: nvm, asdf, pyenv, rbenv, goenv, rustup
 - **SDKs & Tools**: Xcode, Android SDK, Flutter
 - **Cloud/DevOps**: AWS CLI, GCP SDK, Terraform, kubectl, Helm
 - **Databases**: Redis, MongoDB, MySQL, PostgreSQL, SQLite
 - **IDE Extensions**: VS Code, Antigravity, Cursor, Windsurf, Zed
 - **Browsers**: Chrome, Firefox, Safari, Edge, Brave, Opera, Arc, Vivaldi (with versions)
-- **Docker**: Container/image counts, daemon status
+- **Docker**: Container/image counts, daemon status, **detailed container & image info**
+- **Git**: **Global configuration** (user, email, aliases, settings)
 
 ### 🔧 System Activity & Diagnostics
-- Top processes (CPU and memory usage)
-- Launch agents and daemons (user and system level)
-- Login items
-- Listening network ports
-- Cron jobs
+- **Top Processes**: CPU/memory usage for resource-heavy processes
+- **Launch Agents**: User agents, system agents/daemons
+- **Launchd Services**: System services status with PID and exit codes (user domain)
+- **Login Items**: Applications that launch at startup
+- **Listening Ports**: Network ports with active listeners
+- **Cron Jobs**: User crontab entries
 - Third-party kernel extensions
 - **All installed applications** (not just Electron)
 - Electron-based applications

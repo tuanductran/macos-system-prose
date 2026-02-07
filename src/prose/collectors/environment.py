@@ -11,6 +11,7 @@ from prose.schema import (
     DiagnosticsInfo,
     EnvironmentInfo,
     KernelExtensionsInfo,
+    LaunchdService,
     LaunchItems,
     ProcessInfo,
     SecurityInfo,
@@ -62,6 +63,57 @@ def collect_login_items() -> list[str]:
         return []
 
 
+def collect_launchd_services() -> list[LaunchdService]:
+    """Collect launchd services status for user and system domains."""
+    verbose_log("Collecting launchd services...")
+    services = []
+
+    try:
+        # Get user domain services
+        output = run(["launchctl", "list"], timeout=15)
+        for line in output.splitlines()[1:]:  # Skip header
+            parts = line.split()
+            if len(parts) >= 3:
+                pid_str = parts[0]
+                exit_code_str = parts[1]
+                label = parts[2]
+
+                # Parse PID (can be "-" for not running)
+                pid = int(pid_str) if pid_str != "-" else None
+
+                # Parse exit code (can be "-" or number)
+                exit_code = None
+                if exit_code_str != "-":
+                    try:
+                        exit_code = int(exit_code_str)
+                    except ValueError:
+                        pass
+
+                # Determine status
+                if pid is not None:
+                    status = "running"
+                elif exit_code == 0:
+                    status = "stopped"
+                else:
+                    status = "error"
+
+                services.append(
+                    {
+                        "label": label,
+                        "pid": pid,
+                        "status": status,
+                        "last_exit_code": exit_code,
+                    }
+                )
+
+        # Limit to top 50 services to avoid huge output
+        services = services[:50]
+    except Exception:
+        pass
+
+    return services
+
+
 def collect_environment_info() -> EnvironmentInfo:
     log("Collecting environment info...")
     path_entries = os.environ.get("PATH", "").split(":")
@@ -92,6 +144,7 @@ def collect_environment_info() -> EnvironmentInfo:
         "path_entries": path_entries,
         "path_duplicates": list(set(dupes)),
         "listening_ports": sorted(ports),
+        "launchd_services": collect_launchd_services(),
     }
 
 

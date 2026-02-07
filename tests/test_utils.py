@@ -141,4 +141,3 @@ class TestUtilityFunctions:
         fake_app = Path("/nonexistent/Test.app")
         version = utils.get_app_version(fake_app)
         assert version == ""
-

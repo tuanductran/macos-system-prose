@@ -3,8 +3,8 @@ from __future__ import annotations
 import re
 from typing import Union, cast
 
-from prose.schema import NotInstalled, PackageManagers, PackageVersionInfo
-from prose.utils import get_json_output, log, run, which
+from prose.schema import BrewService, NotInstalled, PackageManagers, PackageVersionInfo
+from prose.utils import get_json_output, log, run, verbose_log, which
 
 
 def homebrew_info() -> Union[PackageVersionInfo, NotInstalled]:
@@ -160,6 +160,41 @@ def bun_global_info() -> Union[PackageVersionInfo, NotInstalled]:
     )
 
 
+def collect_homebrew_services() -> list[BrewService]:
+    """Collect Homebrew services status."""
+    verbose_log("Checking Homebrew services...")
+    services = []
+
+    if not which("brew"):
+        return services
+
+    try:
+        output = run(["brew", "services", "list"], timeout=15)
+        lines = output.splitlines()
+
+        # Skip header line
+        for line in lines[1:]:
+            parts = line.split()
+            if len(parts) >= 2:
+                name = parts[0]
+                status = parts[1]
+                user = parts[2] if len(parts) > 2 and parts[2] != "none" else None
+                file_path = parts[3] if len(parts) > 3 else None
+
+                services.append(
+                    {
+                        "name": name,
+                        "status": status,
+                        "user": user,
+                        "file": file_path,
+                    }
+                )
+    except Exception:
+        pass
+
+    return services
+
+
 def collect_package_managers() -> PackageManagers:
     return {
         "homebrew": homebrew_info(),
@@ -169,4 +204,5 @@ def collect_package_managers() -> PackageManagers:
         "yarn": yarn_global_info(),
         "pnpm": pnpm_global_info(),
         "bun": bun_global_info(),
+        "homebrew_services": collect_homebrew_services(),
     }
