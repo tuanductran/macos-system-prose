@@ -75,7 +75,7 @@ def collect_docker_info() -> DockerInfo:
 
 def collect_browsers() -> list[BrowserInfo]:
     """Detect installed web browsers and their versions."""
-    browsers = []
+    browsers: list[BrowserInfo] = []
 
     browser_configs: dict[str, dict[str, str | list[str]]] = {
         "Google Chrome": {
@@ -132,16 +132,18 @@ def collect_browsers() -> list[BrowserInfo]:
     }
 
     for browser_name, config in browser_configs.items():
-        browser_path = config["path"]
+        browser_path = str(config["path"])
         installed = Path(browser_path).exists()
         version = "Unknown"
 
         if installed:
             try:
-                version_output = run(config["version_cmd"], timeout=3, log_errors=False)
-                if version_output:
-                    # Extract version number
-                    version = version_output.strip().split()[-1]
+                version_cmd = config["version_cmd"]
+                if isinstance(version_cmd, list):
+                    version_output = run(version_cmd, timeout=3, log_errors=False)
+                    if version_output:
+                        # Extract version number
+                        version = version_output.strip().split()[-1]
             except Exception:
                 version = "Installed"
 

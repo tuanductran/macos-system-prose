@@ -66,6 +66,9 @@ packages = ["src/prose"]
 [tool.hatch.build.targets.wheel.sources]
 "src/prose" = "prose"
 
+[tool.hatch.build.targets.wheel.force-include]
+"src/prose/py.typed" = "prose/py.typed"
+
 [tool.ruff]
 line-length = 100
 target-version = "py39"
@@ -84,6 +87,9 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 no_implicit_optional = true
 strict_equality = true
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "src"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -118,7 +118,8 @@ def get_json_output(cmd: list[str]) -> Optional[Union[dict, list]]:
     try:
         output = run(cmd)
         if output:
-            return json.loads(output)
+            parsed = json.loads(output)
+            return parsed  # type: ignore[no-any-return]
     except (json.JSONDecodeError, Exception):
         pass
     return None

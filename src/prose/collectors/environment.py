@@ -22,7 +22,7 @@ def collect_processes() -> list[ProcessInfo]:
     log("Collecting process information...")
     try:
         ps = run(["ps", "-A", "-o", "pid,%cpu,%mem,comm", "-r"])
-        processes = []
+        processes: list[ProcessInfo] = []
         for line in ps.splitlines()[1:16]:
             parts = line.split()
             if len(parts) >= 4:

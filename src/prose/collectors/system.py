@@ -94,21 +94,26 @@ def collect_system_info() -> SystemInfo:
         # Method 2: Fallback to system_profiler if name still generic
         if macos_name == "macOS":
             sw_data = get_json_output(["system_profiler", "SPSoftwareDataType", "-json"])
-            if sw_data and "SPSoftwareDataType" in sw_data:
-                os_ver_str = sw_data["SPSoftwareDataType"][0].get("os_version", "")
-                if "macOS" in os_ver_str:
-                    # Often looks like "macOS 12.7.6 (21H1320)"
-                    macos_name = os_ver_str.split("(")[0].strip()
+            if sw_data and isinstance(sw_data, dict) and "SPSoftwareDataType" in sw_data:
+                sp_soft = sw_data["SPSoftwareDataType"]
+                if isinstance(sp_soft, list) and len(sp_soft) > 0:
+                    os_ver_str = sp_soft[0].get("os_version", "")
+                    if "macOS" in str(os_ver_str):
+                        # Often looks like "macOS 12.7.6 (21H1320)"
+                        macos_name = str(os_ver_str).split("(")[0].strip()
     except Exception:
         pass
 
     hw_data = get_json_output(["system_profiler", "SPHardwareDataType", "-json"])
     model_name, model_id = "Unknown Mac", "Unknown"
 
-    if hw_data and "SPHardwareDataType" in hw_data:
-        info = hw_data["SPHardwareDataType"][0]
-        model_name = info.get("machine_name", "Mac")
-        model_id = info.get("machine_model", "Unknown")
+    if hw_data and isinstance(hw_data, dict) and "SPHardwareDataType" in hw_data:
+        sp_hard = hw_data["SPHardwareDataType"]
+        if isinstance(sp_hard, list) and len(sp_hard) > 0:
+            info = sp_hard[0]
+            if isinstance(info, dict):
+                model_name = str(info.get("machine_name", "Mac"))
+                model_id = str(info.get("machine_model", "Unknown"))
 
     return {
         "os": "macOS",
@@ -128,24 +133,32 @@ def collect_system_info() -> SystemInfo:
 
 def collect_display_info() -> list[DisplayInfo]:
     """Collect display information including resolution and refresh rate."""
-    displays = []
+    displays: list[DisplayInfo] = []
     try:
         data = get_json_output(["system_profiler", "SPDisplaysDataType", "-json"])
-        if data and "SPDisplaysDataType" in data:
-            for card in data["SPDisplaysDataType"]:
-                for display in card.get("spdisplays_ndrvs", []):
-                    resolution = display.get("_spdisplays_resolution", "Unknown")
-                    refresh = display.get("spdisplays_refresh_rate", "Unknown")
-                    depth = display.get("spdisplays_depth", "Unknown")
+        if data and isinstance(data, dict) and "SPDisplaysDataType" in data:
+            sp_displays = data["SPDisplaysDataType"]
+            if isinstance(sp_displays, list):
+                for card in sp_displays:
+                    if isinstance(card, dict):
+                        ndrvs = card.get("spdisplays_ndrvs", [])
+                        if isinstance(ndrvs, list):
+                            for display in ndrvs:
+                                if isinstance(display, dict):
+                                    resolution = str(
+                                        display.get("_spdisplays_resolution", "Unknown")
+                                    )
+                                    refresh = str(display.get("spdisplays_refresh_rate", "Unknown"))
+                                    depth = str(display.get("spdisplays_depth", "Unknown"))
 
-                    displays.append(
-                        {
-                            "resolution": resolution,
-                            "refresh_rate": refresh,
-                            "color_depth": depth,
-                            "external_displays": 1 if "_name" in display else 0,
-                        }
-                    )
+                                    displays.append(
+                                        {
+                                            "resolution": resolution,
+                                            "refresh_rate": refresh,
+                                            "color_depth": depth,
+                                            "external_displays": 1 if "_name" in display else 0,
+                                        }
+                                    )
 
         # If no displays found, add a default entry
         if not displays:
@@ -201,7 +214,7 @@ def collect_hardware_info() -> HardwareInfo:
 
 def collect_disk_health() -> list[DiskHealthInfo]:
     """Collect S.M.A.R.T. status and disk health information."""
-    health_info = []
+    health_info: list[DiskHealthInfo] = []
     try:
         # Get list of physical disks
         disks_output = run(["diskutil", "list"], timeout=10)
