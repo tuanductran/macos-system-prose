@@ -116,8 +116,8 @@ class TestLegacyMacDetection:
         assert is_legacy_mac("MacBookAir6,2", "12.0") is True
 
         # Catalina (10.15.x)
-        assert is_legacy_mac("MacBookAir5,1", "10.15.7") is False  # max: Big Sur
-        assert is_legacy_mac("MacBookAir5,1", "11.0") is False
+        assert is_legacy_mac("MacBookAir5,1", "10.15.7") is False  # max: Catalina
+        assert is_legacy_mac("MacBookAir5,1", "11.0") is True  # Big Sur unsupported
         assert is_legacy_mac("MacBookAir5,1", "12.0") is True  # Monterey unsupported
 
 

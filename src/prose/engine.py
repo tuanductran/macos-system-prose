@@ -11,7 +11,9 @@ import json
 import os
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict, cast
 
 from prose import utils
 from prose.collectors.advanced import (
@@ -42,6 +44,8 @@ from prose.collectors.ioregistry import collect_ioregistry_info  # Phase 3
 from prose.collectors.network import collect_network_info
 from prose.collectors.packages import collect_package_managers
 from prose.collectors.system import collect_disk_info, collect_hardware_info, collect_system_info
+from prose.diff import diff_reports, format_diff
+from prose.html_report import generate_html_report
 from prose.schema import SystemReport
 
 
@@ -147,7 +151,11 @@ Standard security recommendations apply (SIP enabled, signed kexts only, etc.).
         "You are an expert macOS system administrator and performance analyst. "
         "Your task is to analyze the provided system data and provide actionable insights."
     )
+
+    timestamp = datetime.fromtimestamp(data["timestamp"]).strftime("%Y-%m-%d %H:%M:%S")
+
     prompt = f"""# macOS System Analysis Assistant
+Generated: {timestamp}
 
 {sys_admin_role}
 
@@ -155,51 +163,31 @@ Standard security recommendations apply (SIP enabled, signed kexts only, etc.).
 
 ---
 
-## Analysis Tasks
+## 1. Analysis Logic & Instructions
 
-Please analyze the following aspects of this macOS system:
+### Core Tasks
+1. **Security Posture**: SIP, FileVault, Gatekeeper, Firewall, unsigned apps, TCC.
+2. **Performance**: Memory pressure, swap, disk usage, CPU load, bottlenecks.
+3. **Dev Environment**: Languages, tools, package managers, git, shell.
+4. **Health Check**: Battery, SMART status, logs, kexts, daemons.
+5. **Optimization**: Cleanup, tuning, hardening, backups.
 
-### 1. Security Posture
-- Review SIP, FileVault, Gatekeeper, Firewall status
-- Check for unsigned applications or suspicious code signatures
-- Evaluate TCC permissions and privacy settings
-- **OpenCore Context**: {
-        "Adjust recommendations for OCLP users - some 'security issues' are intentional"
+### Operating Rules
+1. **Be Concise**: Focus on actionable insights, not data regurgitation.
+2. **Prioritize**: Critical issues first, then important, then optional.
+3. **Context-Aware**: {
+        "OCLP SYSTEM DETECTED - Adjust for unsupported hardware/patches."
         if is_oclp_user
-        else "Apply standard security best practices"
+        else "Standard macOS system."
     }
-
-### 2. Performance Analysis
-- Memory pressure and swap usage
-- Disk space and storage patterns
-- CPU utilization (high processes)
-- System load and uptime
-- Identify bottlenecks or resource constraints
-
-### 3. Developer Environment
-- Languages, tools, and version managers installed
-- Package managers and global packages
-- IDE/editor setup and extensions
-- Git configuration and shell customization
-- Docker, cloud tools, and infrastructure setup
-
-### 4. System Health
-- Battery condition (if applicable)
-- Disk health (S.M.A.R.T. status)
-- System logs for critical errors
-- Kernel extensions and system extensions
-- Launch agents/daemons status
-
-### 5. Optimization Recommendations
-- Storage cleanup opportunities (caches, logs, duplicates)
-- Performance tuning suggestions
-- Security hardening steps
-- Backup and disaster recovery assessment
-- Software update recommendations
+4. **Specific**: Provide exact commands or steps where applicable.
+5. **Realistic**: Consider the hardware constraints (especially for OCLP users on older Macs).
 
 ---
 
-## System Data (JSON)
+## 2. System Data (JSON)
+
+The following JSON object contains the complete system state snapshot.
 
 ```json
 {json.dumps(data, indent=2)}
@@ -207,19 +195,7 @@ Please analyze the following aspects of this macOS system:
 
 ---
 
-## Instructions
-
-1. **Be Concise**: Focus on actionable insights, not data regurgitation
-2. **Prioritize**: Critical issues first, then important, then optional
-3. **Context-Aware**: {
-        "Remember this is an OCLP-patched system - some modifications are necessary"
-        if is_oclp_user
-        else "This is a standard macOS system"
-    }
-4. **Specific**: Provide exact commands or steps where applicable
-5. **Realistic**: Consider the hardware constraints (especially for OCLP users on older Macs)
-
-Please provide your analysis now.
+**End of System Report**
 """
 
     return prompt.strip()
@@ -239,6 +215,8 @@ def main() -> int:
     parser.add_argument("-q", "--quiet", action="store_true")
     parser.add_argument("--no-prompt", action="store_true")
     parser.add_argument("-o", "--output", default="macos_system_report.json")
+    parser.add_argument("--diff", help="Compare current report with a previous JSON report")
+    parser.add_argument("--html", action="store_true", help="Generate a beautiful HTML dashboard")
     args = parser.parse_args()
 
     utils.VERBOSE = args.verbose
@@ -268,6 +246,36 @@ def main() -> int:
             utils.log(f"AI Prompt saved to: {os.path.abspath(prompt_file)}", "success")
         except Exception as e:
             utils.log(f"Failed to save AI prompt: {e}", "error")
+
+    if args.diff:
+        diff_path = Path(args.diff)
+        if diff_path.exists():
+            try:
+                with open(diff_path, "r", encoding="utf-8") as f:
+                    old_data = json.load(f)
+
+                utils.log(f"Comparing with: {args.diff}", "header")
+                changes = diff_reports(old_data, cast(Dict[str, Any], report))
+                if changes:
+                    diff_lines = format_diff(changes)
+                    for line in diff_lines:
+                        print(line)
+                else:
+                    utils.log("No differences found.", "success")
+            except Exception as e:
+                utils.log(f"Failed to compare reports: {e}", "error")
+        else:
+            utils.log(f"Diff target not found: {args.diff}", "error")
+
+    if args.html:
+        html_file = Path(args.output).with_suffix(".html")
+        try:
+            html_content = generate_html_report(cast(Dict[str, Any], report))
+            with open(html_file, "w", encoding="utf-8") as f:
+                f.write(html_content)
+            utils.log(f"HTML Dashboard saved to: {os.path.abspath(html_file)}", "success")
+        except Exception as e:
+            utils.log(f"Failed to generate HTML dashboard: {e}", "error")
 
     utils.log("Collection complete.", "success")
     return 0

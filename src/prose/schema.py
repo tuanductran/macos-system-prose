@@ -109,10 +109,29 @@ class IORegistryInfo(TypedDict):
     audio_codecs: list[AudioCodec]
 
 
+class APFSVolume(TypedDict):
+    name: str
+    device: str  # e.g. "disk1s1"
+    role: str  # e.g. "Data", "System", "Preboot", "Recovery", "VM"
+    capacity_used_gb: float
+    encrypted: bool
+    filevault: bool
+
+
+class APFSContainer(TypedDict):
+    reference: str  # e.g. "disk1"
+    physical_store: str  # e.g. "disk0s2"
+    capacity_gb: float
+    free_gb: float
+    used_percent: float
+    fusion: bool
+    volumes: list[APFSVolume]
+
+
 class DiskInfo(TypedDict):
     disk_total_gb: float
     disk_free_gb: float
-    apfs_info: list[str]
+    apfs_info: list[APFSContainer]
     disk_health: list[DiskHealthInfo]
 
 
@@ -390,7 +409,7 @@ class KernelParameters(TypedDict):
 class SystemLogs(TypedDict):
     critical_errors: list[str]
     warnings: list[str]
-    log_period: str  # "last 24 hours"
+    log_period: str  # e.g. "last 1 hour"
 
 
 class SystemReport(TypedDict):

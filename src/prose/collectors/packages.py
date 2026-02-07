@@ -86,20 +86,24 @@ def yarn_global_info() -> Union[PackageVersionInfo, NotInstalled]:
     log("Checking Yarn globals...")
     if not which("yarn"):
         return cast(NotInstalled, {"installed": False})
+    version = run(["yarn", "--version"])
     globals_list = []
-    output = run(["yarn", "global", "list", "--depth=0"]).splitlines()
-    for line in output:
-        if "info" in line and "@" in line:
-            parts = line.split('"')
-            if len(parts) >= 2:
-                globals_list.append(parts[1])
-        elif line.strip().startswith("- "):
-            globals_list.append(line.strip().replace("- ", ""))
+    # Yarn v2+ (Berry) removed `yarn global` command
+    major_version = int(version.split(".")[0]) if version and version[0].isdigit() else 1
+    if major_version < 2:
+        output = run(["yarn", "global", "list", "--depth=0"]).splitlines()
+        for line in output:
+            if "info" in line and "@" in line:
+                parts = line.split('"')
+                if len(parts) >= 2:
+                    globals_list.append(parts[1])
+            elif line.strip().startswith("- "):
+                globals_list.append(line.strip().replace("- ", ""))
     return cast(
         PackageVersionInfo,
         {
             "installed": True,
-            "version": run(["yarn", "--version"]),
+            "version": version,
             "bin_path": which("yarn") or "Unknown",
             "globals": sorted(globals_list),
         },

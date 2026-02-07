@@ -549,20 +549,19 @@ def collect_nvram_variables() -> NVRAMInfo:
             verbose_log(f"OCLP version (NVRAM): {oclp_version}")
 
         # Get OCLP settings bitmask
-        oclp_settings = read_nvram("OCLP-Settings")
+        oclp_settings = read_nvram("OCLP-Settings", OCLP_NVRAM_UUID)
         if oclp_settings:
+            oclp_settings = oclp_settings.replace("%00", "").replace("\x00", "").strip()
             nvram_info["oclp_settings"] = oclp_settings
             verbose_log(f"OCLP settings: {oclp_settings}")
 
-        # Get SecureBootModel (Apple Silicon)
-        secure_boot_model = read_nvram("SecureBootModel")
-        if secure_boot_model:
-            nvram_info["secure_boot_model"] = secure_boot_model
-            verbose_log(f"SecureBootModel: {secure_boot_model}")
+        # Get HardwareModel from Apple Secure Boot NVRAM UUID
+        from prose.iokit import SECURE_BOOT_UUID
 
-        # Get HardwareModel (T2 / Apple Silicon)
-        hardware_model = read_nvram("HardwareModel")
+        hardware_model = read_nvram("HardwareModel", SECURE_BOOT_UUID)
         if hardware_model:
+            hardware_model = hardware_model.replace("%00", "").replace("\x00", "").strip()
+            nvram_info["secure_boot_model"] = hardware_model
             nvram_info["hardware_model"] = hardware_model
             verbose_log(f"HardwareModel: {hardware_model}")
 

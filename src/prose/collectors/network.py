@@ -1,9 +1,36 @@
 from __future__ import annotations
 
 import os
+import struct
 
 from prose.schema import NetworkInfo
 from prose.utils import log, run, which
+
+
+def _hex_mask_to_dotted(hex_mask: str) -> str:
+    """Convert hex subnet mask to dotted-decimal notation.
+
+    Example: '0xffffff00' → '255.255.255.0'
+    """
+    try:
+        val = int(hex_mask, 16)
+        return ".".join(str(b) for b in struct.pack("!I", val))
+    except (ValueError, struct.error):
+        return hex_mask
+
+
+def _parse_firewall_status(raw: str) -> str:
+    """Parse socketfilterfw output into clean status string.
+
+    Input:  'Firewall is enabled. (State = 1)'
+    Output: 'Enabled'
+    """
+    raw = raw.strip().lower()
+    if "enabled" in raw:
+        return "Enabled"
+    if "disabled" in raw:
+        return "Disabled"
+    return raw.strip() or "Unknown"
 
 
 def collect_vpn_info() -> tuple[bool, list[str], list[str]]:
@@ -86,18 +113,19 @@ def collect_network_info() -> NetworkInfo:
                 parts = line.split()
                 ipv4 = parts[1]
                 if "netmask" in line:
-                    mask = parts[parts.index("netmask") + 1]
+                    raw_mask = parts[parts.index("netmask") + 1]
+                    mask = _hex_mask_to_dotted(raw_mask) if raw_mask.startswith("0x") else raw_mask
             if line.startswith("ether "):
                 mac = line.split()[1]
 
     # 3. DNS Servers
-    dns = []
+    dns: list[str] = []
     scutil_dns = run(["scutil", "--dns"])
     for line in scutil_dns.splitlines():
         line = line.strip()
-        if "nameserver[" in line:
-            server = line.split(":")[1].strip()
-            if server not in dns:
+        if "nameserver[" in line and " : " in line:
+            server = line.split(" : ", 1)[1].strip()
+            if server and server not in dns:
                 dns.append(server)
 
     # 4. Public IP
@@ -147,9 +175,9 @@ def collect_network_info() -> NetworkInfo:
         "mac_address": mac,
         "dns_servers": dns,
         "wifi_ssid": wifi_ssid,
-        "firewall_status": run(
-            ["/usr/libexec/ApplicationFirewall/socketfilterfw", "--getglobalstate"]
-        ).strip(),
+        "firewall_status": _parse_firewall_status(
+            run(["/usr/libexec/ApplicationFirewall/socketfilterfw", "--getglobalstate"])
+        ),
         "local_interfaces": local_interfaces,
         "vpn_status": vpn_status,
         "vpn_connections": vpn_conns,

@@ -35,6 +35,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: System :: Systems Administration",
     "Topic :: System :: Monitoring",
     "Topic :: Utilities",
@@ -46,7 +47,7 @@ dependencies = []  # No external dependencies - uses stdlib only
 Homepage = "https://github.com/tuanductran/macos-system-prose"
 Repository = "https://github.com/tuanductran/macos-system-prose"
 Issues = "https://github.com/tuanductran/macos-system-prose/issues"
-Changelog = "https://github.com/tuanductran/macos-system-prose/blob/main/CHANGELOG.md"
+
 Documentation = "https://github.com/tuanductran/macos-system-prose#readme"
 
 [project.optional-dependencies]

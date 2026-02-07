@@ -1,71 +1,92 @@
 # AGENTS.md
 
-This file provides critical guidance to AI coding agents (Claude, Cursor, Copilot, etc.) when
-working with the `macos-system-prose` repository.
+Instructions for AI coding agents (Claude, Cursor, Copilot, etc.) when working with the `macos-system-prose` repository.
 
-## 📖 Repository Overview
+## Overview
 
-`macos-system-prose` is a **read-only** macOS system introspection tool that collects comprehensive
-system data and generates AI-optimized reports for performance analysis, security auditing, and
-developer environment optimization.
+`macos-system-prose` is a **read-only** introspection tool on Darwin (macOS) that collects comprehensive system data and generates optimized reports for AI performance analysis, security auditing, and development environment optimization.
 
-**Core Capabilities:**
-- **System Introspection**: Hardware, OS version, SIP/FileVault/Gatekeeper status, thermal pressure
-- **Developer Environment**: Languages (Node, Python, Go, Rust, Ruby, Java, PHP, Perl), SDKs (Xcode, Android, Flutter), Cloud/DevOps tools (AWS, GCP, Terraform, kubectl, helm), databases
-- **Package Managers**: Homebrew, MacPorts, npm, yarn, pnpm, bun, pipx (with global package lists)
-- **IDE Extensions**: VS Code, Cursor, Windsurf, Zed extension detection
-- **Network & Connectivity**: Public IP, local interfaces, gateway, DNS, Wi-Fi SSID, firewall status
-- **System Activity**: Top processes, launch agents/daemons, login items, listening ports, cron jobs
-- **Diagnostics**: Battery health, recent crash logs (IPS files), kernel extensions, Electron apps
+**Key Capabilities:**
 
-**Output Formats:**
-- `macos_system_report.json` - Structured data for programmatic use
-- `macos_system_report.txt` - AI-optimized prompt for LLM analysis
+- **System**: Darwin/macOS version (SMBIOS enrichment), SIP/FileVault/Gatekeeper, thermal, memory pressure, Time Machine, EDID display parsing
+- **Developer**: 8 languages, 3 SDKs, 5 cloud tools, 5 databases, 10 version managers, 5 IDEs, 8 browsers, 8 terminal emulators, 7 shell frameworks
+- **Package Management**: Homebrew (formula + cask + service), MacPorts, npm, yarn, pnpm, bun, pipx
+- **Network**: Public/local IP, DNS, Wi-Fi, VPN detection, firewall
+- **Activity**: Processes, launch agents/daemons, launchd services, login items, open ports, cron jobs
+- **Security**: Security tools, antivirus, TCC permissions, code signing verification
+- **Hardware**: IORegistry (PCIe, USB, audio codecs), NVRAM
+- **OCLP**: OpenCore Legacy Patcher detection via 7 methods (NVRAM, AMFI, SMBIOS, kexts, etc.)
+- **Advanced**: Storage analysis, fonts, shell customization, system preferences, kernel parameters, system logs
 
-## 🏗️ Project Architecture
+**Outputs:**
+
+- `macos_system_report.json` — Structured data
+- `macos_system_report.txt` — Optimized prompt for LLMs (OCLP-aware)
+- `macos_system_report.html` — Visual dashboard (dark theme)
+
+## Project Architecture
 
 ```text
 macos-system-prose/
 ├── src/prose/
-│   ├── __init__.py
-│   ├── engine.py              # Main orchestration engine and CLI entry point
-│   ├── schema.py              # TypedDict definitions for all data structures
-│   ├── utils.py               # Command execution, logging, JSON parsing
-│   ├── exceptions.py          # Custom exception classes
-│   └── collectors/            # Modular data collection modules
-│       ├── __init__.py
-│       ├── system.py          # System info, hardware, disk (97 lines)
-│       ├── network.py         # Network, DNS, firewall, Wi-Fi (96 lines)
-│       ├── packages.py        # Package managers (146 lines)
-│       ├── developer.py       # Languages, SDKs, cloud tools, extensions (195 lines)
-│       └── environment.py     # Processes, launch items, battery, diagnostics (165 lines)
-├── tests/
-│   ├── __init__.py
-│   ├── test_collection.py     # Integration tests for collectors
-│   ├── test_exceptions.py     # Exception handling tests
-│   └── test_utils.py          # Utility function tests
-├── .github/
-│   ├── workflows/
-│   │   └── ci.yml             # CI/CD pipeline (lint, test, security scan)
-│   └── ISSUE_TEMPLATE/        # GitHub issue templates
-├── run.py                     # Development entry point (adds src to path)
-├── pyproject.toml             # Project metadata, dependencies, tool configs
+│   ├── engine.py              # CLI, orchestration, AI prompt generation
+│   ├── schema.py              # 47 TypedDicts defining data structure
+│   ├── utils.py               # Command execution, logging, EDID parsing
+│   ├── exceptions.py          # Custom exceptions
+│   ├── iokit.py               # NVRAM access via subprocess
+│   ├── macos_versions.py      # macOS version detection and mapping
+│   ├── html_report.py         # HTML dashboard generation
+│   ├── diff.py                # Report comparison logic
+│   ├── py.typed               # PEP 561 type marker
+│   ├── datasets/
+│   │   └── smbios.py          # SMBIOS database and legacy Mac detection
+│   └── collectors/            # 7 data collector modules
+│       ├── system.py          # System, hardware, display, disk, EDID
+│       ├── network.py         # Network, DNS, firewall, Wi-Fi, VPN
+│       ├── packages.py        # Package managers, Homebrew services
+│       ├── developer.py       # Languages, SDKs, Docker, browsers, extensions
+│       ├── environment.py     # Processes, launch items, security, NVRAM, apps
+│       ├── advanced.py        # Storage, fonts, OCLP, preferences, logs
+│       └── ioregistry.py      # IORegistry: PCIe, USB, audio codecs
+├── tests/                     # 10 test files + conftest.py (~107 tests)
+│   ├── conftest.py            # Factory functions creating 5 in-memory fixture profiles
+│   ├── test_collection.py     # Collector integration tests
+│   ├── test_display.py        # EDID parsing and display detection
+│   ├── test_exceptions.py     # Exception handling
+│   ├── test_fixtures.py       # Schema validation with factory fixtures
+│   ├── test_ioregistry.py     # IORegistry collector
+│   ├── test_smbios.py         # SMBIOS database and legacy Mac detection
+│   ├── test_utils.py          # Utility functions
+│   ├── test_html_report.py    # HTML generation tests
+│   ├── test_engine.py         # Engine orchestration tests
+│   └── test_diff.py           # Diff logic tests
+├── scripts/
+│   ├── scrape_macos_versions.py # Scrape macOS versions from Apple Support
+│   └── scrape_smbios_models.py  # Scrape Mac models from EveryMac
+├── data/                      # Runtime data (DO NOT EDIT MANUALLY)
+│   ├── macos_versions.json    # 22 macOS versions
+│   └── smbios_models.json     # 70+ Mac models
+├── .github/workflows/ci.yml   # CI/CD: lint, test, integration, security scan
+├── run.py                     # Development entry point
+├── pyproject.toml             # Metadata, dependencies, tool config
+├── renovate.json              # Renovate dependency updates
 ├── LICENSE                    # MIT License
-├── README.md                  # User-facing documentation
-└── AGENTS.md                  # This file (AI agent instructions)
+├── README.md                  # User documentation
+└── AGENTS.md                  # This file
 ```
 
-## 🛠️ Development Standards
+## Development Standards
 
-### 1. Code Style & Quality
+### Code Style
 
-- **Python Version**: 3.9+ (use `from __future__ import annotations` for forward compatibility)
-- **Type Safety**: All functions MUST be typed. Use `TypedDict` schemas from `src/prose/schema.py`
-- **Linting**: Ruff (line length: 100 chars, target: py39)
-- **Type Checking**: Mypy with partial strictness
-- **Testing**: pytest with coverage (target: src/prose)
+- **Python**: 3.9+ (`from __future__ import annotations`)
+- **Type Safety**: Every function MUST have type hints. Use `TypedDict` from `schema.py`.
+- **Linting**: Ruff (100 chars/line, target py39, rules: E, F, I, N, W, B).
+- **Type Checking**: Mypy (partial strict, see `pyproject.toml`).
+- **Testing**: pytest with coverage (target: `src/prose`).
 
-**Before committing:**
+**Before Committing:**
+
 ```bash
 ruff check . --fix
 ruff format .
@@ -73,350 +94,250 @@ mypy src/prose --check-untyped-defs
 pytest --cov=src/prose
 ```
 
-### 2. Collector Implementation Guidelines
+### Collector Guidelines
 
 **Architecture:**
-- Each collector module exports typed collection functions (e.g., `collect_system_info() -> SystemInfo`)
-- `engine.py` orchestrates all collectors in `collect_all() -> SystemReport`
-- All schemas are defined in `schema.py` using `TypedDict`
 
-**Current Collectors (as of v1.1.0):**
-- **system.py**: System info, hardware (with memory pressure), disk, Time Machine
-- **network.py**: Network interfaces, VPN, DNS, firewall, Wi-Fi
-- **packages.py**: Package managers (Homebrew services, npm, yarn, pnpm, bun, pipx, MacPorts)
-- **developer.py**: Languages, SDKs, cloud tools, Docker (detailed), Git config, terminal emulators, shell frameworks, browsers, extensions
-- **environment.py**: Processes, launch items, launchd services, kexts, system extensions, applications, battery, cron, diagnostics, security tools, TCC permissions, code signing, iCloud sync
+- Each collector exports a typed function (e.g., `collect_system_info() -> SystemInfo`).
+- `engine.py` orchestrates all collectors in `collect_all() -> SystemReport` (27 sections).
+- All schemas are defined in `schema.py` using `TypedDict` (47 classes).
 
-**Best Practices:**
-- **Error Resilience**: Wrap external commands in try-except. One collector failure MUST NOT crash the entire report
-- **Direct System Access**: Prefer `system_profiler`, `scutil`, `sw_vers` over hardcoded mappings
-- **JSON Parsing**: Use `get_json_output()` wrapper for commands with `--json` flags (npm, pnpm, brew)
-- **Timeout Management**: Use `timeout` parameter in `run()` for slow commands (diskutil, network diagnostics)
-- **Logging**: Use `verbose_log()` for debug output, `log()` for user-facing messages
+**7 Collectors (100+ functions total):**
 
-**Utilities (src/prose/utils.py):**
-- `run(cmd, timeout, log_errors)` - Execute shell command with timeout
-- `which(cmd)` - Check if command exists in PATH
-- `get_version(cmd)` - Extract version string from command output
-- `get_json_output(cmd)` - Parse JSON from command output
-- `log(msg, level)` - Colored logging (info/success/warning/error/header)
-- `verbose_log(msg)` - Debug logging (only shown with --verbose)
+| Module | Functions | Functionality |
+| --- | --- | --- |
+| `system.py` | 17 | System info + SMBIOS, hardware + memory pressure, display + EDID, disk + S.M.A.R.T., Time Machine |
+| `network.py` | 4 | Network interfaces, VPN detection, DNS, firewall, Wi-Fi |
+| `packages.py` | 9 | Homebrew (formula + cask + service), MacPorts, pipx, npm, yarn, pnpm, bun |
+| `developer.py` | 13 | Languages, SDKs, clouds, Docker, browsers, extensions, editors, Git config, terminals, shell frameworks |
+| `environment.py` | 18 | Processes, launch items, launchd services, kexts, system extensions, apps, Electron, security, TCC, code signing, iCloud, NVRAM, battery, cron, diagnostics |
+| `advanced.py` | 8 | Storage analysis, fonts, shell customization, OCLP detection (7 methods), system preferences, kernel parameters, system logs |
+| `ioregistry.py` | 4 | PCIe devices, USB devices, audio codecs from IORegistry |
 
-### 3. Data Privacy & Security
+**Principles:**
 
-- **Read-Only**: NEVER modify system state. No writes, no installs, no configuration changes
-- **PII Filtering**: Avoid collecting usernames, file paths with home directories, credentials
-- **Safe Commands**: Only use standard macOS binaries or well-known package managers
-- **Transparency**: All commands are logged in verbose mode for auditability
+- **Fault Tolerance**: Wrap commands in try-except. A collector error MUST NOT crash the entire report.
+- **System Access**: Prefer `system_profiler`, `scutil`, `sw_vers`, `ioreg` over hardcoded paths.
+- **Parse JSON**: Use `get_json_output()` for commands with `--json` flags.
+- **Timeouts**: Use `timeout` in `run()` (default 15s, increase for slow commands).
+- **Logging**: `verbose_log()` for debugging, `log()` for user info.
+- **Apple HIG**: Output values must be human-readable (e.g., `"32-bit Color"` instead of `"CGSThirtytwoBitColor"`, `"255.255.255.0"` instead of `"0xffffff00"`).
 
-## 🧪 Testing Strategy
+### Utility API
 
-**Unit Tests** (`tests/test_*.py`):
-- Test each collector independently with mocked system calls
-- Test error handling for missing commands/permissions
-- Test schema compliance (TypedDict validation)
+**`utils.py` (9 functions):**
 
-**Integration Tests** (`.github/workflows/ci.yml`):
-- Full system report generation on macOS runners
-- JSON structure validation
-- Coverage reporting to Codecov
+| Function | Description |
+| --- | --- |
+| `run(cmd, description, timeout, log_errors, capture_stderr)` | Execute shell command with timeout |
+| `which(cmd)` | Find command path (resolve symlinks) |
+| `get_version(cmd)` | Get version string from command |
+| `get_json_output(cmd)` | Parse JSON output from command |
+| `get_app_version(app_path)` | Get .app version (3 fallback keys) |
+| `safe_glob(path, pattern)` | Safe glob with error handling |
+| `parse_edid(edid_bytes)` | Parse EDID display identification data |
+| `log(msg, level)` | Colored logging (info/success/warning/error/header) |
+| `verbose_log(msg)` | Debug logging (only visible with `--verbose`) |
 
-**Running Tests:**
+**`iokit.py` (8 functions):**
+
+| Function | Description |
+| --- | --- |
+| `read_nvram(variable, uuid)` | Read NVRAM variable via `nvram` command |
+| `read_nvram_all()` | Read all NVRAM variables |
+| `get_boot_args()` | Get boot-args |
+| `get_csr_active_config()` | Get SIP configuration |
+| `parse_amfi_boot_arg(boot_args)` | Parse AMFI bitmask flag |
+| `get_oclp_nvram_version()` | Get OCLP version from NVRAM |
+| `get_oclp_nvram_settings()` | Get OCLP settings from NVRAM |
+| `get_secure_boot_model()` | Get SecureBootModel from NVRAM |
+
+**`datasets/smbios.py` (5 functions):**
+
+- 70+ Mac models with marketing name, board ID, CPU generation, max OS supported, stock GPU.
+- `get_smbios_data(model_identifier)` — Lookup model metadata.
+- `is_legacy_mac(model_identifier, current_macos_version)` — Check for unsupported OS.
+
+### Security and Privacy
+
+- **Read-Only**: NEVER change system state.
+- **PII Filtering**: Avoid collecting usernames, home paths, credentials.
+- **Safe Commands**: Use only standard macOS binaries.
+- **Transparency**: All commands are logged in verbose mode.
+
+## Testing
+
+**10 Test Files + conftest.py (~107 tests):**
+
+| File | Content |
+| --- | --- |
+| `test_collection.py` | Integration tests for system collectors (Darwin only) |
+| `test_utils.py` | run, which, get_version, get_json_output, get_app_version, parse_edid |
+| `test_exceptions.py` | ProseError, CollectorError, SystemCommandError, UnsupportedPlatformError |
+| `test_display.py` | EDID parsing and display info collection (mock + real data) |
+| `test_fixtures.py` | Schema validation with 5 fixture profiles |
+| `test_ioregistry.py` | IORegistry collector (PCIe, USB, audio) with mock plist |
+| `test_smbios.py` | SMBIOS database integrity, lookup, legacy Mac detection |
+| `test_html_report.py` | HTML reporting logic |
+| `test_diff.py` | Report comparison logic |
+| `test_engine.py` | Engine orchestration and prompt generation logic |
+
+**5 Fixture Profiles (conftest.py — in-memory):**
+
+1. `macbookair6-2_monterey_oclp` — Intel MacBook Air 2013, OCLP
+2. `macbookpro18-1_sequoia_m1pro` — Apple Silicon M1 Pro, Sequoia
+3. `macbookpro18-1_ventura_m1` — Apple Silicon M1, Ventura
+4. `imac19-1_bigsur_intel` — Intel iMac 2019, Big Sur, Docker
+5. `macmini8-1_sonoma_server` — Intel Mac mini 2018, Sonoma
+
+**CI/CD (`ci.yml`):**
+
+- Test matrix: Python 3.9–3.14 on macOS-latest
+- Ruff lint + format check
+- Mypy type check (soft fail)
+- pytest + coverage → Codecov
+- Integration test: full report + JSON/TXT validation
+- Security scan: Trivy on ubuntu-latest
+
 ```bash
-# All tests
-pytest
-
-# With coverage
-pytest --cov=src/prose --cov-report=term-missing
-
-# Specific test file
-pytest tests/test_collection.py -v
+pytest                                           # All tests
+pytest --cov=src/prose --cov-report=term-missing # With coverage
+pytest tests/test_smbios.py -v                   # Specific file
 ```
 
-## 🛡️ Operational Protocols
+## Workflow
 
-### 1. Adding New Data Points
+### Adding a New Data Point
 
-1. **Schema First**: Update `src/prose/schema.py` with new TypedDict fields
-2. **Implement Collector**: Add collection logic to appropriate collector module
-3. **Update Engine**: Integrate collector call in `engine.py:collect_all()`
-4. **Add Tests**: Write unit tests in `tests/test_collection.py`
-5. **Update Docs**: Document in README.md if user-facing
+1. Add a new `TypedDict` in `schema.py`.
+2. Add the field to `SystemReport` in `schema.py`.
+3. Implement the collector function.
+4. Integrate it into `engine.py:collect_all()`.
+5. Write unit tests.
+6. Update fixtures in `conftest.py`.
+7. Update `README.md` if user-facing.
 
-### 2. Modifying Existing Collectors
+### Modifying an Existing Collector
 
-- **Minimal Changes**: Only modify what's necessary
-- **Backwards Compatibility**: Don't break existing JSON structure
-- **Test Coverage**: Ensure tests pass after changes
-- **Verbose Logging**: Add `verbose_log()` calls for debugging
+- Minimal changes.
+- Do not break the JSON structure.
+- Ensure tests pass.
+- Add `verbose_log()` for debugging.
 
-### 3. Commit Conventions
+### Commit Convention
 
-Use conventional commits:
-- `feat:` - New features or collectors
-- `fix:` - Bug fixes
-- `refactor:` - Code restructuring without behavior change
-- `docs:` - Documentation updates
-- `test:` - Test additions or fixes
-- `chore:` - Build/tooling updates
+- `feat:` — New feature
+- `fix:` — Bug fix
+- `refactor:` — Refactoring
+- `docs:` — Documentation
+- `test:` — Tests
+- `chore:` — Build/tooling
 
-**Examples:**
-```
-feat: add PostgreSQL version detection to database collector
-fix: handle missing Wi-Fi interface gracefully
-refactor: extract common version parsing logic to utils
-docs: update AGENTS.md with new collector guidelines
-```
-
-## 🚀 Development Workflow
-
-### Initial Setup
+## Development Setup
 
 ```bash
-# Clone repository
 git clone https://github.com/tuanductran/macos-system-prose.git
 cd macos-system-prose
-
-# Create virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
-
-# Install in editable mode with dev dependencies
 pip install -e ".[dev]"
 ```
 
-### Running the Tool
-
 ```bash
-# Development (via run.py)
-python3 run.py --verbose
-
-# As installed package
-macos-prose --verbose
-
-# Generate only JSON (skip AI prompt)
-python3 run.py --no-prompt
-
-# Custom output location
-python3 run.py --output custom_report.json
-
-# Quiet mode (minimal output)
-python3 run.py --quiet
+python3 run.py --verbose       # Verbose run
+python3 run.py --no-prompt     # JSON only
+python3 run.py -o report.json  # Custom output path
+python3 run.py --quiet         # Minimum output
+python3 run.py --html          # HTML output
+macos-prose --verbose          # Installed package entry point
 ```
 
-### Development Commands
-
 ```bash
-# Lint and format
-ruff check . --fix && ruff format .
-
-# Type check
-mypy src/prose --check-untyped-defs
-
-# Run tests
-pytest
-
-# Run tests with coverage
-pytest --cov=src/prose --cov-report=html
-
-# Full CI simulation
-ruff check . && ruff format --check . && pytest --cov=src/prose
+ruff check . --fix && ruff format .                # Lint + format
+mypy src/prose --check-untyped-defs                # Type check
+pytest --cov=src/prose --cov-report=html           # Test + coverage
+ruff check . && ruff format --check . && pytest --cov=src/prose  # Full CI simulation
 ```
 
-## 📦 Package Structure
+## Technical Details
 
-**Entry Points:**
-- `macos-prose` command → `prose.engine:main()`
-- `run.py` → development entry point (adds src to path, calls `prose.engine:main()`)
+### Schema (schema.py — 47 TypedDicts)
 
-**Build System:**
-- Hatchling (PEP 621 compliant)
-- `src-layout` with `src/prose` as package root
-- No runtime dependencies (pure Python stdlib)
-- Dev dependencies: ruff, pytest, pytest-cov, mypy
+**SystemReport** has 27 keys: `timestamp`, `system`, `hardware`, `disk`, `top_processes`, `startup`, `login_items`, `package_managers`, `developer_tools`, `kexts`, `applications`, `environment`, `network`, `battery`, `cron`, `diagnostics`, `security`, `cloud`, `nvram`, `storage_analysis`, `fonts`, `shell_customization`, `opencore_patcher`, `system_preferences`, `kernel_params`, `system_logs`, `ioregistry`
 
-**Metadata:**
-- Package name: `macos-system-prose`
-- Version: 1.1.0 (Phase 2-4 features added)
-- License: MIT
-- Python: >=3.9
-- Platform: macOS only (Darwin)
+### Engine Flow (engine.py)
 
-## 🔍 Key Implementation Details
+1. `main()` — Parse CLI arguments (`-v`, `-q`, `--no-prompt`, `-o`, `--diff`, `--html`)
+2. `collect_all()` — Orchestrate collectors → `SystemReport`
+3. If `--diff`: `diff_reports()` compares with baseline
+4. If `--html`: `generate_html_report()` creates dashboard
+5. `generate_ai_prompt(data)` — Create OCLP-aware prompt for LLMs
+6. Write `macos_system_report.json`, `macos_system_report.txt`, and optionally `.html`
 
-### Schema Structure (src/prose/schema.py)
+### OCLP Detection (advanced.py — 7 methods)
 
-All data types are defined as `TypedDict`:
+1. NVRAM `OCLP-Version` (most reliable)
+2. `/Applications/OpenCore-Patcher.app` directory
+3. Root patch marker plist
+4. OCLP signature kexts (AMFIPass, RestrictEvents, Lilu, WhateverGreen, etc.)
+5. Patched system frameworks
+6. SMBIOS-based unsupported OS detection
+7. Boot-args AMFI configuration parsing
 
-**Core System (18 sections total):**
-- `SystemReport` - Top-level report structure
-- `SystemInfo` - OS version, model, SIP/FileVault/Gatekeeper, Time Machine
-- `HardwareInfo` - CPU, memory, GPU, thermal pressure, **memory pressure stats**
-- `DiskInfo` - Disk usage, APFS volumes, S.M.A.R.T. health
-- `NetworkInfo` - IPs, interfaces, DNS, Wi-Fi, firewall, VPN
+### Runtime Data (`data/` directory)
 
-**Package Management:**
-- `PackageManagers` - Homebrew (**with services**), MacPorts, npm, yarn, pnpm, bun, pipx
-- `BrewService` - Homebrew service status (name, status, user, file)
+- `macos_versions.json` — 22 macOS versions with metadata. Updated via `python3 scripts/scrape_macos_versions.py --write`.
+- `smbios_models.json` — 70 Mac models. Updated via `python3 scripts/scrape_smbios_models.py --write`.
+- **DO NOT EDIT JSON FILES MANUALLY** unless absolutely necessary.
 
-**Developer Tools:**
-- `DeveloperToolsInfo` - Languages, SDKs, cloud tools, extensions, **Git config, terminal emulators, shell frameworks**
-- `DockerInfo` - Docker daemon, **containers (DockerContainer)**, **images (DockerImage)**
-- `GitConfig` - Git global config (user, email, aliases, settings)
-- `BrowserInfo` - Browser detection with versions
+### Package
 
-**System Activity:**
-- `EnvironmentInfo` - Shell, PATH, listening ports, **launchd services**
-- `LaunchdService` - Service status with PID and exit codes
-- `ProcessInfo` - Top processes (CPU/memory)
-- `LaunchItems` - Launch agents/daemons
-- `BatteryInfo` - Percentage, cycle count, condition
+- Entry point: `macos-prose` → `prose.engine:main()`
+- Build: Hatchling (PEP 621), src-layout
+- Dependencies: No runtime dependencies (pure Python stdlib)
+- Dev Dependencies: ruff, pytest, pytest-cov, mypy
 
-**Kernel & Extensions:**
-- `KernelExtensionsInfo` - Third-party kexts, **system extensions (macOS 10.15+)**
-- `SystemExtension` - Extension identifier, version, state, team ID
+## Common Issues
 
-**Security & Privacy:**
-- `SecurityInfo` - Security tools, antivirus, **TCC permissions, code signing sample**
-- `TCCPermission` - Privacy permissions (camera, microphone, etc.)
-- `CodeSigningInfo` - App signing verification (authority, validity, team ID)
+| Issue | Solution |
+| --- | --- |
+| Collector crash (missing command) | Always check `which()`, use try-except |
+| Command hangs | Use `timeout` in `run()` (default 15s) |
+| JSON parse error | Use `get_json_output()` to handle empty/error JSON |
+| Test fail on non-Darwin | Use `sys.platform == "darwin"` check |
+| New field breaks schema | Update TypedDict in `schema.py` BEFORE implementation |
+| App version detection fail | 3 fallback keys: CFBundleShortVersionString → CFBundleVersion → CFBundleGetInfoString |
+| Code signing slow | Limit to 5 app samples, timeout 3s/app |
+| TCC database needs FDA | Return empty list on PermissionDenied |
+| `codesign` writes to stderr | Use `capture_stderr=True` in `run()` |
+| NVRAM null bytes (OCLP) | Clean with `.replace("%00", "").replace("\x00", "")` |
+| Raw API values | Use lookup maps to humanize (e.g., `_COLOR_DEPTH_MAP`, `_CONNECTOR_TYPE_MAP`) |
 
-**Cloud & Sync:**
-- `CloudInfo` - iCloud sync status
-- `CloudSyncInfo` - iCloud Drive, sync state, storage usage
+## Success Criteria
 
-**Diagnostics:**
-- `DiagnosticsInfo` - Crash logs
-- `CronInfo` - Cron jobs
-- `ApplicationsInfo` - All apps (with version fallback support)
+1. All collectors are typed and follow `schema.py`.
+2. Code passes `ruff check .` and `ruff format --check .`.
+3. All tests pass (`pytest`).
+4. No system state changes (read-only).
+5. Robust error handling (one error does not crash the report).
+6. Minimal and accurate changes.
+7. Conventional commits.
+8. Documentation updated for user-facing changes.
+9. Privacy respected (no PII).
+10. Human-readable output values per Apple HIG.
 
-### Engine Flow (src/prose/engine.py)
+## Project Statistics
 
-1. `main()` - CLI argument parsing (--verbose, --quiet, --no-prompt, --output)
-2. `collect_all()` - Orchestrates all collectors, returns `SystemReport`
-3. `generate_ai_prompt(data)` - Creates LLM-optimized text report
-4. Writes `macos_system_report.json` and `macos_system_report.txt`
-
-### Collector Organization (v1.1.0)
-
-**system.py** (172 lines):
-- `collect_time_machine_info()` - Time Machine backup status
-- `collect_display_info()` - Display specs (resolution, refresh rate)
-- `collect_memory_pressure()` - **NEW** Real-time memory stats
-- `collect_hardware_info()` - CPU, GPU, memory, thermal, **memory pressure**
-- `collect_disk_health()` - S.M.A.R.T. disk health
-- `collect_disk_info()` - Disk usage, APFS volumes, health
-- `collect_system_info()` - OS version, SIP, FileVault, Gatekeeper
-
-**network.py** (95 lines):
-- `collect_network_info()` - IPs, interfaces, DNS, Wi-Fi, firewall, VPN
-
-**packages.py** (104 lines):
-- `collect_homebrew_services()` - **NEW** Homebrew service status
-- `homebrew_info()`, `macports_info()`, `pipx_info()`
-- `npm_global_info()`, `yarn_global_info()`, `pnpm_global_info()`, `bun_global_info()`
-- `collect_package_managers()` - Aggregates all package managers
-
-**developer.py** (218 lines):
-- `collect_docker_info()` - **ENHANCED** Docker with container/image details
-- `collect_browsers()` - Browser detection with versions
-- `collect_languages()` - Node, Python, Go, Rust, Ruby, Java, PHP, Perl
-- `collect_sdks()` - Xcode, Android SDK, Flutter
-- `collect_cloud_devops()` - AWS, GCP, Terraform, kubectl, Helm
-- `collect_databases()` - Redis, MongoDB, MySQL, PostgreSQL, SQLite
-- `collect_version_managers()` - nvm, asdf, pyenv, rbenv, goenv, rustup
-- `collect_extensions()` - VS Code, Cursor, Windsurf, Zed extensions
-- `collect_editors()` - Detect installed code editors
-- `collect_git_config()` - **NEW** Git global configuration
-- `collect_terminal_emulators()` - **NEW** Terminal app detection
-- `collect_shell_frameworks()` - **NEW** oh-my-zsh, starship, etc.
-- `collect_dev_tools()` - Aggregates all developer tools
-
-**environment.py** (265 lines):
-- `collect_processes()` - Top 15 CPU/memory processes
-- `collect_launch_items()` - Launch agents/daemons
-- `collect_login_items()` - Login startup items
-- `collect_launchd_services()` - **NEW** User domain services (top 50)
-- `collect_environment_info()` - Shell, PATH, ports, **launchd services**
-- `collect_battery_info()` - Battery health and status
-- `collect_cron_jobs()` - User crontab
-- `collect_diagnostics()` - Recent crash logs
-- `collect_system_extensions()` - **NEW** macOS 10.15+ extensions
-- `collect_kexts()` - Kernel extensions + **system extensions**
-- `collect_all_applications()` - All apps with version detection
-- `collect_electron_apps()` - Electron-based apps
-- `collect_tcc_permissions()` - **NEW** TCC privacy permissions (requires FDA)
-- `collect_code_signing_sample()` - **NEW** Code signing verification (sample 10 apps)
-- `collect_cloud_sync()` - **NEW** iCloud Drive status
-- `collect_security_tools()` - Security apps, antivirus, **TCC, code signing**
-
-## 🚨 Common Pitfalls & Solutions
-
-### Problem: Collector crashes on missing command
-**Solution**: Always check with `which()` before running commands, use try-except blocks
-
-### Problem: Command hangs indefinitely
-**Solution**: Use `timeout` parameter in `run()` (default: 15s, adjust for slow commands like codesign)
-
-### Problem: JSON parsing fails
-**Solution**: Use `get_json_output()` which handles empty output and malformed JSON
-
-### Problem: Tests fail on non-macOS systems
-**Solution**: Add `sys.platform == "darwin"` checks, use `@pytest.mark.skipif` for macOS-only tests
-
-### Problem: New field breaks schema
-**Solution**: Always update `TypedDict` in schema.py BEFORE implementing collector
-
-### Problem: App version detection fails (Phase 2 fix)
-**Solution**: Use fallback keys: CFBundleShortVersionString → CFBundleVersion → CFBundleGetInfoString
-
-### Problem: Memory pressure collection slow
-**Solution**: Already optimized with 5s timeout and error suppression
-
-### Problem: Code signing verification too slow
-**Solution**: Limit to 10 app samples with 5s timeout per app
-
-### Problem: TCC database requires Full Disk Access
-**Solution**: Returns empty list gracefully, document FDA requirement in logs
-
-## 📚 Additional Resources
-
-- **GitHub Repo**: https://github.com/tuanductran/macos-system-prose
-- **CI/CD Pipeline**: `.github/workflows/ci.yml` (test matrix: Python 3.9-3.12, macOS-latest)
-- **Package Config**: `pyproject.toml` (Ruff, Mypy, pytest configs)
-- **License**: MIT (see LICENSE file)
-
-## 🎯 AI Agent Success Criteria
-
-When working on this repository, you are successful if:
-1. ✅ All collectors are properly typed and follow schema.py
-2. ✅ Code passes ruff linting and formatting checks
-3. ✅ All tests pass with good coverage (target: 30%+)
-4. ✅ No system modifications are made (read-only guarantee)
-5. ✅ Error handling is robust (one failure doesn't crash entire report)
-6. ✅ Changes are minimal and surgical
-7. ✅ Conventional commit format is used
-8. ✅ Documentation is updated if user-facing changes are made
-9. ✅ Performance is acceptable (<60s for full report, Phase 3/4 adds ~5-10s)
-10. ✅ Privacy considerations respected (no PII, FDA requirements documented)
-
-## 📊 Project Statistics (v1.1.0)
-
-- **Total Lines of Code**: ~1,231 (collectors: 854, utils: 89, schema: 224, engine: 50)
-- **Test Coverage**: 30% (25 tests passing)
-- **Schema Completeness**: 100% (all Typedicts defined)
-- **Collectors**: 5 modules, ~40 collection functions
-- **Features**: 18 data collection sections
-- **Platform**: macOS only (Darwin)
-- **Dependencies**: Zero runtime (pure stdlib)
-- **Python Support**: 3.9, 3.10, 3.11, 3.12
-
-## 🚀 Version History
-
-- **v1.0.0** (Initial): Basic system introspection (system, hardware, network, packages, developer tools)
-- **v1.1.0** (Current):
-  - **Phase 2**: Homebrew services, Docker details, Git config, Launchd services (+248 lines)
-  - **Phase 3**: Memory pressure, System extensions, Terminal emulators, Shell frameworks
-  - **Phase 4**: TCC permissions, Code signing verification, iCloud sync (+347 lines)
-  - Total additions: ~595 lines across 6 files
-  - New TypeDicts: BrewService, LaunchdService, DockerContainer, DockerImage, GitConfig, MemoryPressure, SystemExtension, TCCPermission, CodeSigningInfo, CloudSyncInfo, CloudInfo
+| Metric | Value |
+| --- | --- |
+| Total Source Lines | ~4,800 (16 Python modules) |
+| Collector Lines | ~2,800 (7 modules) |
+| TypedDict Classes | 47 |
+| Total Functions | ~110 |
+| SMBIOS Models | 70+ |
+| Tests | 107 (10 files + conftest.py) |
+| Fixture Profiles | 5 (in-memory) |
+| SystemReport Sections | 27 |
+| Platform | Darwin (macOS) |
+| Runtime Dependencies | 0 (pure stdlib) |
+| Python CI Matrix | 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 |

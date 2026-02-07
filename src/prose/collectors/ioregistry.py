@@ -32,12 +32,13 @@ def collect_pcie_devices() -> list[PCIeDevice]:
         if not output:
             return devices
 
-        # Parse XML plist (returns a list)
+        # Parse XML plist (may return a list or a dict)
         plist_data = plistlib.loads(output.encode("utf-8"))
+        if isinstance(plist_data, dict):
+            plist_data = [plist_data]
         if not isinstance(plist_data, list):
             return devices
 
-        # Recursively extract PCIe devices
         def extract_pcie_devices(node: dict) -> None:
             if not isinstance(node, dict):
                 return
@@ -107,8 +108,10 @@ def collect_usb_devices() -> list[USBDevice]:
 
     try:
         # Get USB device tree in XML plist format
+        # Use -c IOUSBHostDevice (class-based) instead of -p IOUSB (plane-based)
+        # because -p IOUSB -r -a returns empty on some macOS versions
         output = run(
-            ["ioreg", "-l", "-w0", "-r", "-a", "-p", "IOUSB"],
+            ["ioreg", "-c", "IOUSBHostDevice", "-r", "-a"],
             timeout=10,
             log_errors=False,
         )
@@ -116,12 +119,13 @@ def collect_usb_devices() -> list[USBDevice]:
         if not output:
             return devices
 
-        # Parse XML plist (returns a list)
+        # Parse XML plist (may return a list or a dict)
         plist_data = plistlib.loads(output.encode("utf-8"))
+        if isinstance(plist_data, dict):
+            plist_data = [plist_data]
         if not isinstance(plist_data, list):
             return devices
 
-        # Recursively extract USB devices
         def extract_usb_devices(node: dict) -> None:
             if not isinstance(node, dict):
                 return
@@ -218,8 +222,10 @@ def collect_audio_codecs() -> list[AudioCodec]:
         if not output:
             return codecs
 
-        # Parse XML plist (returns a list)
+        # Parse XML plist (may return a list or a dict)
         plist_data = plistlib.loads(output.encode("utf-8"))
+        if isinstance(plist_data, dict):
+            plist_data = [plist_data]
         if not isinstance(plist_data, list):
             return codecs
 
@@ -229,9 +235,15 @@ def collect_audio_codecs() -> list[AudioCodec]:
                 return
 
             io_name = node.get("IOName")
-            if io_name and ("Codec" in str(io_name) or "Audio" in str(io_name)):
+            io_class = str(node.get("IOObjectClass", ""))
+
+            # Match on IOObjectClass (IOHDACodecDevice) since IOName is often empty
+            is_codec = "HDACodec" in io_class or (
+                io_name and ("Codec" in str(io_name) or "Audio" in str(io_name))
+            )
+            if is_codec and "IOHDACodecVendorID" in node:
                 codec: AudioCodec = {
-                    "name": str(io_name),
+                    "name": str(io_name or io_class or "HDA Codec"),
                     "codec_id": None,
                     "layout_id": None,
                     "vendor": None,

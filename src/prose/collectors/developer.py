@@ -264,7 +264,7 @@ def collect_databases() -> dict[str, str]:
 
 def collect_version_managers() -> dict[str, str]:
     vms = {}
-    vm_checks = ["nvm", "asdf", "pyenv", "fnm", "rvm"]
+    vm_checks = ["nvm", "asdf", "pyenv", "fnm", "rvm", "rbenv", "goenv", "volta", "mise", "rustup"]
     for vm in vm_checks:
         if which(vm):
             vms[vm] = "Installed"

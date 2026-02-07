@@ -1,13 +1,15 @@
 """
 macOS version detection and mapping utilities.
 
-Automatically detect macOS version name from build number or version string
-using system APIs and online databases.
+Version names and metadata are loaded from data/macos_versions.json at runtime.
+To update: run ``python3 scripts/scrape_macos_versions.py``.
 """
 
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
 from typing import TypedDict
 
 from prose.utils import run, verbose_log
@@ -25,31 +27,17 @@ class MacOSVersion(TypedDict):
     marketing_name: str  # e.g., "macOS Monterey 12.7.6"
 
 
-# macOS version name mapping (updated from Apple Support as of Feb 2026)
-VERSION_NAMES = {
-    "26": "Tahoe",  # macOS Tahoe 26.2 (2026)
-    "15": "Sequoia",  # macOS Sequoia 15.7.3
-    "14": "Sonoma",  # macOS Sonoma 14.8.3
-    "13": "Ventura",  # macOS Ventura 13.7.8
-    "12": "Monterey",  # macOS Monterey 12.7.6
-    "11": "Big Sur",  # macOS Big Sur 11.7.11
-    "10.15": "Catalina",  # macOS Catalina 10.15.8
-    "10.14": "Mojave",  # macOS Mojave 10.14.6
-    "10.13": "High Sierra",  # macOS High Sierra 10.13.6
-    "10.12": "Sierra",  # macOS Sierra 10.12.6
-    "10.11": "El Capitan",  # OS X El Capitan 10.11.6
-    "10.10": "Yosemite",  # OS X Yosemite 10.10.5
-    "10.9": "Mavericks",  # OS X Mavericks 10.9.5
-    "10.8": "Mountain Lion",  # OS X Mountain Lion 10.8.5
-    "10.7": "Lion",  # OS X Lion 10.7.5
-    "10.6": "Snow Leopard",  # Mac OS X Snow Leopard 10.6.8
-    "10.5": "Leopard",  # Mac OS X Leopard 10.5.8
-    "10.4": "Tiger",  # Mac OS X Tiger 10.4.11
-    "10.3": "Panther",  # Mac OS X Panther 10.3.9
-    "10.2": "Jaguar",  # Mac OS X Jaguar 10.2.8
-    "10.1": "Puma",  # Mac OS X Puma 10.1.5
-    "10.0": "Cheetah",  # Mac OS X Cheetah 10.0.4
-}
+def _load_versions_json() -> dict:
+    """Load macOS version data from JSON file."""
+    json_path = Path(__file__).resolve().parent.parent.parent / "data" / "macos_versions.json"
+    if not json_path.exists():
+        return {"version_names": {}, "versions": []}
+    with open(json_path, encoding="utf-8") as f:
+        return json.load(f)  # type: ignore[no-any-return]
+
+
+_VERSIONS_DATA = _load_versions_json()
+VERSION_NAMES: dict[str, str] = _VERSIONS_DATA.get("version_names", {})
 
 
 def parse_version_string(version: str) -> tuple[int, int, int]:
@@ -219,156 +207,13 @@ def get_all_macos_versions() -> list[dict[str, object]]:
     """
     Get list of all known macOS versions with metadata.
 
-    Updated from Apple Support (https://support.apple.com/en-vn/109033)
-    as of February 2026.
+    Data is loaded from data/macos_versions.json. To update, run:
+        python3 scripts/scrape_macos_versions.py
 
     Returns:
         List of dictionaries with version info
-
-    Example:
-        >>> versions = get_all_macos_versions()
-        >>> versions[0]
-        {'major': 26, 'name': 'Tahoe', 'release_year': 2026, ...}
     """
-    versions = [
-        {"major": 26, "version": 26.0, "name": "Tahoe", "release_year": 2026, "latest": "26.2"},
-        {
-            "major": 15,
-            "version": 15.0,
-            "name": "Sequoia",
-            "release_year": 2024,
-            "latest": "15.7.3",
-        },
-        {
-            "major": 14,
-            "version": 14.0,
-            "name": "Sonoma",
-            "release_year": 2023,
-            "latest": "14.8.3",
-        },
-        {
-            "major": 13,
-            "version": 13.0,
-            "name": "Ventura",
-            "release_year": 2022,
-            "latest": "13.7.8",
-        },
-        {
-            "major": 12,
-            "version": 12.0,
-            "name": "Monterey",
-            "release_year": 2021,
-            "latest": "12.7.6",
-        },
-        {
-            "major": 11,
-            "version": 11.0,
-            "name": "Big Sur",
-            "release_year": 2020,
-            "latest": "11.7.11",
-        },
-        {
-            "major": 10,
-            "version": 10.15,
-            "name": "Catalina",
-            "release_year": 2019,
-            "latest": "10.15.8",
-        },
-        {
-            "major": 10,
-            "version": 10.14,
-            "name": "Mojave",
-            "release_year": 2018,
-            "latest": "10.14.6",
-        },
-        {
-            "major": 10,
-            "version": 10.13,
-            "name": "High Sierra",
-            "release_year": 2017,
-            "latest": "10.13.6",
-        },
-        {
-            "major": 10,
-            "version": 10.12,
-            "name": "Sierra",
-            "release_year": 2016,
-            "latest": "10.12.6",
-        },
-        {
-            "major": 10,
-            "version": 10.11,
-            "name": "El Capitan",
-            "release_year": 2015,
-            "latest": "10.11.6",
-        },
-        {
-            "major": 10,
-            "version": 10.10,
-            "name": "Yosemite",
-            "release_year": 2014,
-            "latest": "10.10.5",
-        },
-        {
-            "major": 10,
-            "version": 10.9,
-            "name": "Mavericks",
-            "release_year": 2013,
-            "latest": "10.9.5",
-        },
-        {
-            "major": 10,
-            "version": 10.8,
-            "name": "Mountain Lion",
-            "release_year": 2012,
-            "latest": "10.8.5",
-        },
-        {"major": 10, "version": 10.7, "name": "Lion", "release_year": 2011, "latest": "10.7.5"},
-        {
-            "major": 10,
-            "version": 10.6,
-            "name": "Snow Leopard",
-            "release_year": 2009,
-            "latest": "10.6.8",
-        },
-        {
-            "major": 10,
-            "version": 10.5,
-            "name": "Leopard",
-            "release_year": 2007,
-            "latest": "10.5.8",
-        },
-        {
-            "major": 10,
-            "version": 10.4,
-            "name": "Tiger",
-            "release_year": 2005,
-            "latest": "10.4.11",
-        },
-        {
-            "major": 10,
-            "version": 10.3,
-            "name": "Panther",
-            "release_year": 2003,
-            "latest": "10.3.9",
-        },
-        {
-            "major": 10,
-            "version": 10.2,
-            "name": "Jaguar",
-            "release_year": 2002,
-            "latest": "10.2.8",
-        },
-        {"major": 10, "version": 10.1, "name": "Puma", "release_year": 2001, "latest": "10.1.5"},
-        {
-            "major": 10,
-            "version": 10.0,
-            "name": "Cheetah",
-            "release_year": 2000,
-            "latest": "10.0.4",
-        },
-    ]
-    return versions
+    return _VERSIONS_DATA.get("versions", [])  # type: ignore[no-any-return]
 
 
 __all__ = [

@@ -2,9 +2,10 @@ name: CI/CD
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   test:
@@ -72,7 +73,7 @@ jobs:
     
     - name: Run full system report
       run: |
-        python run.py --verbose
+        python run.py --verbose --html
     
     - name: Verify JSON output
       run: |
@@ -83,6 +84,11 @@ jobs:
       run: |
         test -f macos_system_report.txt
         test -s macos_system_report.txt
+    
+    - name: Verify HTML report output
+      run: |
+        test -f macos_system_report.html
+        test -s macos_system_report.html
 
   security:
     name: Security Scan

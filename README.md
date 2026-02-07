@@ -5,168 +5,231 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
-A **read-only** macOS system introspection tool that generates comprehensive, AI-optimized reports for performance analysis, security auditing, and developer environment optimization.
+A **read-only** introspection tool for Darwin (macOS) that collects comprehensive system data and generates optimized reports for AI performance analysis, security auditing, and development environment optimization.
 
-## 🎯 What It Does
+## What This Tool Does
 
-`macos-system-prose` collects detailed system information without modifying anything on your Mac. It produces two outputs:
+`macos-system-prose` gathers detailed system information without modifying anything on your Mac. It produces three main outputs:
 
-1. **`macos_system_report.json`** - Structured data for programmatic analysis
-2. **`macos_system_report.txt`** - AI-optimized prompt for LLM consumption
+1. **`macos_system_report.json`** — Structured data for programmatic analysis.
+2. **`macos_system_report.txt`** — Optimized prompt for LLMs (OCLP-aware).
+3. **`macos_system_report.html`** — Visual dashboard for human review.
 
-### ✨ Focused AI Prompt
+### AI Prompt
 
-The text report focuses on **actionable insights** with clean hierarchy:
+The generated prompt is context-aware:
 
-- **Security Analysis** 🔒 - Critical issues highlighted first (SIP, FileVault, Firewall, Code Signing)
-- **Performance Analysis** ⚡️ - Memory pressure, disk usage, high CPU processes
-- **Developer Environment** 💻 - Git config, Docker status, PATH issues
-- **Cloud & Backup** ☁️ - iCloud, Time Machine status
-- **Recommended Actions** 🎯 - Priority-based (Critical → Important → Optional)
+- **OCLP Detection**: Automatically detects OpenCore Legacy Patcher and adjusts recommendations (e.g., avoids suggesting SIP enablement if it breaks patches).
+- **Security Analysis**: SIP, FileVault, Firewall, code signing, TCC permissions.
+- **Performance Analysis**: Memory pressure, disk usage, heavy CPU processes.
+- **Developer Environment**: Git config, Docker status, PATH issues.
+- **System Health**: Battery cycles, S.M.A.R.T. status, system logs, kernel extensions.
+- **Optimization**: Prioritized recommendations (Critical → Important → Optional).
 
-**Visual indicators**: 🔴 Critical | 🟡 Warning | 🟢 Healthy | ℹ️ Info
+## Features
 
-Perfect for:
-- 🔍 Quick security posture assessment (no manual filtering)
-- 🛠️ Instant performance bottleneck identification
-- 🤖 LLM-ready insights for optimization recommendations
-- 📊 Human-readable system status at a glance
-- 🔒 Security auditing with clear priorities
+### System & Hardware
 
-## ✨ Features
+- Darwin/macOS version with marketing name and **SMBIOS enrichment** (board ID, CPU generation, max supported OS).
+- Hardware model, identifier, architecture (Intel/Apple Silicon).
+- CPU, GPU, memory stats.
+- **Memory Pressure**: Real-time statistics (wired/active/inactive/free, swap usage).
+- **Display**: Resolution, refresh rate, color depth (human-readable), **EDID parsing** for manufacturer info.
+- Disk usage, APFS volumes, **S.M.A.R.T. disk health**.
+- SIP, FileVault, Gatekeeper status.
+- Thermal pressure monitoring.
+- **Time Machine** backup status.
 
-### 🖥️ System & Hardware
-- macOS version with marketing name (Monterey, Ventura, Sonoma, etc.)
-- Hardware model, identifier, and architecture (Intel/Apple Silicon)
-- CPU, GPU, memory specifications
-- **Memory Pressure**: Real-time stats (pages free/active/inactive/wired, swap usage)
-- **Display information** (resolution, refresh rate, color depth)
-- Disk usage and APFS volume information
-- **S.M.A.R.T. disk health status**
-- System Integrity Protection (SIP) status
-- FileVault encryption status
-- Gatekeeper configuration
-- Thermal pressure monitoring
-- **Time Machine backup status**
+### Network & Connectivity
 
-### 🌐 Network & Connectivity
-- Public and local IP addresses
-- Network interface details (MAC, subnet, gateway)
-- DNS server configuration
-- Wi-Fi SSID and connection status
-- **VPN status and active connections**
-- **VPN applications detection**
-- Firewall status
-- Active network routes
+- Public and local IP addresses.
+- Network interfaces (MAC address, subnet mask, gateway).
+- DNS server configuration.
+- Wi-Fi SSID and connection status.
+- **VPN detection** (app + interface checks).
+- Firewall status.
 
-### 💻 Developer Environment
-- **Languages**: Node.js, Python, Go, Rust, Ruby, Java, PHP, Perl
-- **Package Managers**: Homebrew (formula + casks + **services**), MacPorts, npm, yarn, pnpm, bun, pipx
-- **Version Managers**: nvm, asdf, pyenv, rbenv, goenv, rustup
-- **SDKs & Tools**: Xcode, Android SDK, Flutter
-- **Cloud/DevOps**: AWS CLI, GCP SDK, Terraform, kubectl, Helm
-- **Databases**: Redis, MongoDB, MySQL, PostgreSQL, SQLite
-- **IDE Extensions**: VS Code, Antigravity, Cursor, Windsurf, Zed
-- **Browsers**: Chrome, Firefox, Safari, Edge, Brave, Opera, Arc, Vivaldi (with versions)
-- **Docker**: Container/image counts, daemon status, **detailed container & image info**
-- **Git**: **Global configuration** (user, email, aliases, settings)
-- **Terminal Emulators**: iTerm2, Warp, Hyper, Alacritty, Kitty, Ghostty, WezTerm, Rio
-- **Shell Frameworks**: oh-my-zsh, oh-my-bash, starship, powerlevel10k, zinit, antigen, Fig
+### Developer Environment
 
-### 🔧 System Activity & Diagnostics
-- **Top Processes**: CPU/memory usage for resource-heavy processes
-- **Launch Agents**: User agents, system agents/daemons
-- **Launchd Services**: System services status with PID and exit codes (user domain, top 50)
-- **Login Items**: Applications that launch at startup
-- **Listening Ports**: Network ports with active listeners
-- **Cron Jobs**: User crontab entries
-- **Third-party kernel extensions** (kexts)
-- **System Extensions** (macOS 10.15+ security extensions)
-- **All installed applications** with version detection (3 fallback keys)
-- Electron-based applications
-- Recent crash logs (IPS files)
-- Battery health (cycle count, condition, power source)
+- **Languages**: Node.js, Python, Go, Rust, Ruby, Java, PHP, Perl.
+- **Package Managers**: Homebrew (formula + cask + **service**), MacPorts, npm, yarn, pnpm, bun, pipx.
+- **Version Managers**: nvm, asdf, pyenv, fnm, rvm, rbenv, goenv, volta, mise, rustup.
+- **SDKs & Tools**: Xcode, Android SDK, Flutter.
+- **Cloud/DevOps**: AWS CLI, GCP SDK, Terraform, kubectl, Helm.
+- **Databases**: Redis, MongoDB, MySQL, PostgreSQL, SQLite.
+- **IDE Extensions**: VS Code, Cursor, Windsurf, Zed.
+- **Browsers**: Chrome, Firefox, Safari, Edge, Brave, Opera, Arc, Vivaldi (with versions).
+- **Docker**: Daemon status, minimal container/image stats.
+- **Git**: Global configuration (user, email, aliases).
+- **Terminal Emulators**: Terminal, iTerm, Warp, Hyper, Alacritty, Kitty, Ghostty, WezTerm, Rio.
+- **Shell Frameworks**: oh-my-zsh, oh-my-bash, starship, powerlevel10k, zinit, antigen, Fig.
 
-### 🔒 Security & Privacy
-- **Security tools** (Little Snitch, Lulu, BlockBlock, OverSight, etc.)
-- **Antivirus software** detection
-- **Code Signing Verification**: Sample of installed apps (signatures, authorities, validity)
-- **TCC Permissions**: Privacy permissions (requires Full Disk Access)
+### System Activity & Diagnostics
 
-### ☁️ Cloud & Sync
-- **iCloud Status**: Drive enabled, sync status, storage usage
-- Cloud sync detection (iCloud Drive)
+- **Top Processes**: Heavy CPU/memory consumers.
+- **Launch Agents/Daemons**: User agents and system daemons.
+- **Launchd Services**: Service status with PID and exit code (user domain).
+- **Login Items**: Apps launching at startup.
+- **Listening Ports**: Active network listeners.
+- **Cron Jobs**: User crontab entries.
+- **Kernel Extensions**: Third-party kexts.
+- **System Extensions**: macOS 10.15+ security extensions.
+- **Application Inventory**: Version detection with fallback strategies.
+- **Electron Apps**: Electron-based app detection.
+- **Crash Logs**: Recent IPS files.
+- **Battery**: Cycle count, health condition, power source.
 
-## 🚀 Getting Started
+### Security & Privacy
 
-### Prerequisites
+- **Security Tools**: Little Snitch, Lulu, BlockBlock, OverSight, etc.
+- **Antivirus**: AV software detection.
+- **Code Signing**: Verification (sampled 5 apps, 3s timeout).
+- **TCC Permissions**: Privacy database checks (requires Full Disk Access).
 
-- **macOS**: Version 12 (Monterey) or later
-- **Python**: 3.9 or higher
-- **Command Line Tools**: Install with `xcode-select --install` (if needed)
+### Advanced Hardware
+
+- **IORegistry**: PCIe devices, USB devices, audio codecs.
+- **NVRAM**: Boot args, CSR/SIP config, SecureBoot model, OCLP settings.
+
+### OpenCore Legacy Patcher (OCLP)
+
+Advanced detection methods for unsupported Macs running newer macOS versions:
+
+1. NVRAM `OCLP-Version` variable.
+2. `/Applications/OpenCore-Patcher.app` presence.
+3. Root patch marker plist.
+4. OCLP signature kexts (AMFIPass, RestrictEvents, Lilu, WhateverGreen, etc.).
+5. Patched system frameworks.
+6. SMBIOS-based unsupported OS detection (70+ Mac models in database).
+7. Boot-args AMFI configuration parsing.
+
+### Advanced Analysis
+
+- **Storage Analysis**: Cache sizes, log sizes, user directory usage.
+- **Fonts**: System and user font counts.
+- **Shell Customization**: Shell type, framework detection, alias/function counts.
+- **System Preferences**: Trackpad, key repeat, mouse speed, scroll direction.
+- **Kernel Parameters**: sysctl values (max files, max procs).
+- **System Logs**: Recent critical/error entries.
+
+### Cloud & Sync
+
+- **iCloud**: Drive status, sync status, storage usage.
+
+## Getting Started
+
+### Requirements
+
+- **Darwin**: macOS 10.15 (Catalina) or later.
+- **Python**: 3.9 or higher.
+- **Command Line Tools**: `xcode-select --install` (if needed).
 
 ### Installation
 
-#### Option 1: From Source (Recommended)
-
 ```bash
-# Clone the repository
 git clone https://github.com/tuanductran/macos-system-prose.git
 cd macos-system-prose
 
-# Create virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install in editable mode with dev dependencies
 pip install -e ".[dev]"
-```
-
-#### Option 2: Direct Install (Coming Soon)
-
-```bash
-# Install from PyPI (when published)
-pip install macos-system-prose
 ```
 
 ### Usage
 
 ```bash
-# Basic execution (generates both JSON and AI prompt)
+# Generate JSON + AI Prompt (default)
 python3 run.py
 
-# With verbose output
+# Generate beautiful HTML Dashboard
+python3 run.py --html
+
+# Compare with a previous report
+python3 run.py --diff baseline.json
+
+# Verbose output (recommended for debugging)
 python3 run.py --verbose
 
-# Generate only JSON report (skip AI prompt)
+# JSON only (skip prompt generation)
 python3 run.py --no-prompt
 
-# Custom output location
-python3 run.py --output custom_report.json
+# Custom output path
+python3 run.py -o report.json
 
-# Quiet mode (minimal output)
+# Minimal output
 python3 run.py --quiet
 
-# After installing as package
-macos-prose --verbose
+# Only installed package usage
+macos-prose --verbose --html
 ```
 
-### Command-Line Options
+### Command Line Options
 
-```
-usage: run.py [-h] [--verbose] [--quiet] [--no-prompt] [--output OUTPUT]
+```text
+usage: run.py [-h] [-v] [-q] [--no-prompt] [-o OUTPUT] [--diff DIFF] [--html]
 
-macOS System Prose - Generate comprehensive system reports
+macOS System Prose Collector
 
 options:
-  -h, --help       Show this help message and exit
-  --verbose, -v    Enable verbose logging
-  --quiet, -q      Suppress all non-error output
-  --no-prompt      Skip generating AI optimization prompt
-  --output OUTPUT  Custom output path for JSON report
+  -h, --help            Show this help message and exit
+  -v, --verbose         Enable verbose logging
+  -q, --quiet           Show only errors
+  --no-prompt           Skip AI prompt generation
+  -o, --output OUTPUT   Custom output path for JSON report
+  --diff DIFF           Compare current report with a baseline JSON
+  --html                Generate HTML dashboard with dark theme
 ```
 
-## 📤 Output Examples
+## New Features
+
+### 🎨 HTML Dashboard
+
+Generate a stunning HTML report with:
+
+- Dark theme with glassmorphism effects.
+- Gradient backgrounds and hover animations.
+- Responsive grid layout.
+- Status badges (Enabled/Disabled).
+
+```bash
+python3 run.py --html
+# Generates: macos_system_report.html
+```
+
+### 🔍 Diff Mode
+
+Compare two system reports to track changes over time:
+
+```bash
+# Create baseline
+python3 run.py -o baseline.json
+
+# ... later ...
+
+# Compare current state with baseline
+python3 run.py --diff baseline.json
+```
+
+Output shows:
+
+- `+` Added items
+- `-` Removed items
+- `*` Changed items
+
+### 🔄 Data Scrapers
+
+Update internal databases automatically:
+
+```bash
+# Update macOS versions from Apple Support
+python3 scripts/scrape_macos_versions.py --write
+
+# Update SMBIOS models from EveryMac
+python3 scripts/scrape_smbios_models.py --write
+```
+
+## Example Output
 
 ### JSON Report Structure
 
@@ -175,254 +238,97 @@ options:
   "timestamp": 1738908295.123,
   "system": {
     "os": "Darwin",
-    "macos_version": "14.2.1",
-    "macos_name": "Sonoma",
-    "model_name": "MacBook Pro",
-    "model_identifier": "Mac14,10",
-    "kernel": "Darwin 23.2.0",
-    "architecture": "arm64",
-    "uptime": "5 days, 3:24",
-    "sip_enabled": true,
-    "gatekeeper_enabled": true,
-    "filevault_enabled": true
+    "macos_version": "12.7.6",
+    "macos_name": "macOS Monterey",
+    "model_name": "MacBook Air",
+    "model_identifier": "MacBookAir6,2",
+    "marketing_name": "MacBook Air (13-inch, Early 2014)",
+    "cpu_generation": "Haswell",
+    "max_os_supported": "Big Sur",
+    "sip_enabled": false,
+    "gatekeeper_enabled": true
   },
   "hardware": {
-    "cpu": "Apple M3 Pro",
-    "cpu_cores": 12,
-    "memory_gb": 36.0,
-    "thermal_pressure": ["Nominal"],
-    "gpu": ["Apple M3 Pro"]
-  },
-  "disk": {
-    "disk_total_gb": 994.66,
-    "disk_free_gb": 487.23,
-    "apfs_info": ["Macintosh HD (APFS): 994.66 GB total"]
-  },
-  "network": {
-    "hostname": "MacBook-Pro.local",
-    "primary_interface": "en0",
-    "ipv4_address": "192.168.1.100",
-    "public_ip": "203.0.113.42",
-    "gateway": "192.168.1.1",
-    "subnet_mask": "255.255.255.0",
-    "mac_address": "a4:83:e7:xx:xx:xx",
-    "dns_servers": ["1.1.1.1", "8.8.8.8"],
-    "wifi_ssid": "MyNetwork",
-    "firewall_status": "enabled"
-  },
-  "package_managers": {
-    "homebrew": {
-      "installed": true,
-      "version": "4.2.5",
-      "bin_path": "/opt/homebrew/bin/brew",
-      "prefix": "/opt/homebrew",
-      "formula": ["git", "node", "python@3.12", "wget"],
-      "casks": ["visual-studio-code", "docker", "firefox"]
-    },
-    "npm": {
-      "installed": true,
-      "version": "10.2.4",
-      "bin_path": "/usr/local/bin/npm",
-      "globals": ["typescript", "eslint", "prettier"]
+    "cpu": "Intel(R) Core(TM) i5-4260U CPU @ 1.40GHz",
+    "memory_pressure": {
+      "level": "normal",
+      "pages_free": 12345
     }
   },
-  "developer_tools": {
-    "languages": {
-      "node": "v20.11.0",
-      "python3": "Python 3.12.1",
-      "go": "go1.21.6",
-      "rust": "rustc 1.75.0"
-    },
-    "sdks": {
-      "xcode": "Xcode 15.2",
-      "flutter": "Flutter 3.16.5",
-      "android_sdk": "/Users/user/Library/Android/sdk"
-    },
-    "cloud_devops": {
-      "aws": "aws-cli/2.15.10",
-      "gcloud": "Google Cloud SDK 462.0.0",
-      "terraform": "Terraform v1.7.0",
-      "kubectl": "Client Version: v1.29.1"
-    },
-    "extensions": {
-      "vscode": ["ms-python.python", "github.copilot", "esbenp.prettier-vscode"]
-    }
-  },
-  "battery": {
-    "present": true,
-    "percentage": "82%",
-    "cycle_count": 47,
-    "condition": "Normal",
-    "power_source": "AC Power"
+  "opencore_patcher": {
+    "detected": true,
+    "version": "2.4.1",
+    "unsupported_os_detected": true
   }
 }
 ```
 
-### AI Prompt Example
+### AI Prompt Structure
 
-The generated `macos_system_report.txt` contains a structured prompt for LLMs:
+Found in `macos_system_report.txt`:
 
-```
-# macOS System Optimization & Analysis Report
+```markdown
+# macOS System Analysis Assistant
 
-You are an expert macOS Systems Engineer with specialization in performance tuning,
-developer environment optimization, and system security.
+You are an expert macOS system administrator and performance analyst.
 
-Below is a comprehensive system report in JSON format. Your task is to:
-1. Identify potential performance bottlenecks (CPU/Memory/Disk).
-2. Spot redundant or conflicting developer tool installations
-   (Multiple package managers/PATH duplicates).
-3. Recommend security hardening based on SIP/Gatekeeper/FileVault status.
-4. Propose cleanup for non-existent but referenced launch agents/daemons.
-5. List specific commands to execute the proposed optimizations safely.
+## OpenCore Legacy Patcher Detected
+(or "## Standard macOS Configuration")
 
----
-SYSTEM REPORT:
+## Analysis Tasks
+1. Security Posture
+2. Performance Analysis
+3. Developer Environment
+4. System Health
+5. Optimization Recommendations
+
+## System Data (JSON)
 {...complete JSON report...}
 ```
 
-## 🛡️ Safety & Privacy
+## Safety & Privacy
 
-- **✅ Read-Only**: Never modifies system state (no writes, no installs, no config changes)
-- **✅ Transparent**: Uses only standard macOS binaries (`system_profiler`, `scutil`, `sw_vers`, etc.)
-- **✅ No PII**: Avoids collecting sensitive personal information where possible
-- **✅ No Network Calls**: All data collection is local (except public IP detection)
-- **✅ Open Source**: MIT licensed, fully auditable code
+- **Read-Only**: Never modifies system state.
+- **Transparent**: Uses standard macOS binaries (`system_profiler`, `scutil`, `nvram`, etc.).
+- **No PII**: Avoids collecting sensitive personal information.
+- **Local Execution**: No network calls (except optionally checking public IP).
+- **Open Source**: MIT licensed and fully auditable.
 
-## 🏗️ Architecture
+## Development
 
-```
-src/prose/
-├── engine.py              # CLI entry point and orchestration
-├── schema.py              # TypedDict schemas for all data structures
-├── utils.py               # Command execution, logging, JSON parsing
-├── exceptions.py          # Custom exception classes
-└── collectors/            # Modular data collectors
-    ├── system.py          # Hardware, OS, disk info
-    ├── network.py         # Network, DNS, firewall
-    ├── packages.py        # Package manager detection
-    ├── developer.py       # Languages, SDKs, cloud tools, IDE extensions
-    └── environment.py     # Processes, launch items, battery, diagnostics
-```
+See [AGENTS.md](AGENTS.md) for detailed architecture and contribution guidelines.
 
-**Design Principles:**
-- **Modular**: Each collector is independent and can fail without crashing the entire report
-- **Typed**: Full type safety with `TypedDict` schemas
-- **Resilient**: Comprehensive error handling and timeouts for slow commands
-- **Extensible**: Easy to add new collectors or data points
-
-## 🛠️ Development
-
-### Setup Development Environment
+### Setup
 
 ```bash
-# Install development dependencies
 pip install -e ".[dev]"
-
-# Activate pre-commit checks (optional)
-ruff check . --fix && ruff format .
 ```
 
-### Code Quality
+### Quality Checks
 
 ```bash
-# Lint and auto-fix
-ruff check . --fix
-
-# Format code
-ruff format .
-
-# Type check
-mypy src/prose --check-untyped-defs
-
-# Run tests
-pytest
-
-# Run tests with coverage
-pytest --cov=src/prose --cov-report=term-missing
-
-# Full CI simulation
-ruff check . && ruff format --check . && pytest --cov=src/prose
+ruff check . --fix              # Lint & fix
+mypy src/prose --check-untyped-defs  # Type check
+pytest                          # Run tests
 ```
 
-### Project Standards
+## Comparisons & Roadmap
 
-- **Python**: 3.9+ with type hints (`from __future__ import annotations`)
-- **Linting**: Ruff (line length: 100 characters)
-- **Testing**: pytest with coverage target: `src/prose`
-- **Type Checking**: Mypy with partial strictness
-- **Commits**: Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feat/amazing-feature`)
-3. Write tests for new functionality
-4. Ensure all checks pass (`ruff check . && pytest`)
-5. Use conventional commit messages
-6. Open a Pull Request
-
-**Key Guidelines:**
-- All collectors must be typed with schemas from `schema.py`
-- Add tests for new collectors in `tests/test_collection.py`
-- Use `verbose_log()` for debug output
-- Wrap external commands in try-except blocks
-- Never modify system state (read-only guarantee)
-
-For detailed guidelines, see [AGENTS.md](AGENTS.md).
-
-## 📊 Use Cases
-
-### For System Administrators
-- Quick health check of macOS machines
-- Inventory management and asset tracking
-- Configuration audits and compliance verification
-- Security posture assessment (SIP, FileVault, Gatekeeper)
-
-### For Developers
-- Environment debugging and dependency resolution
-- Identify conflicting package managers or PATH issues
-- Detect redundant tool installations
-- Performance bottleneck identification
-
-### For AI/LLM Analysis
-- Generate optimization recommendations
-- Identify security hardening opportunities
-- Suggest cleanup actions for unused services
-- Provide context-aware system tuning advice
-
-## 🗺️ Roadmap
-
-- [ ] PyPI package publication
-- [ ] Homebrew formula distribution
-- [ ] Docker/Podman detection
-- [ ] Browser extensions collector
-- [ ] Comparison mode (diff two reports)
-- [ ] HTML/Web dashboard output
+- [x] Comparison mode (diff two reports)
+- [x] HTML/Web dashboard output
+- [ ] Export as PyPI package
+- [ ] Homebrew formula
 - [ ] Plugin architecture for custom collectors
 - [ ] Historical tracking and trending
 
-## 📄 License
+## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE).
 
 Copyright (c) 2026 Tuan Duc Tran
 
-## 🙏 Acknowledgments
-
-- Built with Python and modern macOS system APIs
-- Inspired by system profiling needs in AI/LLM workflows
-- Thanks to the open-source community for tools and inspiration
-
-## 📞 Support & Contact
+## Support
 
 - **Issues**: [GitHub Issues](https://github.com/tuanductran/macos-system-prose/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/tuanductran/macos-system-prose/discussions)
-- **Email**: tuanductran.dev@gmail.com
-- **Security**: Please report security vulnerabilities privately via GitHub Security Advisories
-
----
-
-**Made with ❤️ for the macOS development community**
+- **Email**: <tuanductran.dev@gmail.com>

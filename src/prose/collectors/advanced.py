@@ -11,6 +11,8 @@ import re
 from pathlib import Path
 
 from prose import utils
+from prose.datasets.smbios import is_legacy_mac
+from prose.iokit import get_boot_args, get_oclp_nvram_version, parse_amfi_boot_arg
 from prose.schema import (
     FontInfo,
     KernelParameters,
@@ -61,7 +63,7 @@ def collect_storage_analysis() -> StorageAnalysis:
         "library_gb": library,
         "caches_gb": caches,
         "logs_gb": logs,
-        "total_user_data_gb": documents + downloads + desktop,
+        "total_user_data_gb": documents + downloads + desktop + library,
     }
 
 
@@ -73,14 +75,14 @@ def collect_fonts() -> FontInfo:
     # System fonts
     system_font_dir = Path("/System/Library/Fonts")
     if system_font_dir.exists():
-        system_fonts = len(list(system_font_dir.glob("*.ttf"))) + len(
-            list(system_font_dir.glob("*.otf"))
-        )
+        for ext in ("*.ttf", "*.otf", "*.ttc", "*.dfont"):
+            system_fonts += len(list(system_font_dir.glob(ext)))
 
     # User fonts
     user_font_dir = Path.home() / "Library" / "Fonts"
     if user_font_dir.exists():
-        user_fonts = len(list(user_font_dir.glob("*.ttf"))) + len(list(user_font_dir.glob("*.otf")))
+        for ext in ("*.ttf", "*.otf", "*.ttc", "*.dfont"):
+            user_fonts += len(list(user_font_dir.glob(ext)))
 
     return {
         "system_fonts": system_fonts,
@@ -111,8 +113,10 @@ def collect_shell_customization() -> ShellCustomization:
             content = rc_file.read_text()
             # Count aliases
             aliases_count = len(re.findall(r"^\s*alias\s+", content, re.MULTILINE))
-            # Count functions
-            functions_count = len(re.findall(r"^\s*function\s+", content, re.MULTILINE))
+            # Count functions (both `function name` and `name()` syntax)
+            functions_count = len(
+                re.findall(r"^\s*(?:function\s+\w+|(\w+)\s*\(\)\s*\{)", content, re.MULTILINE)
+            )
             # Get size
             rc_size_kb = rc_file.stat().st_size / 1024
         except Exception:
@@ -126,131 +130,6 @@ def collect_shell_customization() -> ShellCustomization:
     }
 
 
-def _get_mac_model_max_os() -> dict[str, str]:
-    """Database of Mac models and their officially supported maximum macOS versions.
-
-    Returns:
-        Dictionary mapping model identifiers to max supported macOS version.
-    """
-    # Based on Apple's official support documentation
-    return {
-        # MacBook Air
-        "MacBookAir2,1": "10.11",  # Late 2008
-        "MacBookAir3,1": "10.13",  # Late 2010
-        "MacBookAir3,2": "10.13",  # Late 2010
-        "MacBookAir4,1": "10.13",  # Mid 2011
-        "MacBookAir4,2": "10.13",  # Mid 2011
-        "MacBookAir5,1": "10.15",  # Mid 2012
-        "MacBookAir5,2": "10.15",  # Mid 2012
-        "MacBookAir6,1": "11",  # Mid 2013
-        "MacBookAir6,2": "11",  # Mid 2013
-        "MacBookAir7,1": "12",  # Early 2015
-        "MacBookAir7,2": "12",  # Early 2015
-        # MacBook Pro
-        "MacBookPro4,1": "10.11",  # Early 2008
-        "MacBookPro5,1": "10.11",  # Late 2008
-        "MacBookPro5,2": "10.11",  # Early 2009
-        "MacBookPro5,3": "10.11",  # Mid 2009
-        "MacBookPro5,4": "10.11",  # Mid 2009
-        "MacBookPro5,5": "10.11",  # Mid 2009
-        "MacBookPro6,1": "10.13",  # Mid 2010
-        "MacBookPro6,2": "10.13",  # Mid 2010
-        "MacBookPro7,1": "10.13",  # Mid 2010
-        "MacBookPro8,1": "10.13",  # Early 2011
-        "MacBookPro8,2": "10.13",  # Early 2011
-        "MacBookPro8,3": "10.13",  # Early 2011
-        "MacBookPro9,1": "10.15",  # Mid 2012
-        "MacBookPro9,2": "10.15",  # Mid 2012
-        "MacBookPro10,1": "10.15",  # Mid 2012
-        "MacBookPro10,2": "10.15",  # Late 2012
-        "MacBookPro11,1": "11",  # Late 2013
-        "MacBookPro11,2": "11",  # Late 2013
-        "MacBookPro11,3": "11",  # Late 2013
-        "MacBookPro11,4": "12",  # Mid 2015
-        "MacBookPro11,5": "12",  # Mid 2015
-        "MacBookPro12,1": "12",  # Early 2015
-        # iMac
-        "iMac8,1": "10.11",  # Early 2008
-        "iMac9,1": "10.11",  # Early 2009
-        "iMac10,1": "10.13",  # Late 2009
-        "iMac11,1": "10.13",  # Late 2009
-        "iMac11,2": "10.13",  # Mid 2010
-        "iMac11,3": "10.13",  # Mid 2010
-        "iMac12,1": "10.13",  # Mid 2011
-        "iMac12,2": "10.13",  # Mid 2011
-        "iMac13,1": "10.15",  # Late 2012
-        "iMac13,2": "10.15",  # Late 2012
-        "iMac14,1": "11",  # Late 2013
-        "iMac14,2": "11",  # Late 2013
-        "iMac14,3": "11",  # Late 2013
-        "iMac14,4": "11",  # Mid 2014
-        "iMac15,1": "12",  # Late 2014
-        "iMac16,1": "12",  # Late 2015
-        "iMac16,2": "12",  # Late 2015
-        # Mac mini
-        "Macmini3,1": "10.11",  # Early 2009
-        "Macmini4,1": "10.13",  # Mid 2010
-        "Macmini5,1": "10.13",  # Mid 2011
-        "Macmini5,2": "10.13",  # Mid 2011
-        "Macmini5,3": "10.13",  # Mid 2011
-        "Macmini6,1": "10.15",  # Late 2012
-        "Macmini6,2": "10.15",  # Late 2012
-        "Macmini7,1": "12",  # Late 2014
-        # Mac Pro
-        "MacPro3,1": "10.11",  # Early 2008
-        "MacPro4,1": "10.11",  # Early 2009
-        "MacPro5,1": "10.11",  # Mid 2010/2012
-        "MacPro6,1": "12",  # Late 2013
-    }
-
-
-def _parse_macos_version(version_str: str) -> tuple[int, int]:
-    """Parse macOS version string to major.minor tuple.
-
-    Args:
-        version_str: Version like "12.7.6" or "11" or "10.15"
-
-    Returns:
-        Tuple of (major, minor) version numbers.
-    """
-    try:
-        parts = version_str.split(".")
-        major = int(parts[0])
-        minor = int(parts[1]) if len(parts) > 1 else 0
-        return (major, minor)
-    except (ValueError, IndexError):
-        return (0, 0)
-
-
-def _is_unsupported_os(current_os: str, model: str) -> bool:
-    """Check if current macOS version is unsupported for this Mac model.
-
-    Args:
-        current_os: Current macOS version (e.g., "12.7.6")
-        model: Mac model identifier (e.g., "MacBookAir6,2")
-
-    Returns:
-        True if running unsupported OS (likely OCLP), False otherwise.
-    """
-    model_db = _get_mac_model_max_os()
-    max_supported = model_db.get(model)
-
-    if not max_supported:
-        # Unknown model, can't determine
-        return False
-
-    current_ver = _parse_macos_version(current_os)
-    max_ver = _parse_macos_version(max_supported)
-
-    # Compare versions
-    if current_ver[0] > max_ver[0]:
-        return True
-    if current_ver[0] == max_ver[0] and current_ver[1] > max_ver[1]:
-        return True
-
-    return False
-
-
 def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCorePatcherInfo:
     """Detect OpenCore Patcher installation and configuration.
 
@@ -260,9 +139,6 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
         loaded_kexts: Optional list of currently loaded kexts from kextstat.
                       If None, will be collected internally.
     """
-    from prose.datasets.smbios import is_legacy_mac
-    from prose.iokit import get_boot_args, get_oclp_nvram_version, parse_amfi_boot_arg
-
     detected = False
     version = None
     nvram_version = None
@@ -398,10 +274,20 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
 
 
 def collect_system_preferences() -> SystemPreferences:
-    """Collect key system preferences."""
-    trackpad_speed = None
-    key_repeat_rate = None
-    mouse_speed = None
+    """Collect key system preferences.
+
+    When user hasn't explicitly changed a preference, macOS uses internal
+    defaults that aren't stored in the user domain. We fall back to the
+    documented macOS defaults in that case.
+    """
+    # macOS default values (used when user hasn't customized)
+    default_trackpad = 1.0  # Medium tracking speed
+    default_key_repeat = 6  # Normal repeat rate (unit: 15 ms tick)
+    default_mouse = 1.0  # Medium tracking speed
+
+    trackpad_speed: float | None = default_trackpad
+    key_repeat_rate: int | None = default_key_repeat
+    mouse_speed: float | None = default_mouse
     scroll_direction_natural = True
 
     # Trackpad tracking speed
@@ -486,11 +372,11 @@ def collect_kernel_parameters() -> KernelParameters:
 
 
 def collect_system_logs() -> SystemLogs:
-    """Collect critical system logs from last 24 hours."""
+    """Collect critical system logs from last 1 hour."""
     critical_errors: list[str] = []
     warnings: list[str] = []
 
-    # Get logs from last 24 hours using log command
+    # Get logs from last 1 hour using log command
     # Note: log show is VERY slow, so we use aggressive timeout and limit
     log_output = utils.run(
         [
@@ -534,5 +420,5 @@ def collect_system_logs() -> SystemLogs:
     return {
         "critical_errors": critical_errors[:20],
         "warnings": warnings[:15],
-        "log_period": "last 24 hours",
+        "log_period": "last 1 hour",
     }

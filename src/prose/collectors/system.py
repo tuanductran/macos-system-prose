@@ -2,9 +2,15 @@ from __future__ import annotations
 
 import os
 import platform
+import plistlib
 import re
+import subprocess
 
+from prose.datasets.smbios import get_smbios_data
+from prose.macos_versions import get_macos_version_info
 from prose.schema import (
+    APFSContainer,
+    APFSVolume,
     DiskHealthInfo,
     DiskInfo,
     DisplayInfo,
@@ -91,15 +97,138 @@ def collect_time_machine_info() -> TimeMachineInfo:
         }
 
 
+def _parse_uptime(raw: str) -> str:
+    """Parse uptime output into clean human-readable format.
+
+    Input:  '10:02  up 3 days,  5:17, 3 users,'
+    Output: 'up 3 days, 5:17'
+    """
+    # Remove leading timestamp (e.g. "10:02  ")
+    if "up" in raw:
+        idx = raw.index("up")
+        raw = raw[idx:]
+    # Remove trailing ", N users," and whitespace
+    raw = re.sub(r",\s*\d+\s+users?,?\s*$", "", raw)
+    # Collapse whitespace
+    return re.sub(r"\s{2,}", " ", raw).strip()
+
+
+def _parse_boot_time(raw: str) -> str:
+    """Parse kern.boottime sysctl output into ISO-like timestamp.
+
+    Input:  '{ sec = 1770471959, usec = 528688 } Sat Feb  7 20:45:59 2026'
+    Output: 'Sat Feb 7 20:45:59 2026'
+    """
+    # Extract the human-readable date after the closing brace
+    if "}" in raw:
+        date_part = raw.split("}", 1)[1].strip()
+        if date_part:
+            return re.sub(r"\s{2,}", " ", date_part)
+    return raw
+
+
+def _parse_load_average(raw: str) -> str:
+    """Parse vm.loadavg sysctl output into clean format.
+
+    Input:  '{ 13.16 12.04 11.45 }'
+    Output: '13.16 12.04 11.45'
+    """
+    return raw.strip().strip("{").strip("}").strip()
+
+
+# CoreGraphics color depth constants → human-readable
+_COLOR_DEPTH_MAP: dict[str, str] = {
+    "CGSThirtytwoBitColor": "32-bit Color",
+    "CGSTwentyfourBitColor": "24-bit Color",
+    "CGSSixteenBitColor": "16-bit Color",
+    "CGSEightBitColor": "8-bit Color",
+}
+
+
+def _humanize_color_depth(raw: str) -> str:
+    """Convert CoreGraphics depth constant to human-readable string."""
+    return _COLOR_DEPTH_MAP.get(raw, raw)
+
+
+# system_profiler connector type constants → human-readable
+_CONNECTOR_TYPE_MAP: dict[str, str] = {
+    "spdisplays_internal": "Internal",
+    "spdisplays_displayport": "DisplayPort",
+    "spdisplays_hdmi": "HDMI",
+    "spdisplays_thunderbolt": "Thunderbolt",
+    "spdisplays_vga": "VGA",
+    "spdisplays_dvi": "DVI",
+}
+
+
+def _humanize_connector_type(raw: str) -> str:
+    """Convert system_profiler connector constant to human-readable string."""
+    return _CONNECTOR_TYPE_MAP.get(raw, raw)
+
+
+def _check_sip_enabled() -> bool:
+    """Check SIP status from the first line of csrutil output only.
+
+    csrutil status output can contain 'enabled' in sub-field descriptions
+    even when SIP itself is disabled/unknown. Only the first line is authoritative:
+      "System Integrity Protection status: enabled."
+      "System Integrity Protection status: disabled."
+      "System Integrity Protection status: unknown (Custom Configuration)."
+    """
+    output = run(["csrutil", "status"])
+    if not output:
+        return False
+    first_line = output.splitlines()[0].lower()
+    return "enabled" in first_line and "unknown" not in first_line
+
+
+def _get_marketing_name_from_system() -> str | None:
+    """Get the exact marketing name from macOS SystemProfiler preferences.
+
+    macOS stores the precise model name (e.g., "MacBook Air (13-inch, Early 2014)")
+    in com.apple.SystemProfiler "CPU Names". This distinguishes models that share
+    the same model identifier but were released in different years.
+    """
+    try:
+        output = run(
+            ["defaults", "read", "com.apple.SystemProfiler", "CPU Names"],
+            log_errors=False,
+        )
+        if output:
+            match = re.search(r'"[^"]+"\s*=\s*"([^"]+)"', output)
+            if match:
+                return match.group(1)
+    except Exception:
+        pass
+    return None
+
+
+def _get_board_id_from_ioreg() -> str | None:
+    """Get the board-id directly from IORegistry hardware.
+
+    Reads IOPlatformExpertDevice to get the actual board-id burned into firmware,
+    rather than relying on a static database lookup.
+    """
+    try:
+        output = run(
+            ["ioreg", "-c", "IOPlatformExpertDevice", "-d2"],
+            log_errors=False,
+        )
+        if output:
+            match = re.search(r'"board-id"\s*=\s*<"([^"]+)">', output)
+            if match:
+                return match.group(1)
+    except Exception:
+        pass
+    return None
+
+
 def collect_system_info() -> SystemInfo:
     log("Collecting system information...")
 
-    # Use new macOS version detector
-    from prose.macos_versions import get_macos_version_info
-
     version_info = get_macos_version_info()
     version = version_info["version"]
-    macos_name = version_info["marketing_name"]
+    macos_name = f"macOS {version_info['name']}"
 
     hw_data = get_json_output(["system_profiler", "SPHardwareDataType", "-json"])
     model_name, model_id = "Unknown Mac", "Unknown"
@@ -112,23 +241,28 @@ def collect_system_info() -> SystemInfo:
                 model_name = str(info.get("machine_name", "Mac"))
                 model_id = str(info.get("machine_model", "Unknown"))
 
-    # Enrich with SMBIOS data
-    from prose.datasets.smbios import get_smbios_data
+    # Get real marketing name and board-id from system APIs first
+    system_marketing_name = _get_marketing_name_from_system()
+    system_board_id = _get_board_id_from_ioreg()
 
+    # Fall back to SMBIOS database for fields the system doesn't provide
     smbios_data = get_smbios_data(model_id)
-    marketing_name = smbios_data.get("marketing_name") if smbios_data else None
-    board_id = smbios_data.get("board_id") if smbios_data else None
+    marketing_name = system_marketing_name or (
+        smbios_data.get("marketing_name") if smbios_data else None
+    )
+    board_id = system_board_id or (smbios_data.get("board_id") if smbios_data else None)
     cpu_generation = smbios_data.get("cpu_generation") if smbios_data else None
     max_os_supported = smbios_data.get("max_os_supported") if smbios_data else None
 
-    if smbios_data:
+    if marketing_name:
+        source = "system" if system_marketing_name else "SMBIOS"
         verbose_log(
-            f"SMBIOS: {marketing_name} (Board: {board_id}, "
-            f"CPU: {cpu_generation}, Max OS: {max_os_supported})"
+            f"Model: {marketing_name} (source: {source}, Board: {board_id}, "
+            f"CPU gen: {cpu_generation}, Max OS: {max_os_supported})"
         )
 
     return {
-        "os": "macOS",
+        "os": "Darwin",
         "macos_version": version,
         "macos_name": macos_name,
         "model_name": model_name,
@@ -139,11 +273,11 @@ def collect_system_info() -> SystemInfo:
         "max_os_supported": max_os_supported,
         "kernel": run(["uname", "-r"]),
         "architecture": platform.machine(),
-        "uptime": run(["uptime"]).split("load")[0].strip(),
+        "uptime": _parse_uptime(run(["uptime"]).split("load")[0]),
         "uptime_seconds": _get_uptime_seconds(),
-        "boot_time": run(["sysctl", "-n", "kern.boottime"]).strip(),
-        "load_average": run(["sysctl", "-n", "vm.loadavg"]).strip(),
-        "sip_enabled": "enabled" in run(["csrutil", "status"]).lower(),
+        "boot_time": _parse_boot_time(run(["sysctl", "-n", "kern.boottime"])),
+        "load_average": _parse_load_average(run(["sysctl", "-n", "vm.loadavg"])),
+        "sip_enabled": _check_sip_enabled(),
         "gatekeeper_enabled": "enabled" in run(["spctl", "--status"]).lower(),
         "filevault_enabled": "on" in run(["fdesetup", "status"]).lower(),
         "time_machine": collect_time_machine_info(),
@@ -243,7 +377,9 @@ def collect_display_info() -> list[DisplayInfo]:
                                         else:
                                             refresh_str = "Unknown"
 
-                                    depth = str(display.get("spdisplays_depth", "Unknown"))
+                                    depth = _humanize_color_depth(
+                                        str(display.get("spdisplays_depth", "Unknown"))
+                                    )
 
                                     # Try to match with EDID data
                                     edid_info: dict[str, Optional[str]] = {
@@ -271,14 +407,23 @@ def collect_display_info() -> list[DisplayInfo]:
                                     if not edid_info["connector_type"]:
                                         conn_type = display.get("spdisplays_connection_type", "")
                                         if conn_type:
-                                            edid_info["connector_type"] = str(conn_type)
+                                            edid_info["connector_type"] = _humanize_connector_type(
+                                                str(conn_type)
+                                            )
 
                                     displays.append(
                                         {
                                             "resolution": resolution,
                                             "refresh_rate": refresh_str,
                                             "color_depth": depth,
-                                            "external_displays": 1 if "_name" in display else 0,
+                                            "external_displays": (
+                                                0
+                                                if "internal"
+                                                in str(
+                                                    display.get("spdisplays_connection_type", "")
+                                                ).lower()
+                                                else 1
+                                            ),
                                             "edid_manufacturer": edid_info["edid_manufacturer"],
                                             "edid_product_code": edid_info["edid_product_code"],
                                             "edid_serial": edid_info["edid_serial"],
@@ -358,11 +503,17 @@ def collect_memory_pressure() -> MemoryPressure:
             parts = sysctl_output.split()
             for i, part in enumerate(parts):
                 if part == "used" and i + 2 < len(parts):
-                    used_str = parts[i + 2].replace("M", "").replace("G", "000")
-                    pressure["swap_used"] = int(float(used_str))
+                    used_str = parts[i + 2]
+                    if used_str.endswith("G"):
+                        pressure["swap_used"] = int(float(used_str[:-1]) * 1024)
+                    else:
+                        pressure["swap_used"] = int(float(used_str.replace("M", "")))
                 elif part == "free" and i + 2 < len(parts):
-                    free_str = parts[i + 2].replace("M", "").replace("G", "000")
-                    pressure["swap_free"] = int(float(free_str))
+                    free_str = parts[i + 2]
+                    if free_str.endswith("G"):
+                        pressure["swap_free"] = int(float(free_str[:-1]) * 1024)
+                    else:
+                        pressure["swap_free"] = int(float(free_str.replace("M", "")))
     except Exception:
         pass
 
@@ -448,12 +599,67 @@ def collect_disk_health() -> list[DiskHealthInfo]:
     return health_info
 
 
+def _bytes_to_gb(b: int) -> float:
+    """Convert bytes to GB, rounded to 2 decimals."""
+    return round(b / 1024**3, 2)
+
+
+def _parse_apfs_containers() -> list[APFSContainer]:
+    """Parse APFS container/volume info via ``diskutil apfs list -plist``."""
+    try:
+        raw = subprocess.run(
+            ["diskutil", "apfs", "list", "-plist"],
+            capture_output=True,
+            timeout=30,
+        )
+        if raw.returncode != 0 or not raw.stdout:
+            return []
+        data = plistlib.loads(raw.stdout)
+
+        containers: list[APFSContainer] = []
+        for c in data.get("Containers", []):
+            ceiling = c.get("CapacityCeiling", 0)
+            free = c.get("CapacityFree", 0)
+            used = ceiling - free
+            used_pct = round(used / ceiling * 100, 1) if ceiling > 0 else 0.0
+
+            volumes: list[APFSVolume] = []
+            for v in c.get("Volumes", []):
+                roles = v.get("Roles", [])
+                volumes.append(
+                    {
+                        "name": v.get("Name", "Unknown"),
+                        "device": v.get("DeviceIdentifier", ""),
+                        "role": roles[0] if roles else "Unknown",
+                        "capacity_used_gb": _bytes_to_gb(v.get("CapacityInUse", 0)),
+                        "encrypted": v.get("Encryption", False),
+                        "filevault": v.get("FileVault", False),
+                    }
+                )
+
+            stores = c.get("PhysicalStores", [])
+            containers.append(
+                {
+                    "reference": c.get("ContainerReference", ""),
+                    "physical_store": stores[0].get("DeviceIdentifier", "") if stores else "",
+                    "capacity_gb": _bytes_to_gb(ceiling),
+                    "free_gb": _bytes_to_gb(free),
+                    "used_percent": used_pct,
+                    "fusion": c.get("Fusion", False),
+                    "volumes": volumes,
+                }
+            )
+        return containers
+    except Exception:
+        return []
+
+
 def collect_disk_info() -> DiskInfo:
     log("Collecting disk information...")
     stat = os.statvfs("/")
     return {
         "disk_total_gb": round(stat.f_blocks * stat.f_frsize / 1024**3, 2),
         "disk_free_gb": round(stat.f_bavail * stat.f_frsize / 1024**3, 2),
-        "apfs_info": run(["diskutil", "apfs", "list"], timeout=30).splitlines(),
+        "apfs_info": _parse_apfs_containers(),
         "disk_health": collect_disk_health(),
     }
