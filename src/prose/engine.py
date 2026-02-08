@@ -14,6 +14,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import cast
 
 from prose import utils
 from prose.collectors.advanced import (
@@ -46,7 +47,7 @@ from prose.collectors.packages import collect_package_managers
 from prose.collectors.system import collect_disk_info, collect_hardware_info, collect_system_info
 from prose.diff import diff_reports, format_diff
 from prose.html_report import generate_html_report
-from prose.schema import SystemReport
+from prose.schema import KernelExtensionsInfo, SystemReport
 
 
 async def collect_all() -> SystemReport:
@@ -160,6 +161,12 @@ async def collect_all() -> SystemReport:
         {},  # ioregistry: IORegistryInfo
     ]
 
+    # Ensure lists are synchronized to prevent silent mis-mapping
+    assert len(results) == len(collector_names) == len(default_values), (
+        f"Mismatch in collector configuration: "
+        f"results={len(results)}, names={len(collector_names)}, defaults={len(default_values)}"
+    )
+
     # Replace exceptions with type-appropriate defaults BEFORE unpacking
     # This ensures that unpacked variables never contain Exception objects
     # Mypy cannot infer the correct types after modification, so we use type: ignore
@@ -205,7 +212,8 @@ async def collect_all() -> SystemReport:
     # Collect opencore_patcher with dependency on kext_info
     # This must run after kexts are collected
     # kext_info is guaranteed to be a dict (KernelExtensionsInfo) after exception handling
-    third_party_kexts = kext_info.get("third_party_kexts", [])  # type: ignore[union-attr]
+    kext_info_typed = cast(KernelExtensionsInfo, kext_info)
+    third_party_kexts = kext_info_typed.get("third_party_kexts", [])
     opencore_patcher = await asyncio.to_thread(
         collect_opencore_patcher,
         third_party_kexts,
