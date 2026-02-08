@@ -80,7 +80,7 @@ class HardwareCard(Static):
         cpu = hardware.get("cpu", "Unknown")
         cores = hardware.get("cpu_cores", 0)
         memory_gb = hardware.get("memory_gb")
-        memory = f"{memory_gb} GB" if memory_gb else "Unknown"
+        memory = f"{memory_gb} GB" if memory_gb is not None else "Unknown"
         gpu_list = hardware.get("gpu", ["Unknown"])
         gpu = ", ".join(gpu_list) if gpu_list else "Unknown"
 
