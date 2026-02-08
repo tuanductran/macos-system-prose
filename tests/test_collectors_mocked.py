@@ -109,7 +109,7 @@ class TestDeveloperCollectorMocked:
     @patch("prose.collectors.developer.os.path.exists")
     def test_collect_dev_tools(self, mock_exists, mock_which, mock_run):
         import asyncio
-        
+
         mock_run.return_value = "v1.2.3"
         mock_which.return_value = "/path/to/tool"
         mock_exists.return_value = True
