@@ -4,6 +4,7 @@ import os
 import re
 from pathlib import Path
 
+from prose.constants import Timeouts
 from prose.iokit import get_boot_args, get_csr_active_config, read_nvram  # Phase 5
 from prose.schema import (
     ApplicationsInfo,
@@ -23,7 +24,7 @@ from prose.schema import (
     SystemExtension,
     TCCPermission,
 )
-from prose.utils import Timeouts, get_app_version, has_full_disk_access, log, run, verbose_log
+from prose.utils import get_app_version, has_full_disk_access, log, run, verbose_log
 
 
 def collect_processes() -> list[ProcessInfo]:

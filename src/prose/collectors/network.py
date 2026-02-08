@@ -3,8 +3,9 @@ from __future__ import annotations
 import os
 import struct
 
+from prose.constants import Timeouts
 from prose.schema import NetworkInfo
-from prose.utils import Timeouts, log, run, verbose_log, which
+from prose.utils import log, run, verbose_log, which
 
 
 def _hex_mask_to_dotted(hex_mask: str) -> str:

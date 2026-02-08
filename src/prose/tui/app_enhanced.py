@@ -262,12 +262,19 @@ class ProcessesTable(VerticalScroll):
         # MyPy can infer this type from SystemReport
         processes = self.data.get("top_processes", [])
 
+        # Normalize to empty list if not a list
+        if not isinstance(processes, list):
+            processes = []
+
+        # Filter to dict-like items only (defensive against malformed data)
+        processes = [p for p in processes if isinstance(p, dict)]
+
         # Sort by CPU descending (just in case)
-        if isinstance(processes, list):
-            try:
-                processes.sort(key=lambda x: x.get("cpu_percent", 0), reverse=True)
-            except Exception:
-                pass
+        try:
+            processes.sort(key=lambda x: x.get("cpu_percent", 0), reverse=True)
+        except (TypeError, AttributeError):
+            # Silently skip sorting if comparison fails
+            pass
 
         for proc in processes[:100]:  # Top 100 rows like htop
             table.add_row(

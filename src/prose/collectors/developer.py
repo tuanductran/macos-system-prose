@@ -27,6 +27,7 @@ import os
 from pathlib import Path
 from typing import cast
 
+from prose.constants import Timeouts
 from prose.schema import (
     BrowserInfo,
     DeveloperToolsInfo,
@@ -35,7 +36,7 @@ from prose.schema import (
     DockerInfo,
     GitConfig,
 )
-from prose.utils import Timeouts, get_version, run, verbose_log, which
+from prose.utils import get_version, run, verbose_log, which
 
 
 def collect_docker_info() -> DockerInfo:
