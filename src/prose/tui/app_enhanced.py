@@ -2,8 +2,10 @@
 
 Professional terminal user interface implementing:
 - Phases 2-4: Enhanced navigation, live updates, Apple HIG compliance
-- 7 tabs with detailed DataTables
-- Keyboard shortcuts (⌘1-7, ⌘F, ⌘E, ⌘R, ⌘?)
+- 8 tabs with detailed DataTables (Dashboard, System, Network, Developer,
+  Packages, Processes, Storage, Security)
+- Keyboard shortcuts (1-8 for tabs, ctrl+e for export, ctrl+s for search,
+  r for refresh, q to quit, ? for help)
 - Apple Human Interface Guidelines colors and typography
 - Progress bars for disk/battery/memory usage
 - Live refresh support

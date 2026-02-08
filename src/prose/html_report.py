@@ -48,7 +48,8 @@ def generate_html_report(data: SystemReport) -> str:
         time_machine.get("enabled", False) if isinstance(time_machine, dict) else False
     )
 
-    fw_enabled = bool(network.get("firewall_enabled", False))
+    fw_status = network.get("firewall_status", "Unknown")
+    fw_enabled = fw_status.lower() == "enabled" if isinstance(fw_status, str) else False
 
     git_info = dev_tools.get("git")
     git_user = str(
@@ -225,7 +226,7 @@ def generate_html_report(data: SystemReport) -> str:
                         </div>
                         <div class="card-body">
                             {format_row("Public IP", str(network.get("public_ip", "Unknown")))}
-                            {format_row("Local IP", str(network.get("local_ip", "Unknown")))}
+                            {format_row("Local IP", str(network.get("ipv4_address", "Unknown")))}
                             {format_row("Gateway", str(network.get("gateway", "Unknown")))}
                             {format_row("Firewall", get_badge(fw_enabled))}
                         </div>

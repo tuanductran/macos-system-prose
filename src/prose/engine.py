@@ -47,7 +47,7 @@ from prose.collectors.packages import collect_package_managers
 from prose.collectors.system import collect_disk_info, collect_hardware_info, collect_system_info
 from prose.diff import diff_reports, format_diff
 from prose.html_report import generate_html_report
-from prose.schema import KernelExtensionsInfo, SystemReport
+from prose.schema import KernelExtensionsInfo, OpenCorePatcherInfo, SystemReport
 
 
 async def collect_all() -> SystemReport:
@@ -212,12 +212,27 @@ async def collect_all() -> SystemReport:
     # Collect opencore_patcher with dependency on kext_info
     # This must run after kexts are collected
     # kext_info is guaranteed to be a dict (KernelExtensionsInfo) after exception handling
-    kext_info_typed = cast(KernelExtensionsInfo, kext_info)
-    third_party_kexts = kext_info_typed.get("third_party_kexts", [])
-    opencore_patcher = await asyncio.to_thread(
-        collect_opencore_patcher,
-        third_party_kexts,
-    )
+    try:
+        kext_info_typed = cast(KernelExtensionsInfo, kext_info)
+        third_party_kexts = kext_info_typed.get("third_party_kexts", [])
+        opencore_patcher = await asyncio.to_thread(
+            collect_opencore_patcher,
+            third_party_kexts,
+        )
+    except Exception as e:
+        error_msg = f"opencore_patcher: {type(e).__name__} - {e!s}"
+        collection_errors.append(error_msg)
+        utils.verbose_log(f"Collector failed: {error_msg}")
+        opencore_patcher = OpenCorePatcherInfo(
+            detected=False,
+            version=None,
+            nvram_version=None,
+            unsupported_os_detected=False,
+            loaded_kexts=[],
+            patched_frameworks=[],
+            amfi_configuration=None,
+            boot_args=None,
+        )
 
     # mypy cannot infer types from asyncio.gather with return_exceptions=True
     # All results are runtime-validated above and guaranteed to be correct types

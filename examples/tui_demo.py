@@ -6,7 +6,7 @@ requiring a full system scan. Useful for rapid TUI development and testing
 UI components in isolation.
 
 Note: This is a manual test script, not an automated unit test.
-Run with: python3 tests/test_tui.py
+Run with: python3 examples/tui_demo.py
 """
 
 from prose.tui.app import run_tui_sync
@@ -27,10 +27,12 @@ mock_data = {
         "gatekeeper_status": "Enabled",
     },
     "hardware": {
-        "cpu_brand": "Apple M1 Pro",
-        "cpu_cores_physical": 10,
-        "ram_gb": 32,
-        "gpu": [{"model": "Apple M1 Pro", "vram": "Shared"}],
+        "cpu": "Apple M1 Pro",
+        "cpu_cores": 10,
+        "memory_gb": 32,
+        "gpu": ["Apple M1 Pro"],
+        "thermal_pressure": [],
+        "displays": [],
         "memory_pressure": {
             "level": "normal",
             "swap_used": "0 MB",
