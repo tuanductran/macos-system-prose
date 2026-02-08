@@ -273,8 +273,12 @@ async def async_get_json_output(cmd: list[str]) -> dict | list | None:
         if output:
             parsed = json.loads(output)
             return parsed  # type: ignore[no-any-return]
-    except (json.JSONDecodeError, Exception):
-        pass
+    except json.JSONDecodeError as e:
+        # Invalid JSON output - return None as per function contract
+        verbose_log(f"JSON parsing failed for command {' '.join(cmd)}: {e}")
+    except Exception as e:
+        # Command execution or other error - return None as per function contract
+        verbose_log(f"Error executing command {' '.join(cmd)}: {e}")
     return None
 
 
@@ -296,8 +300,12 @@ def get_json_output(cmd: list[str]) -> dict | list | None:
         if output:
             parsed = json.loads(output)
             return parsed  # type: ignore[no-any-return]
-    except (json.JSONDecodeError, Exception):
-        pass
+    except json.JSONDecodeError as e:
+        # Invalid JSON output - return None as per function contract
+        verbose_log(f"JSON parsing failed for command {' '.join(cmd)}: {e}")
+    except Exception as e:
+        # Command execution or other error - return None as per function contract
+        verbose_log(f"Error executing command {' '.join(cmd)}: {e}")
     return None
 
 
