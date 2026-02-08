@@ -85,11 +85,11 @@ def generate_html_report(data: SystemReport) -> str:
     )
 
     # Format CPU cores info (no cpu_threads in schema, only cpu_cores)
-    cpu_cores = hardware.get('cpu_cores', 0)
+    cpu_cores = hardware.get("cpu_cores", 0)
     core_info = f"{cpu_cores} cores" if cpu_cores else "Unknown"
 
     # Format memory info
-    memory_gb = hardware.get('memory_gb')
+    memory_gb = hardware.get("memory_gb")
     memory_info = f"{memory_gb} GB" if memory_gb else "Unknown"
 
     def get_badge(status: bool) -> str:
