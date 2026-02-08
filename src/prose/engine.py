@@ -100,38 +100,6 @@ async def collect_all() -> SystemReport:
         return_exceptions=True,
     )
 
-    # Unpack results - if any collector raised an exception, we'll get the exception object
-    # We handle exceptions by logging and using default/empty values
-    # Note: mypy cannot infer correct types from asyncio.gather(return_exceptions=True)
-    # All results are validated at runtime before use
-    (
-        system_info,
-        hardware_info,
-        disk_info,
-        top_processes,
-        startup,
-        login_items,
-        package_managers,
-        developer_tools,
-        kext_info,
-        applications,
-        environment,
-        network,
-        battery,
-        cron,
-        diagnostics,
-        security,
-        cloud,
-        nvram,
-        storage_analysis,
-        fonts,
-        shell_customization,
-        system_preferences,
-        kernel_params,
-        system_logs,
-        ioregistry,
-    ) = results
-
     # Track collection errors
     collection_errors: list[str] = []
     collector_names = [
@@ -162,29 +130,82 @@ async def collect_all() -> SystemReport:
         "ioregistry",
     ]
 
-    # Check for exceptions and replace with default values
-    # This ensures type safety and graceful degradation
+    # Define type-appropriate defaults for each collector
+    # Most are TypedDict (use {}), but some are lists or have special requirements
+    default_values: list[dict[str, object] | list[object]] = [
+        {},  # system_info: SystemInfo
+        {},  # hardware_info: HardwareInfo
+        {},  # disk_info: DiskInfo
+        [],  # top_processes: list[ProcessInfo]
+        {},  # startup: LaunchItems
+        [],  # login_items: list[str]
+        {},  # package_managers: PackageManagers
+        {},  # developer_tools: DeveloperToolsInfo
+        {"third_party_kexts": [], "system_extensions": []},  # kext_info: KernelExtensionsInfo
+        {},  # applications: ApplicationsInfo
+        {},  # environment: EnvironmentInfo
+        {},  # network: NetworkInfo
+        {},  # battery: BatteryInfo
+        {},  # cron: CronInfo
+        {},  # diagnostics: DiagnosticsInfo
+        {},  # security: SecurityInfo
+        {},  # cloud: CloudInfo
+        {},  # nvram: NVRAMInfo
+        {},  # storage_analysis: StorageAnalysis
+        {},  # fonts: FontInfo
+        {},  # shell_customization: ShellCustomization
+        {},  # system_preferences: SystemPreferences
+        {},  # kernel_params: KernelParameters
+        {},  # system_logs: SystemLogs
+        {},  # ioregistry: IORegistryInfo
+    ]
+
+    # Replace exceptions with type-appropriate defaults BEFORE unpacking
+    # This ensures that unpacked variables never contain Exception objects
+    # Mypy cannot infer the correct types after modification, so we use type: ignore
     for idx, result in enumerate(results):
         if isinstance(result, Exception):
             error_msg = f"{collector_names[idx]}: {type(result).__name__} - {result!s}"
             collection_errors.append(error_msg)
             utils.verbose_log(f"Collector failed: {error_msg}")
-            # Replace exception with empty dict as default
-            results[idx] = {}
+            # Replace exception with type-appropriate default
+            results[idx] = default_values[idx]  # type: ignore[assignment]
 
-    # Handle any exceptions by providing default values
-    if isinstance(kext_info, Exception):
-        from prose.schema import KernelExtensionsInfo
-
-        kext_info = KernelExtensionsInfo(third_party_kexts=[], system_extensions=[])
+    # Unpack results - all exceptions have been replaced with defaults
+    # Note: mypy cannot infer correct types from asyncio.gather(return_exceptions=True)
+    # All results are validated at runtime above and guaranteed to be correct types
+    (
+        system_info,
+        hardware_info,
+        disk_info,
+        top_processes,
+        startup,
+        login_items,
+        package_managers,
+        developer_tools,
+        kext_info,
+        applications,
+        environment,
+        network,
+        battery,
+        cron,
+        diagnostics,
+        security,
+        cloud,
+        nvram,
+        storage_analysis,
+        fonts,
+        shell_customization,
+        system_preferences,
+        kernel_params,
+        system_logs,
+        ioregistry,
+    ) = results
 
     # Collect opencore_patcher with dependency on kext_info
     # This must run after kexts are collected
-    # Cast needed: kext_info is guaranteed to be KernelExtensionsInfo from validation
-    if isinstance(kext_info, dict):
-        third_party_kexts = kext_info.get("third_party_kexts", [])
-    else:
-        third_party_kexts = []
+    # kext_info is guaranteed to be a dict (KernelExtensionsInfo) after exception handling
+    third_party_kexts = kext_info.get("third_party_kexts", [])  # type: ignore[union-attr]
     opencore_patcher = await asyncio.to_thread(
         collect_opencore_patcher,
         third_party_kexts,
