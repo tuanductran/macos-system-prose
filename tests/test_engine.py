@@ -193,7 +193,8 @@ def test_collect_all_exception_handling():
             # Verify collection_errors contains the failed collectors
             assert "collection_errors" in report
             errors = report["collection_errors"]
-            assert len(errors) == 4  # system_info, top_processes, login_items, kext_info
+            expected_failed = ["system_info", "top_processes", "login_items", "kext_info"]
+            assert len(errors) == len(expected_failed)
             assert any("system_info" in err for err in errors)
             assert any("top_processes" in err for err in errors)
             assert any("login_items" in err for err in errors)
@@ -202,6 +203,7 @@ def test_collect_all_exception_handling():
             # Verify type-appropriate defaults were used
             # system_info should be a dict (empty dict)
             assert isinstance(report["system"], dict)
+            assert report["system"] == {}
             assert not isinstance(report["system"], Exception)
 
             # top_processes should be a list (empty list)
