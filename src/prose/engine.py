@@ -171,9 +171,9 @@ async def collect_all() -> SystemReport:
             # Replace exception with type-appropriate default
             results[idx] = default_values[idx]  # type: ignore[assignment]
 
-    # Unpack results - all exceptions have been replaced with defaults
+    # Unpack results - all Exception instances have been replaced with defaults
     # Note: mypy cannot infer correct types from asyncio.gather(return_exceptions=True)
-    # All results are validated at runtime above and guaranteed to be correct types
+    # At this point we assume each collector returns the expected shape for SystemReport
     (
         system_info,
         hardware_info,
