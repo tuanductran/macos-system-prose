@@ -63,10 +63,14 @@ def generate_html_report(data: SystemReport) -> str:
     )
     mem_pressure = str(mem_pressure_level).title()
 
-    # Fix: Add type guard for disk_percent with proper type narrowing
-    disk_percent_value = disk.get("disk_percent") if isinstance(disk, dict) else None
-    if isinstance(disk_percent_value, (int, float, str)):
-        disk_percent = float(disk_percent_value)
+    # Calculate disk usage from total and free space
+    disk_total_gb = float(disk.get("disk_total_gb", 0))
+    disk_free_gb = float(disk.get("disk_free_gb", 0))
+    disk_used_gb = max(0.0, disk_total_gb - disk_free_gb)
+
+    # Calculate percentage and clamp to 0-100 range
+    if disk_total_gb > 0:
+        disk_percent = min(100.0, max(0.0, (disk_used_gb / disk_total_gb) * 100))
     else:
         disk_percent = 0.0
 
@@ -84,7 +88,13 @@ def generate_html_report(data: SystemReport) -> str:
         "d-flex justify-content-between align-items-end mb-5 border-bottom border-secondary pb-3"
     )
 
-    core_info = f"{hardware.get('cpu_cores', 0)} ({hardware.get('cpu_threads', 0)} threads)"
+    # Format CPU cores info (no cpu_threads in schema, only cpu_cores)
+    cpu_cores = hardware.get("cpu_cores")
+    core_info = "Unknown" if cpu_cores is None else f"{cpu_cores} cores"
+
+    # Format memory info
+    memory_gb = hardware.get("memory_gb")
+    memory_info = "Unknown" if memory_gb is None else f"{memory_gb} GB"
 
     def get_badge(status: bool) -> str:
         color = "success" if status else "danger"
@@ -165,10 +175,10 @@ def generate_html_report(data: SystemReport) -> str:
                             <i class="bi bi-cpu me-2"></i>Hardware
                         </div>
                         <div class="card-body">
-                            {format_row("CPU", str(hardware.get("cpu_model", "Unknown")))}
+                            {format_row("CPU", str(hardware.get("cpu", "Unknown")))}
                             {format_row("Cores", core_info)}
-                            {format_row("Memory", str(hardware.get("memory_total", "Unknown")))}
-                            {format_row("GPU", str(hardware.get("gpu_model", "Unknown")))}
+                            {format_row("Memory", memory_info)}
+                            {format_row("GPU", ", ".join(hardware.get("gpu", ["Unknown"])))}
                             {format_row("Pressure", mem_pressure)}
                         </div>
                     </div>
@@ -196,12 +206,12 @@ def generate_html_report(data: SystemReport) -> str:
                             <i class="bi bi-hdd me-2"></i>Storage
                         </div>
                         <div class="card-body">
-                            {format_row("Total Space", f"{disk.get('disk_total_gb', 0)} GB")}
-                            {format_row("Free Space", f"{disk.get('disk_free_gb', 0)} GB")}
-                            {format_row("Used Space", f"{disk.get('disk_used_gb', 0)} GB")}
+                            {format_row("Total Space", f"{disk_total_gb:.1f} GB")}
+                            {format_row("Free Space", f"{disk_free_gb:.1f} GB")}
+                            {format_row("Used Space", f"{disk_used_gb:.1f} GB")}
                             <div class="progress mt-3" style="height: 6px;">
                                 <div class="progress-bar bg-info" role="progressbar"
-                                     style="width: {disk_percent}%"></div>
+                                     style="width: {disk_percent:.1f}%"></div>
                             </div>
                         </div>
                     </div>

@@ -23,17 +23,6 @@ QUIET = False
 READ_ONLY_MODE = True
 
 
-# Timeout constants (in seconds) for different command types
-class Timeouts:
-    """Standard timeout values for system commands."""
-
-    FAST = 5  # Quick commands: version checks, simple queries
-    STANDARD = 15  # Default timeout for most commands
-    SLOW = 30  # Slower operations: package listings, network ops
-    VERY_SLOW = 60  # Very slow: cache operations, large file scans
-    EXTREME = 120  # Extreme cases: Library directory scan
-
-
 class Colors:
     """ANSI color codes for terminal output."""
 
@@ -273,8 +262,10 @@ async def async_get_json_output(cmd: list[str]) -> dict | list | None:
         if output:
             parsed = json.loads(output)
             return parsed  # type: ignore[no-any-return]
-    except (json.JSONDecodeError, Exception):
-        pass
+    except json.JSONDecodeError as e:
+        # Invalid JSON output from command - return None as per function contract
+        # This is the expected path for commands that output non-JSON or malformed JSON
+        verbose_log(f"JSON parsing failed for command {' '.join(cmd)}: {e}")
     return None
 
 
@@ -296,8 +287,10 @@ def get_json_output(cmd: list[str]) -> dict | list | None:
         if output:
             parsed = json.loads(output)
             return parsed  # type: ignore[no-any-return]
-    except (json.JSONDecodeError, Exception):
-        pass
+    except json.JSONDecodeError as e:
+        # Invalid JSON output from command - return None as per function contract
+        # This is the expected path for commands that output non-JSON or malformed JSON
+        verbose_log(f"JSON parsing failed for command {' '.join(cmd)}: {e}")
     return None
 
 
