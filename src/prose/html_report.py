@@ -84,7 +84,13 @@ def generate_html_report(data: SystemReport) -> str:
         "d-flex justify-content-between align-items-end mb-5 border-bottom border-secondary pb-3"
     )
 
-    core_info = f"{hardware.get('cpu_cores', 0)} ({hardware.get('cpu_threads', 0)} threads)"
+    # Format CPU cores info (no cpu_threads in schema, only cpu_cores)
+    cpu_cores = hardware.get('cpu_cores', 0)
+    core_info = f"{cpu_cores} cores" if cpu_cores else "Unknown"
+
+    # Format memory info
+    memory_gb = hardware.get('memory_gb')
+    memory_info = f"{memory_gb} GB" if memory_gb else "Unknown"
 
     def get_badge(status: bool) -> str:
         color = "success" if status else "danger"
@@ -165,10 +171,10 @@ def generate_html_report(data: SystemReport) -> str:
                             <i class="bi bi-cpu me-2"></i>Hardware
                         </div>
                         <div class="card-body">
-                            {format_row("CPU", str(hardware.get("cpu_model", "Unknown")))}
+                            {format_row("CPU", str(hardware.get("cpu", "Unknown")))}
                             {format_row("Cores", core_info)}
-                            {format_row("Memory", str(hardware.get("memory_total", "Unknown")))}
-                            {format_row("GPU", str(hardware.get("gpu_model", "Unknown")))}
+                            {format_row("Memory", memory_info)}
+                            {format_row("GPU", ", ".join(hardware.get("gpu", ["Unknown"])))}
                             {format_row("Pressure", mem_pressure)}
                         </div>
                     </div>

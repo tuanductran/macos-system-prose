@@ -77,10 +77,12 @@ class HardwareCard(Static):
     def render(self) -> str:
         """Render hardware information."""
         hardware = self.data.get("hardware", {})
-        cpu = hardware.get("cpu_model", "Unknown")
+        cpu = hardware.get("cpu", "Unknown")
         cores = hardware.get("cpu_cores", 0)
-        memory = hardware.get("memory_total", "Unknown")
-        gpu = hardware.get("gpu_vendor", "Unknown")
+        memory_gb = hardware.get("memory_gb")
+        memory = f"{memory_gb} GB" if memory_gb else "Unknown"
+        gpu_list = hardware.get("gpu", ["Unknown"])
+        gpu = ", ".join(gpu_list) if gpu_list else "Unknown"
 
         mem_pressure = hardware.get("memory_pressure", {})
         mem_level = mem_pressure.get("level", "Unknown")
