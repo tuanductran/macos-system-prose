@@ -225,4 +225,3 @@ def test_collect_all_exception_handling():
             assert not isinstance(report["kexts"], Exception)
 
     asyncio.run(run_test())
-
