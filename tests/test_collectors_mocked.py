@@ -108,11 +108,13 @@ class TestDeveloperCollectorMocked:
     @patch("prose.collectors.developer.which")
     @patch("prose.collectors.developer.os.path.exists")
     def test_collect_dev_tools(self, mock_exists, mock_which, mock_run):
+        import asyncio
+        
         mock_run.return_value = "v1.2.3"
         mock_which.return_value = "/path/to/tool"
         mock_exists.return_value = True
 
-        info = collect_dev_tools()
+        info = asyncio.run(collect_dev_tools())
         assert isinstance(info, dict)
         assert "languages" in info
         assert "docker" in info
