@@ -17,7 +17,6 @@ Technical documentation for the `macos-system-prose` project.
 
 - **[../README.md](../README.md)** (17 KB) - User documentation
 - **[../AGENTS.md](../AGENTS.md)** (33 KB) - AI agent instructions
-- **[../ROADMAP.md](../ROADMAP.md)** (6 KB) - Product roadmap
 - **[../LICENSE](../LICENSE)** - MIT License
 
 ---
