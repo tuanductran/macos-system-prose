@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import re
 
+from prose.constants import Timeouts
 from prose.schema import BrewService, NotInstalled, PackageManagers, PackageVersionInfo
-from prose.utils import Timeouts, get_json_output, log, run, verbose_log, which
+from prose.utils import get_json_output, log, run, verbose_log, which
 
 
 def homebrew_info() -> PackageVersionInfo | NotInstalled:

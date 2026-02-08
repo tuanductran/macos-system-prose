@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 
 from prose import utils
+from prose.constants import Timeouts
 from prose.datasets.smbios import is_legacy_mac
 from prose.iokit import get_boot_args, get_oclp_nvram_version, parse_amfi_boot_arg
 from prose.schema import (
@@ -22,7 +23,7 @@ from prose.schema import (
     SystemLogs,
     SystemPreferences,
 )
-from prose.utils import Timeouts, verbose_log
+from prose.utils import verbose_log
 
 
 def collect_storage_analysis() -> StorageAnalysis:
