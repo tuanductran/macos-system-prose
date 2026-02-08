@@ -266,7 +266,9 @@ class ProcessesTable(VerticalScroll):
         if isinstance(processes, list):
             try:
                 processes.sort(key=lambda x: x.get("cpu_percent", 0), reverse=True)
-            except Exception:
+            except (TypeError, AttributeError):
+                # Silently skip sorting if data is malformed
+                # (e.g., non-dict items or missing methods)
                 pass
 
         for proc in processes[:100]:  # Top 100 rows like htop
