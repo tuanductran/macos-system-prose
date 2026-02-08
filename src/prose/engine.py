@@ -370,12 +370,14 @@ async def async_main() -> int:
         version=f"macos-system-prose {__version__}",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Enable verbose logging output",
     )
     parser.add_argument(
-        "-q", "--quiet",
+        "-q",
+        "--quiet",
         action="store_true",
         help="Suppress all console output",
     )
@@ -385,7 +387,8 @@ async def async_main() -> int:
         help="Skip generating AI-optimized text prompt",
     )
     parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         default="macos_system_report.json",
         help="Output JSON file path (default: %(default)s)",
     )

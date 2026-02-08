@@ -36,9 +36,7 @@ def generate_html_report(data: SystemReport) -> str:
     has_npm = bool(npm_info.get("installed") if isinstance(npm_info, dict) else False)
 
     docker_info = dev_tools.get("docker")
-    has_docker = bool(
-        docker_info.get("installed") if isinstance(docker_info, dict) else False
-    )
+    has_docker = bool(docker_info.get("installed") if isinstance(docker_info, dict) else False)
 
     sip_enabled = bool(system.get("sip_enabled"))
     gk_enabled = bool(system.get("gatekeeper_enabled"))
@@ -147,10 +145,12 @@ def generate_html_report(data: SystemReport) -> str:
                         </div>
                         <div class="card-body">
                             {format_row("Model", str(system.get("model_name", "Unknown")))}
-                            {format_row(
-                                "Identifier",
-                                str(system.get("model_identifier", "Unknown")),
-                            )}
+                            {
+        format_row(
+            "Identifier",
+            str(system.get("model_identifier", "Unknown")),
+        )
+    }
                             {format_row("Serial", str(system.get("serial_number", "redacted")))}
                             {format_row("Uptime", str(system.get("uptime", "Unknown")))}
                             {format_row("Time Machine", get_badge(tm_enabled))}
@@ -196,9 +196,9 @@ def generate_html_report(data: SystemReport) -> str:
                             <i class="bi bi-hdd me-2"></i>Storage
                         </div>
                         <div class="card-body">
-                            {format_row('Total Space', f"{disk.get('disk_total_gb', 0)} GB")}
-                            {format_row('Free Space', f"{disk.get('disk_free_gb', 0)} GB")}
-                            {format_row('Used Space', f"{disk.get('disk_used_gb', 0)} GB")}
+                            {format_row("Total Space", f"{disk.get('disk_total_gb', 0)} GB")}
+                            {format_row("Free Space", f"{disk.get('disk_free_gb', 0)} GB")}
+                            {format_row("Used Space", f"{disk.get('disk_used_gb', 0)} GB")}
                             <div class="progress mt-3" style="height: 6px;">
                                 <div class="progress-bar bg-info" role="progressbar"
                                      style="width: {disk_percent}%"></div>

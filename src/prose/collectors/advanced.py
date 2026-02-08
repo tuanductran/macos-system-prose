@@ -40,9 +40,7 @@ def collect_storage_analysis() -> StorageAnalysis:
                 return 0.0
             # FIXED: Use list arguments directly - no shell interpretation
             # This prevents command injection even with malicious directory names
-            output = utils.run(
-                ["du", "-sk", str(path)], timeout=timeout, log_errors=False
-            )
+            output = utils.run(["du", "-sk", str(path)], timeout=timeout, log_errors=False)
             if output:
                 try:
                     # du -sk output: "1234567\t/path/to/dir"
