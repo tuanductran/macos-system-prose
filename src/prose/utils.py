@@ -276,9 +276,10 @@ async def async_get_json_output(cmd: list[str]) -> dict | list | None:
     except json.JSONDecodeError as e:
         # Invalid JSON output - return None as per function contract
         verbose_log(f"JSON parsing failed for command {' '.join(cmd)}: {e}")
-    except Exception as e:
-        # Command execution or other error - return None as per function contract
-        verbose_log(f"Error executing command {' '.join(cmd)}: {e}")
+    except (OSError, ValueError, TypeError) as e:
+        # Unexpected errors (async_run_command handles most errors internally)
+        # OSError: System-level failures, ValueError/TypeError: Data type issues
+        verbose_log(f"Unexpected error parsing JSON from {' '.join(cmd)}: {e}")
     return None
 
 
@@ -303,9 +304,10 @@ def get_json_output(cmd: list[str]) -> dict | list | None:
     except json.JSONDecodeError as e:
         # Invalid JSON output - return None as per function contract
         verbose_log(f"JSON parsing failed for command {' '.join(cmd)}: {e}")
-    except Exception as e:
-        # Command execution or other error - return None as per function contract
-        verbose_log(f"Error executing command {' '.join(cmd)}: {e}")
+    except (OSError, ValueError, TypeError) as e:
+        # Unexpected errors (run() handles most errors internally)
+        # OSError: System-level failures, ValueError/TypeError: Data type issues
+        verbose_log(f"Unexpected error parsing JSON from {' '.join(cmd)}: {e}")
     return None
 
 
