@@ -21,6 +21,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.request import Request, urlopen
 
+
 EVERYMAC_URL = (
     "https://everymac.com/systems/by_capability/mac-specs-by-machine-model-machine-id.html"
 )

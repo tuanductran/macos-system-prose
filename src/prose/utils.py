@@ -11,10 +11,27 @@ import json
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional, Union
+from typing import Callable
+
 
 VERBOSE = False
 QUIET = False
+
+# SECURITY: This tool is strictly read-only.
+# It must NEVER modify system settings, write to system files, or execute destructive commands.
+# All collectors must adhere to this principle.
+READ_ONLY_MODE = True
+
+
+# Timeout constants (in seconds) for different command types
+class Timeouts:
+    """Standard timeout values for system commands."""
+
+    FAST = 5  # Quick commands: version checks, simple queries
+    STANDARD = 15  # Default timeout for most commands
+    SLOW = 30  # Slower operations: package listings, network ops
+    VERY_SLOW = 60  # Very slow: cache operations, large file scans
+    EXTREME = 120  # Extreme cases: Library directory scan
 
 
 class Colors:
@@ -60,6 +77,51 @@ def verbose_log(msg: str) -> None:
         print(f"{Colors.DIM}  -> {msg}{Colors.ENDC}")
 
 
+def has_full_disk_access() -> bool:
+    """Check if the current process has Full Disk Access (FDA) permission.
+
+    Attempts to access a restricted directory that requires FDA.
+    On macOS 10.14+, many system directories require FDA to read.
+
+    Returns:
+        True if FDA is granted, False otherwise.
+    """
+    # Try to access TCC database which requires FDA
+    tcc_db = Path.home() / "Library/Application Support/com.apple.TCC/TCC.db"
+    try:
+        # Try to check if file is readable
+        with open(tcc_db, "rb") as f:
+            f.read(1)  # Try to read 1 byte
+        return True
+    except (PermissionError, FileNotFoundError, OSError):
+        return False
+
+
+def check_permission_and_warn(
+    permission_name: str, check_func: Callable[[], bool], required_for: str
+) -> bool:
+    """Check a permission and log a warning if not granted.
+
+    Args:
+        permission_name: Human-readable name of the permission.
+        check_func: Callable that returns True if permission is granted.
+        required_for: Description of what requires this permission.
+
+    Returns:
+        True if permission is granted, False otherwise.
+    """
+    has_permission = check_func()
+    if not has_permission:
+        log(
+            f"⚠️  {permission_name} not granted. {required_for} will be limited.",
+            level="warning",
+        )
+        verbose_log(
+            f"To grant {permission_name}: System Settings → Privacy & Security → {permission_name}"
+        )
+    return has_permission
+
+
 def run(
     cmd: list[str],
     description: str = "",
@@ -92,8 +154,7 @@ def run(
     try:
         result = subprocess.run(
             cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             timeout=timeout,
         )
@@ -161,8 +222,13 @@ async def async_run_command(
             try:
                 process.kill()
                 await process.wait()
-            except Exception:
+            except ProcessLookupError:
+                # Process already terminated - this is OK
                 pass
+            except OSError as e:
+                # Real error (e.g., permission denied) - should log
+                if log_errors:
+                    verbose_log(f"Error terminating process: {e}")
             if log_errors:
                 verbose_log(f"Command timed out: {' '.join(cmd)}")
             return ""
@@ -189,7 +255,7 @@ async def async_run_command(
         return ""
 
 
-async def async_get_json_output(cmd: list[str]) -> Optional[Union[dict, list]]:
+async def async_get_json_output(cmd: list[str]) -> dict | list | None:
     """Execute a command asynchronously and parse its JSON output.
 
     Args:
@@ -212,7 +278,7 @@ async def async_get_json_output(cmd: list[str]) -> Optional[Union[dict, list]]:
     return None
 
 
-def get_json_output(cmd: list[str]) -> Optional[Union[dict, list]]:
+def get_json_output(cmd: list[str]) -> dict | list | None:
     """Execute a command and parse its JSON output.
 
     Args:
@@ -235,7 +301,7 @@ def get_json_output(cmd: list[str]) -> Optional[Union[dict, list]]:
     return None
 
 
-def which(cmd: str) -> Optional[str]:
+def which(cmd: str) -> str | None:
     """Find the full path of a command, resolving symlinks.
 
     Args:
@@ -265,7 +331,7 @@ def get_version(cmd: list[str]) -> str:
         cmd: Command with version flag (e.g., ["node", "--version"]).
 
     Returns:
-        Version string or "Not Found" if command fails.
+        Version string or "Not installed" if command fails.
 
     Examples:
         >>> get_version(["node", "--version"])
@@ -275,9 +341,9 @@ def get_version(cmd: list[str]) -> str:
         # Version checks often fail if tool is not installed, so we suppress error logging
         out = run(cmd, timeout=3, log_errors=False)
         out = out.splitlines()[0] if out else ""
-        return out.strip() if out.strip() else "Not Found"
-    except Exception:
-        return "Not Found"
+        return out.strip() if out.strip() else "Not installed"
+    except (OSError, IndexError):
+        return "Not installed"
 
 
 def get_app_version(app_path: Path) -> str:
@@ -319,7 +385,7 @@ def get_app_version(app_path: Path) -> str:
                 return ver.strip()
 
         return ""
-    except Exception:
+    except (OSError, FileNotFoundError):
         return ""
 
 
@@ -346,7 +412,7 @@ def safe_glob(path_str: str, pattern: str) -> list[str]:
         return []
 
 
-def parse_edid(edid_bytes: bytes) -> dict[str, Optional[str]]:
+def parse_edid(edid_bytes: bytes) -> dict[str, str | None]:
     """Parse EDID (Extended Display Identification Data) to extract display information.
 
     EDID structure (simplified):
@@ -368,7 +434,7 @@ def parse_edid(edid_bytes: bytes) -> dict[str, Optional[str]]:
         >>> parse_edid(edid)
         {'manufacturer_id': 'APP', 'product_code': '0x9227', ...}
     """
-    result: dict[str, Optional[str]] = {
+    result: dict[str, str | None] = {
         "manufacturer_id": None,
         "product_code": None,
         "serial_number": None,

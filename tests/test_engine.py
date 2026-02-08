@@ -104,11 +104,18 @@ def test_collect_all_structure_old():
 
 def test_generate_ai_prompt_without_oclp():
     """Test AI prompt generation for standard macOS."""
-    data = {
-        "timestamp": 1738908295.123,
-        "system": {"sip_enabled": True},
-        "opencore_patcher": {"detected": False},
-    }
+    from typing import cast
+
+    from prose.schema import SystemReport
+
+    data = cast(
+        SystemReport,
+        {
+            "timestamp": 1738908295.123,
+            "system": {"sip_enabled": True},
+            "opencore_patcher": {"detected": False},
+        },
+    )
 
     prompt = generate_ai_prompt(data)
 
@@ -119,20 +126,27 @@ def test_generate_ai_prompt_without_oclp():
 
 def test_generate_ai_prompt_with_oclp():
     """Test AI prompt generation for OCLP-patched macOS."""
-    data = {
-        "timestamp": 1738908295.123,
-        "system": {"sip_enabled": False},
-        "opencore_patcher": {
-            "detected": True,
-            "version": "2.2.0",
-            "nvram_version": "2.2.0",
-            "unsupported_os_detected": True,
-            "loaded_kexts": ["Lilu", "WhateverGreen"],
-            "patched_frameworks": [],
-            "amfi_configuration": {"amfi_value": "0x80"},
-            "boot_args": "amfi=0x80",
+    from typing import cast
+
+    from prose.schema import SystemReport
+
+    data = cast(
+        SystemReport,
+        {
+            "timestamp": 1738908295.123,
+            "system": {"sip_enabled": False},
+            "opencore_patcher": {
+                "detected": True,
+                "version": "2.2.0",
+                "nvram_version": "2.2.0",
+                "unsupported_os_detected": True,
+                "loaded_kexts": ["Lilu", "WhateverGreen"],
+                "patched_frameworks": [],
+                "amfi_configuration": {"amfi_value": "0x80"},
+                "boot_args": "amfi=0x80",
+            },
         },
-    }
+    )
 
     prompt = generate_ai_prompt(data)
 

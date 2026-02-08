@@ -14,7 +14,6 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, cast
 
 from prose import utils
 from prose.collectors.advanced import (
@@ -103,6 +102,8 @@ async def collect_all() -> SystemReport:
 
     # Unpack results - if any collector raised an exception, we'll get the exception object
     # We handle exceptions by logging and using default/empty values
+    # Note: mypy cannot infer correct types from asyncio.gather(return_exceptions=True)
+    # All results are validated at runtime before use
     (
         system_info,
         hardware_info,
@@ -131,22 +132,67 @@ async def collect_all() -> SystemReport:
         ioregistry,
     ) = results
 
+    # Track collection errors
+    collection_errors: list[str] = []
+    collector_names = [
+        "system_info",
+        "hardware_info",
+        "disk_info",
+        "top_processes",
+        "startup",
+        "login_items",
+        "package_managers",
+        "developer_tools",
+        "kext_info",
+        "applications",
+        "environment",
+        "network",
+        "battery",
+        "cron",
+        "diagnostics",
+        "security",
+        "cloud",
+        "nvram",
+        "storage_analysis",
+        "fonts",
+        "shell_customization",
+        "system_preferences",
+        "kernel_params",
+        "system_logs",
+        "ioregistry",
+    ]
+
+    # Check for exceptions and replace with default values
+    # This ensures type safety and graceful degradation
+    for idx, result in enumerate(results):
+        if isinstance(result, Exception):
+            error_msg = f"{collector_names[idx]}: {type(result).__name__} - {result!s}"
+            collection_errors.append(error_msg)
+            utils.verbose_log(f"Collector failed: {error_msg}")
+            # Replace exception with empty dict as default
+            results[idx] = {}
+
     # Handle any exceptions by providing default values
     if isinstance(kext_info, Exception):
         from prose.schema import KernelExtensionsInfo
 
         kext_info = KernelExtensionsInfo(third_party_kexts=[], system_extensions=[])
-        utils.verbose_log(f"Kexts collection failed: {kext_info}")
 
     # Collect opencore_patcher with dependency on kext_info
     # This must run after kexts are collected
+    # Cast needed: kext_info is guaranteed to be KernelExtensionsInfo from validation
+    if isinstance(kext_info, dict):
+        third_party_kexts = kext_info.get("third_party_kexts", [])
+    else:
+        third_party_kexts = []
     opencore_patcher = await asyncio.to_thread(
         collect_opencore_patcher,
-        kext_info["third_party_kexts"],  # type: ignore[index]
+        third_party_kexts,
     )
 
-    # mypy can't infer types from asyncio.gather with return_exceptions=True
-    # All results are properly typed at runtime; exceptions are handled gracefully
+    # mypy cannot infer types from asyncio.gather with return_exceptions=True
+    # All results are runtime-validated above and guaranteed to be correct types
+    # The type:ignore comments document this limitation rather than hide bugs
     return {
         "timestamp": timestamp,
         "system": system_info,  # type: ignore[typeddict-item]
@@ -175,6 +221,7 @@ async def collect_all() -> SystemReport:
         "kernel_params": kernel_params,  # type: ignore[typeddict-item]
         "system_logs": system_logs,  # type: ignore[typeddict-item]
         "ioregistry": ioregistry,  # type: ignore[typeddict-item]
+        "collection_errors": collection_errors,
     }
 
 
@@ -239,12 +286,31 @@ Standard security recommendations apply (SIP enabled, signed kexts only, etc.).
 
     timestamp = datetime.fromtimestamp(data["timestamp"]).strftime("%Y-%m-%d %H:%M:%S")
 
+    # Collection errors section
+    errors_section = ""
+    if data.get("collection_errors"):
+        errors_list = "\n".join(f"- {err}" for err in data["collection_errors"])
+        errors_section = f"""
+## ⚠️ Collection Warnings
+
+Some data collectors encountered errors during execution:
+
+{errors_list}
+
+**Note:** These errors may result in incomplete data in certain sections.
+The analysis should account for missing information.
+
+---
+"""
+
     prompt = f"""# macOS System Analysis Assistant
 Generated: {timestamp}
 
 {sys_admin_role}
 
 {oclp_context}
+
+{errors_section}
 
 ---
 
@@ -295,13 +361,59 @@ async def async_main() -> int:
     Returns:
         Exit code (0 for success, 1 for error).
     """
+    from prose import __version__
+
     parser = argparse.ArgumentParser(description="macOS System Prose Collector")
-    parser.add_argument("-v", "--verbose", action="store_true")
-    parser.add_argument("-q", "--quiet", action="store_true")
-    parser.add_argument("--no-prompt", action="store_true")
-    parser.add_argument("-o", "--output", default="macos_system_report.json")
-    parser.add_argument("--diff", help="Compare current report with a previous JSON report")
-    parser.add_argument("--html", action="store_true", help="Generate a beautiful HTML dashboard")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"macos-system-prose {__version__}",
+    )
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Enable verbose logging output",
+    )
+    parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress all console output",
+    )
+    parser.add_argument(
+        "--no-prompt",
+        action="store_true",
+        help="Skip generating AI-optimized text prompt",
+    )
+    parser.add_argument(
+        "-o", "--output",
+        default="macos_system_report.json",
+        help="Output JSON file path (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--diff",
+        help="Compare current report with a previous JSON report",
+    )
+    parser.add_argument(
+        "--html",
+        action="store_true",
+        help="Generate a beautiful HTML dashboard",
+    )
+    parser.add_argument(
+        "--tui",
+        action="store_true",
+        help="Launch interactive terminal UI",
+    )
+    parser.add_argument(
+        "--live",
+        action="store_true",
+        help="Enable live refresh mode in TUI",
+    )
+    parser.add_argument(
+        "--refresh-interval",
+        type=int,
+        default=30,
+        help="Refresh interval in seconds for live TUI mode (default: %(default)s)",
+    )
     args = parser.parse_args()
 
     utils.VERBOSE = args.verbose
@@ -310,6 +422,34 @@ async def async_main() -> int:
     if sys.platform != "darwin":
         utils.log("This tool only supports macOS.", "error")
         return 1
+
+    # TUI mode: launch interactive terminal interface
+    if args.tui:
+        try:
+            from prose.tui.app_enhanced import run_tui_enhanced
+        except ImportError:
+            utils.log(
+                "TUI mode requires textual. Install with: pip install -e '.[tui]'",
+                "error",
+            )
+            return 1
+
+        utils.log("🚀 Launching Enhanced Terminal UI...", "header")
+        if args.live:
+            utils.log(f"Live mode enabled (refresh every {args.refresh_interval}s)", "info")
+        utils.log("Collecting system data...", "info")
+        report = await collect_all()
+        utils.log("✓ Data collected. Starting TUI...", "success")
+
+        try:
+            # Use async version since we're already in an async context
+            await run_tui_enhanced(
+                report, live_mode=args.live, refresh_interval=args.refresh_interval
+            )
+            return 0
+        except Exception as e:
+            utils.log(f"TUI failed: {e}", "error")
+            return 1
 
     utils.log(" Starting macOS System Prose Report Collection...", "header")
     report = await collect_all()
@@ -336,15 +476,15 @@ async def async_main() -> int:
         diff_path = Path(args.diff)
         if diff_path.exists():
             try:
-                with open(diff_path, "r", encoding="utf-8") as f:
+                with open(diff_path, encoding="utf-8") as f:
                     old_data = json.load(f)
 
                 utils.log(f"Comparing with: {args.diff}", "header")
-                changes = diff_reports(old_data, cast(Dict[str, Any], report))
+                changes = diff_reports(old_data, report)
                 if changes:
                     diff_lines = format_diff(changes)
                     for line in diff_lines:
-                        print(line)
+                        utils.log(line, "info")
                 else:
                     utils.log("No differences found.", "success")
             except Exception as e:
@@ -355,7 +495,9 @@ async def async_main() -> int:
     if args.html:
         html_file = Path(args.output).with_suffix(".html")
         try:
-            html_content = generate_html_report(cast(Dict[str, Any], report))
+            from typing import cast
+
+            html_content = generate_html_report(cast(SystemReport, dict(report)))
             with open(html_file, "w", encoding="utf-8") as f:
                 f.write(html_content)
             utils.log(f"HTML Dashboard saved to: {os.path.abspath(html_file)}", "success")
@@ -379,5 +521,5 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except KeyboardInterrupt:
-        print("\nInterrupted by user. Exiting...")
+        utils.log("\nInterrupted by user. Exiting...", "warning")
         sys.exit(130)

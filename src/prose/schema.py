@@ -6,7 +6,7 @@ to ensure type safety and clear data contracts.
 
 from __future__ import annotations
 
-from typing import Literal, Optional, TypedDict, Union
+from typing import Literal, TypedDict
 
 
 class NotInstalled(TypedDict):
@@ -15,8 +15,8 @@ class NotInstalled(TypedDict):
 
 class TimeMachineInfo(TypedDict):
     enabled: bool
-    last_backup: Optional[str]
-    destination: Optional[str]
+    last_backup: str | None
+    destination: str | None
     auto_backup: bool
 
 
@@ -26,10 +26,10 @@ class SystemInfo(TypedDict):
     macos_name: str
     model_name: str
     model_identifier: str
-    marketing_name: Optional[str]  # SMBIOS: "MacBook Air (13-inch, Mid 2013)"
-    board_id: Optional[str]  # SMBIOS: "Mac-7DF21CB3ED6977E5"
-    cpu_generation: Optional[str]  # SMBIOS: "Haswell"
-    max_os_supported: Optional[str]  # SMBIOS: "Big Sur"
+    marketing_name: str | None  # SMBIOS: "MacBook Air (13-inch, Mid 2013)"
+    board_id: str | None  # SMBIOS: "Mac-7DF21CB3ED6977E5"
+    cpu_generation: str | None  # SMBIOS: "Haswell"
+    max_os_supported: str | None  # SMBIOS: "Big Sur"
     kernel: str
     architecture: str
     uptime: str
@@ -47,10 +47,10 @@ class DisplayInfo(TypedDict):
     refresh_rate: str
     color_depth: str
     external_displays: int
-    edid_manufacturer: Optional[str]
-    edid_product_code: Optional[str]
-    edid_serial: Optional[str]
-    connector_type: Optional[str]
+    edid_manufacturer: str | None
+    edid_product_code: str | None
+    edid_serial: str | None
+    connector_type: str | None
 
 
 class MemoryPressure(TypedDict):
@@ -66,7 +66,7 @@ class MemoryPressure(TypedDict):
 class HardwareInfo(TypedDict):
     cpu: str
     cpu_cores: int
-    memory_gb: Optional[float]
+    memory_gb: float | None
     thermal_pressure: list[str]
     gpu: list[str]
     displays: list[DisplayInfo]
@@ -77,30 +77,30 @@ class DiskHealthInfo(TypedDict):
     disk_name: str
     disk_type: str
     smart_status: str
-    health_percentage: Optional[int]
+    health_percentage: int | None
 
 
 class PCIeDevice(TypedDict):
     name: str
-    vendor_id: Optional[str]
-    device_id: Optional[str]
-    class_code: Optional[str]
-    pci_address: Optional[str]
+    vendor_id: str | None
+    device_id: str | None
+    class_code: str | None
+    pci_address: str | None
 
 
 class USBDevice(TypedDict):
     name: str
-    vendor_id: Optional[str]
-    product_id: Optional[str]
-    location_id: Optional[str]
-    speed: Optional[str]
+    vendor_id: str | None
+    product_id: str | None
+    location_id: str | None
+    speed: str | None
 
 
 class AudioCodec(TypedDict):
     name: str
-    codec_id: Optional[str]
-    layout_id: Optional[int]
-    vendor: Optional[str]
+    codec_id: str | None
+    layout_id: int | None
+    vendor: str | None
 
 
 class IORegistryInfo(TypedDict):
@@ -152,29 +152,29 @@ class PackageVersionInfo(TypedDict):
     installed: Literal[True]
     version: str
     bin_path: str
-    globals: Optional[list[str]]
-    prefix: Optional[str]
-    formula: Optional[list[str]]
-    casks: Optional[list[str]]
-    active_ports: Optional[list[str]]
-    packages: Optional[list[str]]
+    globals: list[str] | None
+    prefix: str | None
+    formula: list[str] | None
+    casks: list[str] | None
+    active_ports: list[str] | None
+    packages: list[str] | None
 
 
 class BrewService(TypedDict):
     name: str
     status: str  # started, stopped, error
-    user: Optional[str]
-    file: Optional[str]
+    user: str | None
+    file: str | None
 
 
 class PackageManagers(TypedDict):
-    homebrew: Union[PackageVersionInfo, NotInstalled]
-    macports: Union[PackageVersionInfo, NotInstalled]
-    pipx: Union[PackageVersionInfo, NotInstalled]
-    npm: Union[PackageVersionInfo, NotInstalled]
-    yarn: Union[PackageVersionInfo, NotInstalled]
-    pnpm: Union[PackageVersionInfo, NotInstalled]
-    bun: Union[PackageVersionInfo, NotInstalled]
+    homebrew: PackageVersionInfo | NotInstalled
+    macports: PackageVersionInfo | NotInstalled
+    pipx: PackageVersionInfo | NotInstalled
+    npm: PackageVersionInfo | NotInstalled
+    yarn: PackageVersionInfo | NotInstalled
+    pnpm: PackageVersionInfo | NotInstalled
+    bun: PackageVersionInfo | NotInstalled
     homebrew_services: list[BrewService]
 
 
@@ -185,13 +185,13 @@ class ApplicationsInfo(TypedDict):
 
 class LaunchdService(TypedDict):
     label: str
-    pid: Optional[int]
+    pid: int | None
     status: str
-    last_exit_code: Optional[int]
+    last_exit_code: int | None
 
 
 class EnvironmentInfo(TypedDict):
-    shell: Optional[str]
+    shell: str | None
     python_executable: str
     python_version: str
     path_entries: list[str]
@@ -209,7 +209,7 @@ class NetworkInfo(TypedDict):
     subnet_mask: str
     mac_address: str
     dns_servers: list[str]
-    wifi_ssid: Optional[str]
+    wifi_ssid: str | None
     firewall_status: str
     local_interfaces: list[dict[str, str]]
     vpn_status: bool
@@ -219,10 +219,10 @@ class NetworkInfo(TypedDict):
 
 class BatteryInfo(TypedDict):
     present: bool
-    percentage: Optional[str]
-    cycle_count: Optional[int]
-    condition: Optional[str]
-    power_source: Optional[str]
+    percentage: str | None
+    cycle_count: int | None
+    condition: str | None
+    power_source: str | None
 
 
 class CronInfo(TypedDict):
@@ -262,10 +262,10 @@ class DockerInfo(TypedDict):
 
 
 class GitConfig(TypedDict):
-    user_name: Optional[str]
-    user_email: Optional[str]
-    core_editor: Optional[str]
-    credential_helper: Optional[str]
+    user_name: str | None
+    user_email: str | None
+    core_editor: str | None
+    credential_helper: str | None
     aliases: dict[str, str]
     other_settings: dict[str, str]
 
@@ -316,14 +316,14 @@ class CodeSigningInfo(TypedDict):
     identifier: str
     authority: str
     valid: bool
-    team_id: Optional[str]
+    team_id: str | None
 
 
 class CloudSyncInfo(TypedDict):
     icloud_enabled: bool
     icloud_status: str
     drive_enabled: bool
-    storage_used: Optional[str]
+    storage_used: str | None
 
 
 class SecurityInfo(TypedDict):
@@ -343,10 +343,10 @@ class NVRAMInfo(TypedDict):
     boot_args: str  # kernel boot arguments
     csr_active_config: str  # System Integrity Protection config (hex)
     sip_disabled: bool  # SIP disabled via csr-active-config
-    oclp_version: Optional[str]  # OpenCore Patcher version from NVRAM
-    oclp_settings: Optional[str]  # OCLP-Settings bitmask
-    secure_boot_model: Optional[str]  # SecureBootModel for Apple Silicon
-    hardware_model: Optional[str]  # HardwareModel identifier
+    oclp_version: str | None  # OpenCore Patcher version from NVRAM
+    oclp_settings: str | None  # OCLP-Settings bitmask
+    secure_boot_model: str | None  # SecureBootModel for Apple Silicon
+    hardware_model: str | None  # HardwareModel identifier
     nvram_variables_count: int  # Total NVRAM variable count
 
 
@@ -376,7 +376,7 @@ class ShellCustomization(TypedDict):
 class AMFIConfig(TypedDict):
     """AMFI (AppleMobileFileIntegrity) configuration."""
 
-    amfi_value: Optional[str]
+    amfi_value: str | None
     allow_task_for_pid: bool
     allow_invalid_signature: bool
     lv_enforce_third_party: bool
@@ -384,19 +384,19 @@ class AMFIConfig(TypedDict):
 
 class OpenCorePatcherInfo(TypedDict):
     detected: bool
-    version: Optional[str]
-    nvram_version: Optional[str]  # From NVRAM OCLP-Version
+    version: str | None
+    nvram_version: str | None  # From NVRAM OCLP-Version
     unsupported_os_detected: bool
     loaded_kexts: list[str]
     patched_frameworks: list[str]
-    amfi_configuration: Optional[AMFIConfig]
-    boot_args: Optional[str]
+    amfi_configuration: AMFIConfig | None
+    boot_args: str | None
 
 
 class SystemPreferences(TypedDict):
-    trackpad_speed: Optional[float]
-    key_repeat_rate: Optional[int]
-    mouse_speed: Optional[float]
+    trackpad_speed: float | None
+    key_repeat_rate: int | None
+    mouse_speed: float | None
     scroll_direction_natural: bool
 
 
@@ -440,3 +440,4 @@ class SystemReport(TypedDict):
     kernel_params: KernelParameters
     system_logs: SystemLogs
     ioregistry: IORegistryInfo  # Phase 3: IORegistry hardware detection
+    collection_errors: list[str]  # Track any errors during data collection

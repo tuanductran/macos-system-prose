@@ -1,246 +1,249 @@
-"""Module for generating a beautiful HTML report from a SystemReport."""
+"""Module for generating a beautiful HTML report from a SystemReport using Bootstrap 5."""
 
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict
+
+from prose.schema import SystemReport
 
 
-def generate_html_report(data: Dict[str, Any]) -> str:
-    """Generate a premium, dark-themed HTML report for the system data."""
-    timestamp = datetime.fromtimestamp(data.get("timestamp", 0)).strftime("%Y-%m-%d %H:%M:%S")
-    system = data.get("system", {})
-    hardware = data.get("hardware", {})
+def generate_html_report(data: SystemReport) -> str:
+    """Generate a premium, dark-themed HTML report using Bootstrap 5.
 
-    # Status checks for cleaner template
-    pkg_mgrs = data.get("package_managers", {})
-    dev_tools = data.get("developer_tools", {})
+    Args:
+        data: System report with proper TypedDict structure
 
-    has_homebrew = pkg_mgrs.get("homebrew", {}).get("installed")
-    has_npm = pkg_mgrs.get("npm", {}).get("installed")
-    has_docker = dev_tools.get("docker", {}).get("installed")
-
-    sip_status = "Enabled" if system.get("sip_enabled") else "Disabled"
-    gatekeeper_status = "Enabled" if system.get("gatekeeper_enabled") else "Disabled"
-    filevault_status = "Enabled" if system.get("filevault_enabled") else "Disabled"
-
-    # Modern CSS with glassmorphism and animated gradients
-    css = """
-    :root {
-        --bg: #0a0a0c;
-        --card-bg: rgba(30, 30, 35, 0.7);
-        --accent: #4a9eff;
-        --text: #e0e0e0;
-        --text-dim: #a0a0a0;
-        --success: #43d39e;
-        --warning: #ffbe0b;
-        --error: #ff5f5f;
-    }
-
-    body {
-        background-color: var(--bg);
-        color: var(--text);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        margin: 0;
-        padding: 40px;
-        line-height: 1.6;
-    }
-
-    .container {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
-    header {
-        margin-bottom: 40px;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-        padding-bottom: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-    }
-
-    h1 {
-        margin: 0;
-        font-size: 2.5rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #fff 0%, #4a9eff 100%);
-        background-clip: text;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    .timestamp { color: var(--text-dim); font-size: 0.9rem; }
-
-    .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: 20px;
-    }
-
-    .card {
-        background: var(--card-bg);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.05);
-        border-radius: 16px;
-        padding: 24px;
-        transition: transform 0.2s ease, border-color 0.2s ease;
-    }
-
-    .card:hover {
-        transform: translateY(-4px);
-        border-color: rgba(74, 158, 255, 0.3);
-    }
-
-    h2 {
-        margin-top: 0;
-        font-size: 1.2rem;
-        color: var(--accent);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .info-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 8px;
-        font-size: 0.95rem;
-    }
-
-    .label { color: var(--text-dim); }
-    .value { font-weight: 500; text-align: right; }
-
-    .footer {
-        margin-top: 60px;
-        text-align: center;
-        color: var(--text-dim);
-        font-size: 0.8rem;
-    }
-
-    .badge {
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        background: rgba(255,255,255,0.1);
-    }
-
-    .badge-success { background: rgba(67, 211, 158, 0.15); color: var(--success); }
-    .badge-warning { background: rgba(255, 190, 11, 0.15); color: var(--warning); }
-    .badge-error { background: rgba(255, 95, 95, 0.15); color: var(--error); }
+    Returns:
+        HTML string with Bootstrap 5 dark theme
     """
+    timestamp = datetime.fromtimestamp(data.get("timestamp", 0.0)).strftime("%Y-%m-%d %H:%M:%S")
+    system = data.get("system") or {}
+    hardware = data.get("hardware") or {}
+    network = data.get("network") or {}
+    disk = data.get("disk") or {}
 
-    def format_dict(d: Dict[str, Any]) -> str:
-        rows = ""
-        for k, v in d.items():
-            if isinstance(v, (dict, list)):
-                continue
-            label = k.replace("_", " ").title()
-            val = str(v)
-            if v is True:
-                val = '<span class="badge badge-success">Enabled</span>'
-            elif v is False:
-                val = '<span class="badge badge-error">Disabled</span>'
-            rows += f'<div class="info-row"><span class="label">{label}</span><span class="value">{val}</span></div>'  # noqa: E501
-        return rows
+    # Status checks
+    pkg_mgrs = data.get("package_managers") or {}
+    dev_tools = data.get("developer_tools") or {}
+
+    # Type-safe nested extractions
+    homebrew_info = pkg_mgrs.get("homebrew")
+    has_homebrew = bool(
+        homebrew_info.get("installed") if isinstance(homebrew_info, dict) else False
+    )
+
+    npm_info = pkg_mgrs.get("npm")
+    has_npm = bool(npm_info.get("installed") if isinstance(npm_info, dict) else False)
+
+    docker_info = dev_tools.get("docker")
+    has_docker = bool(
+        docker_info.get("installed") if isinstance(docker_info, dict) else False
+    )
+
+    sip_enabled = bool(system.get("sip_enabled"))
+    gk_enabled = bool(system.get("gatekeeper_enabled"))
+    fv_enabled = bool(system.get("filevault_enabled"))
+
+    # Extract nested values with type checking
+    time_machine = system.get("time_machine")
+    tm_enabled = bool(
+        time_machine.get("enabled", False) if isinstance(time_machine, dict) else False
+    )
+
+    fw_enabled = bool(network.get("firewall_enabled", False))
+
+    git_info = dev_tools.get("git")
+    git_user = str(
+        git_info.get("user_name", "Unknown") if isinstance(git_info, dict) else "Unknown"
+    )
+
+    mem_pressure_data = hardware.get("memory_pressure")
+    mem_pressure_level = (
+        mem_pressure_data.get("level", "normal")
+        if isinstance(mem_pressure_data, dict)
+        else "normal"
+    )
+    mem_pressure = str(mem_pressure_level).title()
+
+    # Fix: Add type guard for disk_percent with proper type narrowing
+    disk_percent_value = disk.get("disk_percent") if isinstance(disk, dict) else None
+    if isinstance(disk_percent_value, (int, float, str)):
+        disk_percent = float(disk_percent_value)
+    else:
+        disk_percent = 0.0
+
+    # Static resources
+    bootstrap_css = (
+        '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" '
+        'rel="stylesheet">'
+    )
+    bootstrap_icons = (
+        '<link rel="stylesheet" '
+        'href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">'
+    )
+
+    header_class = (
+        "d-flex justify-content-between align-items-end mb-5 border-bottom border-secondary pb-3"
+    )
+
+    core_info = f"{hardware.get('cpu_cores', 0)} ({hardware.get('cpu_threads', 0)} threads)"
+
+    def get_badge(status: bool) -> str:
+        color = "success" if status else "danger"
+        text = "Enabled" if status else "Disabled"
+        return f'<span class="badge bg-{color}">{text}</span>'
+
+    def get_check(status: bool) -> str:
+        color = "success" if status else "secondary"
+        icon = "✓" if status else "✗"
+        return f'<span class="badge bg-{color} rounded-pill">{icon}</span>'
+
+    def format_row(label: str, value: str | int | float | bool | None) -> str:
+        return f"""
+        <div class="d-flex justify-content-between mb-2 border-bottom border-secondary-subtle pb-1">
+            <span class="text-secondary">{label}</span>
+            <span class="fw-medium text-end">{value}</span>
+        </div>
+        """
 
     html = f"""
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="en" data-bs-theme="dark">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>macOS System Report - {system.get("model_name", "Mac")}</title>
-        <style>{css}</style>
+        {bootstrap_css}
+        {bootstrap_icons}
+        <style>
+            body {{ background-color: #0d1117; }}
+            .card {{ background-color: #161b22; border-color: #30363d; }}
+            .card-header {{ background-color: #21262d; border-bottom-color: #30363d; }}
+            .text-accent {{ color: #58a6ff; }}
+        </style>
     </head>
-    <body>
+    <body class="py-5">
         <div class="container">
-            <header>
+            <!-- Header -->
+            <header class="{header_class}">
                 <div>
-                    <h1>macOS System Prose</h1>
-                    <div class="timestamp">Generated on {timestamp}</div>
+                    <h1 class="display-5 fw-bold text-accent mb-0">macOS System Prose</h1>
+                    <div class="text-secondary">Generated on {timestamp}</div>
                 </div>
-                <div style="text-align: right">
-                    <div style="font-weight: bold">{system.get("macos_name")}</div>
-                    <div class="label">
+                <div class="text-end">
+                    <h2 class="h4 mb-0">{system.get("macos_name", "macOS")}</h2>
+                    <div class="text-secondary">
                         {system.get("macos_version")} ({system.get("architecture")})
                     </div>
                 </div>
             </header>
 
-            <div class="grid">
-                <div class="card">
-                    <h2> System</h2>
-                    {format_dict(system)}
-                </div>
-
-                <div class="card">
-                    <h2>⚙️ Hardware</h2>
-                    {format_dict(hardware)}
-                    <div class="info-row">
-                        <span class="label">Memory Pressure</span>
-                        <span class="value">
-                            {hardware.get("memory_pressure", {}).get("level", "Unknown").title()}
-                        </span>
+            <div class="row g-4">
+                <!-- System Card -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header fw-bold text-accent">
+                            <i class="bi bi-apple me-2"></i>System
+                        </div>
+                        <div class="card-body">
+                            {format_row("Model", str(system.get("model_name", "Unknown")))}
+                            {format_row(
+                                "Identifier",
+                                str(system.get("model_identifier", "Unknown")),
+                            )}
+                            {format_row("Serial", str(system.get("serial_number", "redacted")))}
+                            {format_row("Uptime", str(system.get("uptime", "Unknown")))}
+                            {format_row("Time Machine", get_badge(tm_enabled))}
+                        </div>
                     </div>
                 </div>
 
-                <div class="card">
-                    <h2>💾 Disk</h2>
-                    <div class="info-row">
-                        <span class="label">Total</span>
-                        <span class="value">{data.get("disk", {}).get("disk_total_gb")} GB</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Free</span>
-                        <span class="value">{data.get("disk", {}).get("disk_free_gb")} GB</span>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h2>🌐 Network</h2>
-                    {format_dict(data.get("network", {}))}
-                </div>
-
-
-                <div class="card">
-                    <h2>📦 Management</h2>
-                    <div class="info-row">
-                        <span class="label">Homebrew</span>
-                        <span class="value">{"✓" if has_homebrew else "✗"}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">NPM</span>
-                        <span class="value">{"✓" if has_npm else "✗"}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Docker</span>
-                        <span class="value">{"✓" if has_docker else "✗"}</span>
+                <!-- Hardware Card -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header fw-bold text-accent">
+                            <i class="bi bi-cpu me-2"></i>Hardware
+                        </div>
+                        <div class="card-body">
+                            {format_row("CPU", str(hardware.get("cpu_model", "Unknown")))}
+                            {format_row("Cores", core_info)}
+                            {format_row("Memory", str(hardware.get("memory_total", "Unknown")))}
+                            {format_row("GPU", str(hardware.get("gpu_model", "Unknown")))}
+                            {format_row("Pressure", mem_pressure)}
+                        </div>
                     </div>
                 </div>
 
+                <!-- Security Card -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header fw-bold text-accent">
+                            <i class="bi bi-shield-lock me-2"></i>Security
+                        </div>
+                        <div class="card-body">
+                            {format_row("SIP Integrity", get_badge(sip_enabled))}
+                            {format_row("Gatekeeper", get_badge(gk_enabled))}
+                            {format_row("FileVault", get_badge(fv_enabled))}
+                            {format_row("Secure Boot", str(system.get("secure_boot", "Unknown")))}
+                        </div>
+                    </div>
+                </div>
 
-                <div class="card">
-                    <h2>🛡️ Security</h2>
-                    <div class="info-row">
-                        <span class="label">SIP</span>
-                        <span class="value">{sip_status}</span>
+                <!-- Disk Card -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header fw-bold text-accent">
+                            <i class="bi bi-hdd me-2"></i>Storage
+                        </div>
+                        <div class="card-body">
+                            {format_row('Total Space', f"{disk.get('disk_total_gb', 0)} GB")}
+                            {format_row('Free Space', f"{disk.get('disk_free_gb', 0)} GB")}
+                            {format_row('Used Space', f"{disk.get('disk_used_gb', 0)} GB")}
+                            <div class="progress mt-3" style="height: 6px;">
+                                <div class="progress-bar bg-info" role="progressbar"
+                                     style="width: {disk_percent}%"></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="info-row">
-                        <span class="label">Gatekeeper</span>
-                        <span class="value">{gatekeeper_status}</span>
+                </div>
+
+                <!-- Network Card -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header fw-bold text-accent">
+                            <i class="bi bi-wifi me-2"></i>Network
+                        </div>
+                        <div class="card-body">
+                            {format_row("Public IP", str(network.get("public_ip", "Unknown")))}
+                            {format_row("Local IP", str(network.get("local_ip", "Unknown")))}
+                            {format_row("Gateway", str(network.get("gateway", "Unknown")))}
+                            {format_row("Firewall", get_badge(fw_enabled))}
+                        </div>
                     </div>
-                    <div class="info-row">
-                        <span class="label">FileVault</span>
-                        <span class="value">{filevault_status}</span>
+                </div>
+
+                <!-- Dev Tools Card -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header fw-bold text-accent">
+                            <i class="bi bi-code-slash me-2"></i>Developer
+                        </div>
+                        <div class="card-body">
+                            {format_row("Homebrew", get_check(has_homebrew))}
+                            {format_row("Node.js / NPM", get_check(has_npm))}
+                            {format_row("Docker", get_check(has_docker))}
+                            {format_row("Git User", git_user)}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="footer">
-                Built with <strong>macOS System Prose</strong> &bull; Open Source MIT License
-            </div>
+            <footer class="text-center text-secondary mt-5 small">
+                <p>Built with <strong>macOS System Prose</strong> &bull; Open Source MIT License</p>
+            </footer>
         </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     </body>
     </html>
     """

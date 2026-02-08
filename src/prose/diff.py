@@ -6,15 +6,38 @@ useful for tracking changes over time or across different systems.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, cast
+
+# NOTE: Any is acceptable here for recursive dictionary comparison.
+# The diff function needs to handle arbitrary nested structures at runtime,
+# making static typing impractical. This is ONE OF ONLY TWO places in the
+# codebase where Any is used (the other is conftest.py for test fixtures).
+from prose.schema import SystemReport
 
 
-def diff_reports(old: Dict[str, Any], new: Dict[str, Any], prefix: str = "") -> Dict[str, Any]:
-    """Recursively compare two dictionaries and return differences."""
-    changes = {}
+def diff_reports(
+    old: SystemReport,
+    new: SystemReport,
+    prefix: str = "",
+) -> dict[str, Any]:
+    """Recursively compare two dictionaries and return differences.
+
+    Args:
+        old: Old report to compare
+        new: New report to compare
+        prefix: Internal prefix for nested keys (default: "")
+
+    Returns:
+        Dictionary containing changes with status and values
+    """
+    changes: dict[str, Any] = {}
+
+    # Cast TypedDict to regular dict for dynamic key access
+    old_dict = cast(dict[str, Any], old)
+    new_dict = cast(dict[str, Any], new)
 
     # All keys from both
-    all_keys = set(old.keys()) | set(new.keys())
+    all_keys = set(old_dict.keys()) | set(new_dict.keys())
 
     for key in all_keys:
         if key == "timestamp":
@@ -22,25 +45,27 @@ def diff_reports(old: Dict[str, Any], new: Dict[str, Any], prefix: str = "") -> 
 
         full_key = f"{prefix}.{key}" if prefix else key
 
-        if key not in old:
-            changes[key] = {"status": "added", "new_value": new[key]}
-        elif key not in new:
-            changes[key] = {"status": "removed", "old_value": old[key]}
+        if key not in old_dict:
+            changes[key] = {"status": "added", "new_value": new_dict[key]}
+        elif key not in new_dict:
+            changes[key] = {"status": "removed", "old_value": old_dict[key]}
         else:
-            old_val = old[key]
-            new_val = new[key]
+            old_val = old_dict[key]
+            new_val = new_dict[key]
 
             if old_val == new_val:
                 continue
 
             if isinstance(old_val, dict) and isinstance(new_val, dict):
-                sub_changes = diff_reports(old_val, new_val, full_key)
+                sub_changes = diff_reports(
+                    cast(SystemReport, old_val), cast(SystemReport, new_val), full_key
+                )
                 if sub_changes:
                     changes[key] = sub_changes
             elif isinstance(old_val, list) and isinstance(new_val, list):
                 # Simple list compare for now (added/removed items)
-                old_set = set(str(i) for i in old_val)
-                new_set = set(str(i) for i in new_val)
+                old_set = {str(i) for i in old_val}
+                new_set = {str(i) for i in new_val}
 
                 added = list(new_set - old_set)
                 removed = list(old_set - new_set)
@@ -53,29 +78,35 @@ def diff_reports(old: Dict[str, Any], new: Dict[str, Any], prefix: str = "") -> 
     return changes
 
 
-def format_diff(changes: Dict[str, Any], indent: int = 0) -> List[str]:
+def format_diff(changes: dict[str, Any], indent: int = 0) -> list[str]:
     """Format the diff dictionary into human-readable lines."""
-    lines = []
+    lines: list[str] = []
     pad = "  " * indent
 
     for key, val in sorted(changes.items()):
-        if "status" in val:
-            status = val["status"]
+        if isinstance(val, dict) and "status" in val:
+            status = val.get("status")
             if status == "added":
-                lines.append(f"{pad}+ {key}: {val['new_value']}")
+                lines.append(f"{pad}+ {key}: {val.get('new_value')}")
             elif status == "removed":
-                lines.append(f"{pad}- {key}: {val['old_value']}")
+                lines.append(f"{pad}- {key}: {val.get('old_value')}")
             elif status == "changed":
                 if "added" in val or "removed" in val:
                     lines.append(f"{pad}* {key}:")
-                    for item in val.get("removed", []):
-                        lines.append(f"{pad}  - {item}")
-                    for item in val.get("added", []):
-                        lines.append(f"{pad}  + {item}")
+                    removed_items = val.get("removed", [])
+                    added_items = val.get("added", [])
+
+                    if isinstance(removed_items, list):
+                        for item in removed_items:
+                            lines.append(f"{pad}  - {item}")
+                    if isinstance(added_items, list):
+                        for item in added_items:
+                            lines.append(f"{pad}  + {item}")
                 else:
-                    lines.append(f"{pad}* {key}: {val['old_value']} -> {val['new_value']}")
-        else:
+                    lines.append(f"{pad}* {key}: {val.get('old_value')} -> {val.get('new_value')}")
+        elif isinstance(val, dict):
             lines.append(f"{pad}{key}:")
+            # Recursive call
             lines.extend(format_diff(val, indent + 1))
 
     return lines

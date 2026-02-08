@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from prose import utils
@@ -28,12 +29,12 @@ class TestUtilityFunctions:
     def test_get_version_success(self):
         """Test get_version() with working command."""
         version = utils.get_version(["python3", "--version"])
-        assert "Python" in version or version != "Not Found"
+        assert "Python" in version or version != "Not installed"
 
     def test_get_version_failure(self):
         """Test get_version() with failing command."""
         version = utils.get_version(["nonexistent_cmd_xyz", "--version"])
-        assert version == "Not Found"
+        assert version == "Not installed"
 
     @patch("prose.utils.run")
     def test_get_json_output_valid(self, mock_run):

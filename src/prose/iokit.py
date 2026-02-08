@@ -79,7 +79,8 @@ def read_nvram_all() -> dict[str, str]:
 
         verbose_log(f"Read {len(nvram_dict)} NVRAM variables")
         return nvram_dict
-    except Exception:
+    except (OSError, ValueError) as e:
+        verbose_log(f"Failed to read all NVRAM variables: {e}")
         return {}
 
 
@@ -167,14 +168,14 @@ def get_secure_boot_model() -> str | None:
 
 
 __all__ = [
-    "read_nvram",
-    "read_nvram_all",
-    "get_boot_args",
-    "get_csr_active_config",
-    "parse_amfi_boot_arg",
-    "get_oclp_nvram_version",
-    "get_oclp_nvram_settings",
-    "get_secure_boot_model",
     "OCLP_NVRAM_UUID",
     "SECURE_BOOT_UUID",
+    "get_boot_args",
+    "get_csr_active_config",
+    "get_oclp_nvram_settings",
+    "get_oclp_nvram_version",
+    "get_secure_boot_model",
+    "parse_amfi_boot_arg",
+    "read_nvram",
+    "read_nvram_all",
 ]

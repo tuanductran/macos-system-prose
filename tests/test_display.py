@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from prose.collectors.system import collect_display_info
@@ -84,9 +85,9 @@ class TestEDIDParsing:
         edid_bytes = bytearray(128)
         edid_bytes[16] = 0xFF  # Unknown week
         edid_bytes[17] = 20  # Year 2010
-        edid_bytes = bytes(edid_bytes)
+        edid_data: bytes = bytes(edid_bytes)
 
-        result = parse_edid(edid_bytes)
+        result = parse_edid(edid_data)
 
         # 0xFF week should result in None
         assert result["manufacture_week"] is None
@@ -96,9 +97,9 @@ class TestEDIDParsing:
         edid_bytes = bytearray(128)
         edid_bytes[10] = 0x34  # Product code low byte
         edid_bytes[11] = 0x12  # Product code high byte
-        edid_bytes = bytes(edid_bytes)
+        edid_data: bytes = bytes(edid_bytes)
 
-        result = parse_edid(edid_bytes)
+        result = parse_edid(edid_data)
 
         if result["product_code"]:
             assert result["product_code"].startswith("0x")

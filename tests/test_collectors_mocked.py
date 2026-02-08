@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from prose.collectors.advanced import collect_opencore_patcher
@@ -98,6 +99,7 @@ class TestPackagesCollectorMocked:
         info = collect_package_managers()
         assert info["homebrew"]["installed"] is True
         assert info["homebrew"]["version"] == "Homebrew 4.2.5"
+        assert info["homebrew"]["formula"] is not None
         assert "git" in info["homebrew"]["formula"]
         assert info["npm"]["installed"] is True
         assert info["npm"]["version"] == "10.2.4"

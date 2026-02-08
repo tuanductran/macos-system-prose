@@ -39,7 +39,7 @@ jobs:
     
     - name: Type check with mypy
       run: |
-        mypy src/prose --check-untyped-defs || true
+        mypy src/prose --check-untyped-defs
     
     - name: Run tests with coverage
       run: |

@@ -6,6 +6,7 @@ import platform
 import plistlib
 import re
 import subprocess
+from typing import cast
 
 from prose.datasets.smbios import get_smbios_data
 from prose.macos_versions import get_macos_version_info
@@ -21,6 +22,7 @@ from prose.schema import (
     TimeMachineInfo,
 )
 from prose.utils import (
+    Timeouts,
     async_get_json_output,
     async_run_command,
     log,
@@ -41,8 +43,8 @@ async def _get_uptime_seconds() -> int:
         if match:
             boot_timestamp = int(match.group(1))
             return int(time.time()) - boot_timestamp
-    except Exception:
-        pass
+    except (OSError, ValueError) as e:
+        verbose_log(f"Failed to get uptime seconds from sysctl: {e}")
     return 0
 
 
@@ -91,7 +93,8 @@ async def collect_time_machine_info() -> TimeMachineInfo:
             "destination": destination,
             "auto_backup": auto_backup,
         }
-    except Exception:
+    except (OSError, ValueError, IndexError) as e:
+        verbose_log(f"Failed to collect Time Machine info: {e}")
         return {
             "enabled": False,
             "last_backup": None,
@@ -182,7 +185,7 @@ async def _check_sip_enabled() -> bool:
     if not output:
         return False
     first_line = output.splitlines()[0].lower()
-    return "enabled" in first_line and "unknown" not in first_line
+    return "enabled" in first_line and "Unknown" not in first_line
 
 
 async def _get_marketing_name_from_system() -> str | None:
@@ -201,8 +204,8 @@ async def _get_marketing_name_from_system() -> str | None:
             match = re.search(r'"[^"]+"\s*=\s*"([^"]+)"', output)
             if match:
                 return match.group(1)
-    except Exception:
-        pass
+    except (OSError, ValueError) as e:
+        verbose_log(f"Failed to get marketing name from system preferences: {e}")
     return None
 
 
@@ -221,8 +224,8 @@ async def _get_board_id_from_ioreg() -> str | None:
             match = re.search(r'"board-id"\s*=\s*<"([^"]+)">', output)
             if match:
                 return match.group(1)
-    except Exception:
-        pass
+    except (OSError, ValueError) as e:
+        verbose_log(f"Failed to get board-id from IORegistry: {e}")
     return None
 
 
@@ -234,21 +237,7 @@ async def collect_system_info() -> SystemInfo:
     macos_name = f"macOS {version_info['name']}"
 
     # Run all independent commands concurrently
-    (
-        hw_data,
-        system_marketing_name,
-        system_board_id,
-        kernel,
-        uptime_raw,
-        uptime_seconds,
-        boot_time_raw,
-        load_avg_raw,
-        sip_enabled,
-        gatekeeper_raw,
-        filevault_raw,
-        time_machine,
-    ) = await asyncio.gather(  # type: ignore[misc]
-        # Mypy struggles with complex asyncio.gather type inference
+    results = await asyncio.gather(
         async_get_json_output(["system_profiler", "SPHardwareDataType", "-json"]),
         _get_marketing_name_from_system(),
         _get_board_id_from_ioreg(),
@@ -262,6 +251,20 @@ async def collect_system_info() -> SystemInfo:
         async_run_command(["fdesetup", "status"]),
         collect_time_machine_info(),
     )
+
+    # Explicit type assignments to help mypy
+    hw_data = cast("dict[str, list[dict[str, str | int | float]]]", results[0])
+    system_marketing_name = cast("str | None", results[1])
+    system_board_id = cast("str | None", results[2])
+    kernel_raw = cast(str, results[3])
+    uptime_raw = cast(str, results[4])
+    uptime_seconds = cast(int, results[5])
+    boot_time_raw = cast(str, results[6])
+    load_avg_raw = cast(str, results[7])
+    sip_enabled = cast(bool, results[8])
+    gatekeeper_raw = cast(str, results[9])
+    filevault_raw = cast(str, results[10])
+    time_machine = cast(TimeMachineInfo, results[11])
 
     # Parse hardware data
     model_name, model_id = "Unknown Mac", "Unknown"
@@ -292,33 +295,35 @@ async def collect_system_info() -> SystemInfo:
     # Non-blocking operation
     architecture = platform.machine()
 
-    return {
-        "os": "Darwin",
-        "macos_version": version,
-        "macos_name": macos_name,
-        "model_name": model_name,
-        "model_identifier": model_id,
-        "marketing_name": marketing_name,
-        "board_id": board_id,
-        "cpu_generation": cpu_generation,
-        "max_os_supported": max_os_supported,
-        "kernel": kernel,
-        "architecture": architecture,
-        "uptime": _parse_uptime(uptime_raw.split("load")[0]),
-        "uptime_seconds": uptime_seconds,
-        "boot_time": _parse_boot_time(boot_time_raw),
-        "load_average": _parse_load_average(load_avg_raw),
-        "sip_enabled": sip_enabled,
-        "gatekeeper_enabled": "enabled" in gatekeeper_raw.lower(),
-        "filevault_enabled": "on" in filevault_raw.lower(),
-        "time_machine": time_machine,
-    }
+    # Parse kernel string
+    kernel = kernel_raw.strip()
+
+    return SystemInfo(
+        os="Darwin",
+        macos_version=version,
+        macos_name=macos_name,
+        model_name=model_name,
+        model_identifier=model_id,
+        marketing_name=marketing_name,
+        board_id=board_id,
+        cpu_generation=cpu_generation,
+        max_os_supported=max_os_supported,
+        kernel=kernel,
+        architecture=architecture,
+        uptime=_parse_uptime(uptime_raw.split("load")[0]),
+        uptime_seconds=uptime_seconds,
+        boot_time=_parse_boot_time(boot_time_raw),
+        load_average=_parse_load_average(load_avg_raw),
+        sip_enabled=sip_enabled,
+        gatekeeper_enabled="enabled" in gatekeeper_raw.lower(),
+        filevault_enabled="on" in filevault_raw.lower(),
+        time_machine=time_machine,
+    )
 
 
 async def collect_display_info() -> list[DisplayInfo]:
     """Collect display information including resolution, refresh rate, and EDID data."""
     import plistlib
-    from typing import Optional
 
     from prose.utils import parse_edid
 
@@ -328,14 +333,14 @@ async def collect_display_info() -> list[DisplayInfo]:
     ioreg_output, sp_data = await asyncio.gather(
         async_run_command(
             ["ioreg", "-l", "-w0", "-r", "-a", "-c", "IODisplayConnect"],
-            timeout=10,
+            timeout=Timeouts.FAST,
             log_errors=False,
         ),
         async_get_json_output(["system_profiler", "SPDisplaysDataType", "-json"]),
     )
 
     # First, parse EDID data from IORegistry
-    edid_data_map: dict[str, dict[str, Optional[str]]] = {}
+    edid_data_map: dict[str, dict[str, str | None]] = {}
     try:
         if ioreg_output:
             plist = plistlib.loads(ioreg_output.encode("utf-8"))
@@ -417,7 +422,7 @@ async def collect_display_info() -> list[DisplayInfo]:
                                     )
 
                                     # Try to match with EDID data
-                                    edid_info: dict[str, Optional[str]] = {
+                                    edid_info: dict[str, str | None] = {
                                         "edid_manufacturer": None,
                                         "edid_product_code": None,
                                         "edid_serial": None,
@@ -480,7 +485,8 @@ async def collect_display_info() -> list[DisplayInfo]:
                     "connector_type": None,
                 }
             )
-    except Exception:
+    except (KeyError, TypeError, ValueError, IndexError) as e:
+        verbose_log(f"Failed to process display info from system_profiler: {e}")
         displays.append(
             {
                 "resolution": "Unknown",
@@ -514,7 +520,7 @@ async def collect_memory_pressure() -> MemoryPressure:
     try:
         # Run all memory commands concurrently
         mp_output, vm_output, sysctl_output = await asyncio.gather(
-            async_run_command(["memory_pressure"], timeout=5, log_errors=False),
+            async_run_command(["memory_pressure"], timeout=Timeouts.FAST, log_errors=False),
             async_run_command(["vm_stat"], log_errors=False),
             async_run_command(["sysctl", "vm.swapusage"], log_errors=False),
         )
@@ -553,8 +559,8 @@ async def collect_memory_pressure() -> MemoryPressure:
                         pressure["swap_free"] = int(float(free_str[:-1]) * 1024)
                     else:
                         pressure["swap_free"] = int(float(free_str.replace("M", "")))
-    except Exception:
-        pass
+    except (OSError, ValueError, IndexError) as e:
+        verbose_log(f"Failed to collect memory pressure stats: {e}")
 
     return pressure
 
@@ -574,7 +580,8 @@ async def collect_hardware_info() -> HardwareInfo:
                         model += f" ({vram})"
                     gpus.append(model)
             return gpus
-        except Exception:
+        except (OSError, KeyError, TypeError, ValueError) as e:
+            verbose_log(f"Failed to collect GPU info: {e}")
             return ["Unknown"]
 
     # Run all independent commands concurrently
@@ -604,7 +611,7 @@ def collect_disk_health() -> list[DiskHealthInfo]:
     health_info: list[DiskHealthInfo] = []
     try:
         # Get list of physical disks
-        disks_output = run(["diskutil", "list"], timeout=10)
+        disks_output = run(["diskutil", "list"], timeout=Timeouts.FAST)
         disk_identifiers = []
 
         for line in disks_output.splitlines():
@@ -617,7 +624,11 @@ def collect_disk_health() -> list[DiskHealthInfo]:
         # Get info for each disk
         for disk_id in disk_identifiers:
             try:
-                info_output = run(["diskutil", "info", disk_id], timeout=10, log_errors=False)
+                info_output = run(
+                    ["diskutil", "info", disk_id],
+                    timeout=Timeouts.FAST,
+                    log_errors=False,
+                )
 
                 disk_name = "Unknown"
                 disk_type = "Unknown"
@@ -640,10 +651,11 @@ def collect_disk_health() -> list[DiskHealthInfo]:
                         "health_percentage": None,  # macOS doesn't expose percentage directly
                     }
                 )
-            except Exception:
+            except (OSError, ValueError, IndexError) as e:
+                verbose_log(f"Failed to collect health info for disk {disk_id}: {e}")
                 continue
-    except Exception:
-        pass
+    except (OSError, ValueError) as e:
+        verbose_log(f"Failed to collect disk list: {e}")
 
     return health_info
 
@@ -659,7 +671,7 @@ def _parse_apfs_containers() -> list[APFSContainer]:
         raw = subprocess.run(
             ["diskutil", "apfs", "list", "-plist"],
             capture_output=True,
-            timeout=30,
+            timeout=Timeouts.SLOW,
         )
         if raw.returncode != 0 or not raw.stdout:
             return []
@@ -699,7 +711,8 @@ def _parse_apfs_containers() -> list[APFSContainer]:
                 }
             )
         return containers
-    except Exception:
+    except (OSError, TypeError, KeyError, ValueError) as e:
+        verbose_log(f"Failed to parse APFS containers: {e}")
         return []
 
 

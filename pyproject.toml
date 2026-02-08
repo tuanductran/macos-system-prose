@@ -5,10 +5,10 @@ build-backend = "hatchling.build"
 [project]
 name = "macos-system-prose"
 version = "1.0.0"
-description = "A high-fidelity system introspection tool for macOS, designed for AI-based optimization."
+description = "A read-only, htop-style system introspection tool for macOS designed for AI analysis and security auditing."
 readme = "README.md"
 requires-python = ">=3.9"
-license = {text = "MIT"}
+license = { text = "MIT" }
 authors = [
     { name = "Tuan Duc Tran", email = "tuanductran.dev@gmail.com" }
 ]
@@ -21,7 +21,9 @@ keywords = [
     "ai",
     "llm",
     "devops",
-    "monitoring"
+    "monitoring",
+    "tui",
+    "read-only",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -36,30 +38,35 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: System :: Systems Administration",
     "Topic :: System :: Monitoring",
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
-dependencies = []  # No external dependencies - uses stdlib only
+dependencies = []  # No external dependencies - strictly stdlib only
 
 [project.urls]
 Homepage = "https://github.com/tuanductran/macos-system-prose"
 Repository = "https://github.com/tuanductran/macos-system-prose"
 Issues = "https://github.com/tuanductran/macos-system-prose/issues"
-
 Documentation = "https://github.com/tuanductran/macos-system-prose#readme"
 
 [project.optional-dependencies]
 dev = [
-    "ruff",
-    "pytest",
-    "pytest-cov",
-    "mypy",
+    "ruff>=0.8.0",
+    "mypy>=1.7.0",
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "types-setuptools",
+    "typing-extensions",
+]
+tui = [
+    "textual>=0.50.0",
 ]
 
 [project.scripts]
-macos-prose = "prose.engine:main"
+macos-prose = "prose.main:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/prose"]
@@ -75,8 +82,12 @@ line-length = 100
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "B"]
+select = ["E", "F", "I", "N", "W", "B", "UP", "A", "C4", "ISC", "RUF"]
 ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["prose"]
+lines-after-imports = 2
 
 [tool.mypy]
 python_version = "3.9"
@@ -91,6 +102,11 @@ strict_equality = true
 namespace_packages = true
 explicit_package_bases = true
 mypy_path = "src"
+
+# Exclude TUI modules (optional dependency, textual typing is complex)
+exclude = [
+    "src/prose/tui/",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
