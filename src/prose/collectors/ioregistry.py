@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import plistlib
 
+from prose.constants import Timeouts
 from prose.schema import AudioCodec, IORegistryInfo, PCIeDevice, USBDevice
-from prose.utils import Timeouts, log, run, verbose_log
+from prose.utils import log, run, verbose_log
 
 
 def collect_pcie_devices() -> list[PCIeDevice]:

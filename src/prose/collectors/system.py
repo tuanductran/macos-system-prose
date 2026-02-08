@@ -8,6 +8,7 @@ import re
 import subprocess
 from typing import cast
 
+from prose.constants import Timeouts
 from prose.datasets.smbios import get_smbios_data
 from prose.macos_versions import get_macos_version_info
 from prose.schema import (
@@ -22,7 +23,6 @@ from prose.schema import (
     TimeMachineInfo,
 )
 from prose.utils import (
-    Timeouts,
     async_get_json_output,
     async_run_command,
     log,

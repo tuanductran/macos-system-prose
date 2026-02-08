@@ -23,17 +23,6 @@ QUIET = False
 READ_ONLY_MODE = True
 
 
-# Timeout constants (in seconds) for different command types
-class Timeouts:
-    """Standard timeout values for system commands."""
-
-    FAST = 5  # Quick commands: version checks, simple queries
-    STANDARD = 15  # Default timeout for most commands
-    SLOW = 30  # Slower operations: package listings, network ops
-    VERY_SLOW = 60  # Very slow: cache operations, large file scans
-    EXTREME = 120  # Extreme cases: Library directory scan
-
-
 class Colors:
     """ANSI color codes for terminal output."""
 
