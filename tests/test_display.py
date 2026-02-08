@@ -111,12 +111,14 @@ class TestDisplayCollection:
     @patch("prose.collectors.system.async_get_json_output")
     def test_collect_display_info_empty(self, mock_json, mock_run):
         """Test display collection with no displays."""
+
         # Make the mock functions return coroutines on each call
         async def mock_run_coro(*args, **kwargs):
             return ""
+
         async def mock_json_coro(*args, **kwargs):
             return None
-        
+
         mock_run.side_effect = mock_run_coro
         mock_json.side_effect = mock_json_coro
 
@@ -143,9 +145,11 @@ class TestDisplayCollection:
     @patch("prose.collectors.system.async_get_json_output")
     def test_collect_display_info_with_data(self, mock_json, mock_run):
         """Test display collection with mock display data."""
+
         # Make the mock functions return coroutines on each call
         async def mock_run_coro(*args, **kwargs):
             return ""  # No EDID data
+
         async def mock_json_coro(*args, **kwargs):
             return {
                 "SPDisplaysDataType": [
@@ -162,7 +166,7 @@ class TestDisplayCollection:
                     }
                 ]
             }
-        
+
         mock_run.side_effect = mock_run_coro
         mock_json.side_effect = mock_json_coro
 
@@ -183,9 +187,11 @@ class TestDisplayCollection:
     @patch("prose.collectors.system.async_get_json_output")
     def test_collect_display_info_internal_display(self, mock_json, mock_run):
         """Test display collection with internal display (default refresh rate)."""
+
         # Make the mock functions return coroutines on each call
         async def mock_run_coro(*args, **kwargs):
             return ""
+
         async def mock_json_coro(*args, **kwargs):
             return {
                 "SPDisplaysDataType": [
@@ -200,7 +206,7 @@ class TestDisplayCollection:
                     }
                 ]
             }
-        
+
         mock_run.side_effect = mock_run_coro
         mock_json.side_effect = mock_json_coro
 
@@ -218,12 +224,14 @@ class TestDisplayCollection:
     @patch("prose.collectors.system.async_get_json_output")
     def test_collect_display_info_error_handling(self, mock_json, mock_run):
         """Test display collection handles errors gracefully in data processing."""
+
         # Make the mock functions return empty/invalid data instead of raising
         async def mock_run_coro(*args, **kwargs):
             return ""  # Empty ioreg output
+
         async def mock_json_coro(*args, **kwargs):
             return {}  # Empty/invalid JSON
-        
+
         mock_run.side_effect = mock_run_coro
         mock_json.side_effect = mock_json_coro
 
@@ -270,6 +278,7 @@ class TestDisplayCollection:
         # Make the mock functions return coroutines on each call
         async def mock_run_coro(*args, **kwargs):
             return mock_ioreg_plist
+
         async def mock_json_coro(*args, **kwargs):
             return {
                 "SPDisplaysDataType": [
@@ -285,7 +294,7 @@ class TestDisplayCollection:
                     }
                 ]
             }
-        
+
         mock_run.side_effect = mock_run_coro
         mock_json.side_effect = mock_json_coro
 
@@ -302,12 +311,14 @@ class TestDisplayCollection:
     @patch("prose.collectors.system.async_get_json_output")
     def test_collect_display_info_structure_complete(self, mock_json, mock_run):
         """Test that all required fields are present in display info."""
+
         # Make the mock functions return coroutines on each call
         async def mock_run_coro(*args, **kwargs):
             return ""
+
         async def mock_json_coro(*args, **kwargs):
             return None
-        
+
         mock_run.side_effect = mock_run_coro
         mock_json.side_effect = mock_json_coro
 
