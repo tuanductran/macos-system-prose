@@ -185,7 +185,7 @@ async def _check_sip_enabled() -> bool:
     if not output:
         return False
     first_line = output.splitlines()[0].lower()
-    return "enabled" in first_line and "Unknown" not in first_line
+    return "enabled" in first_line and "unknown" not in first_line
 
 
 async def _get_marketing_name_from_system() -> str | None:
