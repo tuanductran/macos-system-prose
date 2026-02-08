@@ -3,8 +3,9 @@ from __future__ import annotations
 import os
 import struct
 
+from prose.constants import Timeouts
 from prose.schema import NetworkInfo
-from prose.utils import log, run, which
+from prose.utils import log, run, verbose_log, which
 
 
 def _hex_mask_to_dotted(hex_mask: str) -> str:
@@ -76,14 +77,14 @@ def collect_vpn_info() -> tuple[bool, list[str], list[str]]:
 
         # Check if tailscale daemon is running
         if which("tailscale"):
-            status = run(["tailscale", "status"], timeout=5, log_errors=False)
+            status = run(["tailscale", "status"], timeout=Timeouts.FAST, log_errors=False)
             if status and "Logged out" not in status:
                 vpn_active = True
                 if "Tailscale" not in vpn_apps:
                     vpn_apps.append("Tailscale (CLI)")
 
-    except Exception:
-        pass
+    except OSError as e:
+        verbose_log(f"Failed to collect VPN info: {e}")
 
     return vpn_active, list(set(vpn_connections)), vpn_apps
 
@@ -111,12 +112,15 @@ def collect_network_info() -> NetworkInfo:
             line = line.strip()
             if line.startswith("inet "):
                 parts = line.split()
-                ipv4 = parts[1]
-                if "netmask" in line:
+                if len(parts) >= 2:
+                    ipv4 = parts[1]
+                if "netmask" in line and len(parts) > parts.index("netmask") + 1:
                     raw_mask = parts[parts.index("netmask") + 1]
                     mask = _hex_mask_to_dotted(raw_mask) if raw_mask.startswith("0x") else raw_mask
             if line.startswith("ether "):
-                mac = line.split()[1]
+                parts = line.split()
+                if len(parts) >= 2:
+                    mac = parts[1]
 
     # 3. DNS Servers
     dns: list[str] = []
@@ -159,8 +163,8 @@ def collect_network_info() -> NetworkInfo:
                         ip = s_line.strip().split()[1]
                         break
                 local_interfaces.append({"name": current_port, "device": dev, "ipv4": ip})
-    except Exception:
-        pass
+    except (OSError, IndexError) as e:
+        verbose_log(f"Failed to collect local interface information: {e}")
 
     # VPN Information
     vpn_status, vpn_conns, vpn_apps_list = collect_vpn_info()

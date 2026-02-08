@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 
 from prose import utils
+from prose.constants import Timeouts
 from prose.datasets.smbios import is_legacy_mac
 from prose.iokit import get_boot_args, get_oclp_nvram_version, parse_amfi_boot_arg
 from prose.schema import (
@@ -22,6 +23,7 @@ from prose.schema import (
     SystemLogs,
     SystemPreferences,
 )
+from prose.utils import verbose_log
 
 
 def collect_storage_analysis() -> StorageAnalysis:
@@ -29,14 +31,17 @@ def collect_storage_analysis() -> StorageAnalysis:
     home = Path.home()
 
     def get_dir_size_gb(path: Path, timeout: int = 30) -> float:
-        """Get directory size in GB using du -sk for accuracy."""
+        """Get directory size in GB using du -sk for accuracy.
+
+        SECURITY: Uses subprocess list arguments (no shell interpretation)
+        to prevent command injection attacks.
+        """
         try:
             if not path.exists():
                 return 0.0
-            # Use -sk to get size in KB
-            output = utils.run(
-                ["bash", "-c", f"du -sk '{path}' 2>/dev/null"], timeout=timeout, log_errors=False
-            )
+            # FIXED: Use list arguments directly - no shell interpretation
+            # This prevents command injection even with malicious directory names
+            output = utils.run(["du", "-sk", str(path)], timeout=timeout, log_errors=False)
             if output:
                 try:
                     # du -sk output: "1234567\t/path/to/dir"
@@ -46,15 +51,16 @@ def collect_storage_analysis() -> StorageAnalysis:
                 except (ValueError, IndexError):
                     return 0.0
             return 0.0
-        except Exception:
+        except (OSError, TimeoutError) as e:
+            verbose_log(f"Failed to get directory size for {path}: {e}")
             return 0.0
 
-    documents = get_dir_size_gb(home / "Documents", timeout=30)
-    downloads = get_dir_size_gb(home / "Downloads", timeout=30)
-    desktop = get_dir_size_gb(home / "Desktop", timeout=10)
-    library = get_dir_size_gb(home / "Library", timeout=120)  # Library can be huge
-    caches = get_dir_size_gb(home / "Library" / "Caches", timeout=60)
-    logs = get_dir_size_gb(home / "Library" / "Logs", timeout=10)
+    documents = get_dir_size_gb(home / "Documents", timeout=Timeouts.SLOW)
+    downloads = get_dir_size_gb(home / "Downloads", timeout=Timeouts.SLOW)
+    desktop = get_dir_size_gb(home / "Desktop", timeout=Timeouts.FAST)
+    library = get_dir_size_gb(home / "Library", timeout=Timeouts.EXTREME)  # Library can be huge
+    caches = get_dir_size_gb(home / "Library" / "Caches", timeout=Timeouts.VERY_SLOW)
+    logs = get_dir_size_gb(home / "Library" / "Logs", timeout=Timeouts.FAST)
 
     return {
         "documents_gb": documents,
@@ -119,8 +125,8 @@ def collect_shell_customization() -> ShellCustomization:
             )
             # Get size
             rc_size_kb = rc_file.stat().st_size / 1024
-        except Exception:
-            pass
+        except (OSError, ValueError) as e:
+            verbose_log(f"Failed to analyze shell customization in {rc_file}: {e}")
 
     return {
         "aliases_count": aliases_count,
@@ -385,7 +391,7 @@ def collect_system_logs() -> SystemLogs:
             'log show --predicate \'messageType == "Error" OR messageType == "Fault"\' '
             "--style syslog --last 1h 2>/dev/null | tail -20",  # Reduced from 24h to 1h, 50 to 20
         ],
-        timeout=15,  # Reduced from 30s to 15s
+        timeout=Timeouts.STANDARD,  # Reduced from 30s to 15s
         log_errors=False,
     )
 
@@ -406,7 +412,7 @@ def collect_system_logs() -> SystemLogs:
             "log show --predicate 'messageType == \"Default\"' "
             "--style syslog --last 1h 2>/dev/null | grep -i warning | tail -10",
         ],
-        timeout=15,  # Reduced from 30s to 15s
+        timeout=Timeouts.STANDARD,  # Reduced from 30s to 15s
         log_errors=False,
     )
 

@@ -58,10 +58,9 @@ def test_generate_html_report_basic():
     assert "Enabled" in html
     assert "Disabled" in html
 
-    # Check CSS is included
-    assert "<style>" in html
-    assert "background-color" in html
-    assert "glassmorphism" in html or "backdrop-filter" in html
+    # Check CSS is included (Bootstrap 5 design)
+    assert "<style>" in html or "bootstrap" in html.lower()
+    assert "background" in html or "card" in html
 
 
 def test_generate_html_report_empty_data():

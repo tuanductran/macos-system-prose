@@ -6,14 +6,21 @@ parsing output, logging, and file operations.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional, Union
+from typing import Callable
+
 
 VERBOSE = False
 QUIET = False
+
+# SECURITY: This tool is strictly read-only.
+# It must NEVER modify system settings, write to system files, or execute destructive commands.
+# All collectors must adhere to this principle.
+READ_ONLY_MODE = True
 
 
 class Colors:
@@ -59,6 +66,51 @@ def verbose_log(msg: str) -> None:
         print(f"{Colors.DIM}  -> {msg}{Colors.ENDC}")
 
 
+def has_full_disk_access() -> bool:
+    """Check if the current process has Full Disk Access (FDA) permission.
+
+    Attempts to access a restricted directory that requires FDA.
+    On macOS 10.14+, many system directories require FDA to read.
+
+    Returns:
+        True if FDA is granted, False otherwise.
+    """
+    # Try to access TCC database which requires FDA
+    tcc_db = Path.home() / "Library/Application Support/com.apple.TCC/TCC.db"
+    try:
+        # Try to check if file is readable
+        with open(tcc_db, "rb") as f:
+            f.read(1)  # Try to read 1 byte
+        return True
+    except (PermissionError, FileNotFoundError, OSError):
+        return False
+
+
+def check_permission_and_warn(
+    permission_name: str, check_func: Callable[[], bool], required_for: str
+) -> bool:
+    """Check a permission and log a warning if not granted.
+
+    Args:
+        permission_name: Human-readable name of the permission.
+        check_func: Callable that returns True if permission is granted.
+        required_for: Description of what requires this permission.
+
+    Returns:
+        True if permission is granted, False otherwise.
+    """
+    has_permission = check_func()
+    if not has_permission:
+        log(
+            f"⚠️  {permission_name} not granted. {required_for} will be limited.",
+            level="warning",
+        )
+        verbose_log(
+            f"To grant {permission_name}: System Settings → Privacy & Security → {permission_name}"
+        )
+    return has_permission
+
+
 def run(
     cmd: list[str],
     description: str = "",
@@ -91,8 +143,7 @@ def run(
     try:
         result = subprocess.run(
             cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             timeout=timeout,
         )
@@ -117,7 +168,108 @@ def run(
         return ""
 
 
-def get_json_output(cmd: list[str]) -> Optional[Union[dict, list]]:
+async def async_run_command(
+    cmd: list[str],
+    description: str = "",
+    timeout: int = 15,
+    log_errors: bool = True,
+    capture_stderr: bool = False,
+) -> str:
+    """Execute a system command asynchronously and return its output.
+
+    Args:
+        cmd: Command and arguments as a list.
+        description: Optional description for verbose logging.
+        timeout: Maximum time in seconds to wait for command completion.
+        log_errors: Whether to log errors to console.
+        capture_stderr: If True, return stderr instead of stdout (for tools like codesign).
+
+    Returns:
+        Command output as a string, or empty string on failure.
+
+    Examples:
+        >>> await async_run_command(["sw_vers", "-productVersion"])
+        '14.2.1'
+        >>> await async_run_command(["uname", "-m"])
+        'arm64'
+    """
+    if description:
+        verbose_log(description)
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        try:
+            stdout, stderr = await asyncio.wait_for(
+                process.communicate(),
+                timeout=timeout,
+            )
+        except asyncio.TimeoutError:
+            try:
+                process.kill()
+                await process.wait()
+            except ProcessLookupError:
+                # Process already terminated - this is OK
+                pass
+            except OSError as e:
+                # Real error (e.g., permission denied) - should log
+                if log_errors:
+                    verbose_log(f"Error terminating process: {e}")
+            if log_errors:
+                verbose_log(f"Command timed out: {' '.join(cmd)}")
+            return ""
+
+        stdout_text = stdout.decode("utf-8", errors="replace").strip()
+        stderr_text = stderr.decode("utf-8", errors="replace").strip()
+
+        if process.returncode != 0:
+            if log_errors:
+                verbose_log(f"Command failed: {' '.join(cmd)}\nError: {stderr_text}")
+            # For commands that write to stderr (like codesign), return stderr even on error
+            if capture_stderr and stderr_text:
+                return stderr_text
+            return ""
+
+        # Return stderr if requested (some tools write to stderr by design)
+        if capture_stderr:
+            return stderr_text
+        return stdout_text
+
+    except Exception as e:
+        if log_errors:
+            verbose_log(f"Command execution error: {e}")
+        return ""
+
+
+async def async_get_json_output(cmd: list[str]) -> dict | list | None:
+    """Execute a command asynchronously and parse its JSON output.
+
+    Args:
+        cmd: Command that produces JSON output.
+
+    Returns:
+        Parsed JSON as dict or list, or None on failure.
+
+    Examples:
+        >>> await async_get_json_output(["npm", "list", "-g", "--json", "--depth=0"])
+        {'dependencies': {'npm': {'version': '10.2.3'}}}
+    """
+    try:
+        output = await async_run_command(cmd)
+        if output:
+            parsed = json.loads(output)
+            return parsed  # type: ignore[no-any-return]
+    except json.JSONDecodeError as e:
+        # Invalid JSON output from command - return None as per function contract
+        # This is the expected path for commands that output non-JSON or malformed JSON
+        verbose_log(f"JSON parsing failed for command {' '.join(cmd)}: {e}")
+    return None
+
+
+def get_json_output(cmd: list[str]) -> dict | list | None:
     """Execute a command and parse its JSON output.
 
     Args:
@@ -135,12 +287,14 @@ def get_json_output(cmd: list[str]) -> Optional[Union[dict, list]]:
         if output:
             parsed = json.loads(output)
             return parsed  # type: ignore[no-any-return]
-    except (json.JSONDecodeError, Exception):
-        pass
+    except json.JSONDecodeError as e:
+        # Invalid JSON output from command - return None as per function contract
+        # This is the expected path for commands that output non-JSON or malformed JSON
+        verbose_log(f"JSON parsing failed for command {' '.join(cmd)}: {e}")
     return None
 
 
-def which(cmd: str) -> Optional[str]:
+def which(cmd: str) -> str | None:
     """Find the full path of a command, resolving symlinks.
 
     Args:
@@ -170,7 +324,7 @@ def get_version(cmd: list[str]) -> str:
         cmd: Command with version flag (e.g., ["node", "--version"]).
 
     Returns:
-        Version string or "Not Found" if command fails.
+        Version string or "Not installed" if command fails.
 
     Examples:
         >>> get_version(["node", "--version"])
@@ -180,9 +334,9 @@ def get_version(cmd: list[str]) -> str:
         # Version checks often fail if tool is not installed, so we suppress error logging
         out = run(cmd, timeout=3, log_errors=False)
         out = out.splitlines()[0] if out else ""
-        return out.strip() if out.strip() else "Not Found"
-    except Exception:
-        return "Not Found"
+        return out.strip() if out.strip() else "Not installed"
+    except (OSError, IndexError):
+        return "Not installed"
 
 
 def get_app_version(app_path: Path) -> str:
@@ -224,7 +378,7 @@ def get_app_version(app_path: Path) -> str:
                 return ver.strip()
 
         return ""
-    except Exception:
+    except (OSError, FileNotFoundError):
         return ""
 
 
@@ -251,7 +405,7 @@ def safe_glob(path_str: str, pattern: str) -> list[str]:
         return []
 
 
-def parse_edid(edid_bytes: bytes) -> dict[str, Optional[str]]:
+def parse_edid(edid_bytes: bytes) -> dict[str, str | None]:
     """Parse EDID (Extended Display Identification Data) to extract display information.
 
     EDID structure (simplified):
@@ -273,7 +427,7 @@ def parse_edid(edid_bytes: bytes) -> dict[str, Optional[str]]:
         >>> parse_edid(edid)
         {'manufacturer_id': 'APP', 'product_code': '0x9227', ...}
     """
-    result: dict[str, Optional[str]] = {
+    result: dict[str, str | None] = {
         "manufacturer_id": None,
         "product_code": None,
         "serial_number": None,

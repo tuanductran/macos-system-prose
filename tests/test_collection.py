@@ -1,6 +1,8 @@
+import asyncio
 import sys
 import unittest
 from pathlib import Path
+
 
 # Add the src directory to sys.path for testing
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -21,7 +23,7 @@ class TestMacOSProse(unittest.TestCase):
 
     def test_system_info_struct(self):
         """Verify system_info returns expected keys."""
-        info = collect_system_info()
+        info = asyncio.run(collect_system_info())
         self.assertIn("macos_version", info)
         self.assertIn("model_identifier", info)
         self.assertIn("kernel", info)

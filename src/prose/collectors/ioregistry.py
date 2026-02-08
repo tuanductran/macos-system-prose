@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import plistlib
 
+from prose.constants import Timeouts
 from prose.schema import AudioCodec, IORegistryInfo, PCIeDevice, USBDevice
 from prose.utils import log, run, verbose_log
 
@@ -25,7 +26,7 @@ def collect_pcie_devices() -> list[PCIeDevice]:
         # Get PCIe device tree in XML plist format
         output = run(
             ["ioreg", "-l", "-w0", "-r", "-a", "-c", "IOPCIDevice"],
-            timeout=10,
+            timeout=Timeouts.FAST,
             log_errors=False,
         )
 
@@ -112,7 +113,7 @@ def collect_usb_devices() -> list[USBDevice]:
         # because -p IOUSB -r -a returns empty on some macOS versions
         output = run(
             ["ioreg", "-c", "IOUSBHostDevice", "-r", "-a"],
-            timeout=10,
+            timeout=Timeouts.FAST,
             log_errors=False,
         )
 
@@ -207,7 +208,7 @@ def collect_audio_codecs() -> list[AudioCodec]:
         # Get audio devices from IORegistry
         output = run(
             ["ioreg", "-l", "-w0", "-r", "-a", "-c", "IOHDACodecDevice"],
-            timeout=10,
+            timeout=Timeouts.FAST,
             log_errors=False,
         )
 
@@ -215,7 +216,7 @@ def collect_audio_codecs() -> list[AudioCodec]:
             # Try alternative audio device classes
             output = run(
                 ["ioreg", "-l", "-w0", "-r", "-a", "-c", "AppleHDACodec"],
-                timeout=10,
+                timeout=Timeouts.FAST,
                 log_errors=False,
             )
 

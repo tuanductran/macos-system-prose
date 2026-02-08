@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from prose import utils
@@ -28,12 +29,12 @@ class TestUtilityFunctions:
     def test_get_version_success(self):
         """Test get_version() with working command."""
         version = utils.get_version(["python3", "--version"])
-        assert "Python" in version or version != "Not Found"
+        assert "Python" in version or version != "Not installed"
 
     def test_get_version_failure(self):
         """Test get_version() with failing command."""
         version = utils.get_version(["nonexistent_cmd_xyz", "--version"])
-        assert version == "Not Found"
+        assert version == "Not installed"
 
     @patch("prose.utils.run")
     def test_get_json_output_valid(self, mock_run):
@@ -173,3 +174,62 @@ class TestUtilityFunctions:
         fake_app = Path("/nonexistent/Test.app")
         version = utils.get_app_version(fake_app)
         assert version == ""
+
+
+class TestAsyncUtilityFunctions:
+    """Test suite for async utility functions."""
+
+    async def async_test_async_run_command_success(self):
+        """Test async_run_command() with successful command."""
+        result = await utils.async_run_command(["echo", "test"])
+        assert result == "test"
+
+    async def async_test_async_run_command_timeout(self):
+        """Test async_run_command() with command timeout."""
+        result = await utils.async_run_command(["sleep", "10"], timeout=1)
+        assert result == ""
+
+    async def async_test_async_run_command_failure(self):
+        """Test async_run_command() with failing command."""
+        result = await utils.async_run_command(["false"])
+        assert result == ""
+
+    async def async_test_async_get_json_output_valid(self):
+        """Test async_get_json_output() with valid JSON."""
+        result = await utils.async_get_json_output(["echo", '{"key": "value"}'])
+        assert result == {"key": "value"}
+
+    async def async_test_async_get_json_output_invalid(self):
+        """Test async_get_json_output() with invalid JSON."""
+        result = await utils.async_get_json_output(["echo", "not json"])
+        assert result is None
+
+    def test_async_run_command_success(self):
+        """Wrapper to run async test."""
+        import asyncio
+
+        asyncio.run(self.async_test_async_run_command_success())
+
+    def test_async_run_command_timeout(self):
+        """Wrapper to run async test."""
+        import asyncio
+
+        asyncio.run(self.async_test_async_run_command_timeout())
+
+    def test_async_run_command_failure(self):
+        """Wrapper to run async test."""
+        import asyncio
+
+        asyncio.run(self.async_test_async_run_command_failure())
+
+    def test_async_get_json_output_valid(self):
+        """Wrapper to run async test."""
+        import asyncio
+
+        asyncio.run(self.async_test_async_get_json_output_valid())
+
+    def test_async_get_json_output_invalid(self):
+        """Wrapper to run async test."""
+        import asyncio
+
+        asyncio.run(self.async_test_async_get_json_output_invalid())
