@@ -24,7 +24,7 @@ jobs:
       - name: Set up Python 3.9
         uses: actions/setup-python@v6
         with:
-          python-version: "3.9.x"  # Use minimum supported version
+          python-version: "3.14.x"  # Use minimum supported version
           cache: 'pip'
       
       - name: Install dependencies
