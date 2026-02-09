@@ -6,7 +6,6 @@ import plistlib
 import re
 import subprocess
 
-from prose.datasets.smbios import get_smbios_data
 from prose.macos_versions import get_macos_version_info
 from prose.schema import (
     APFSContainer,
@@ -245,21 +244,8 @@ def collect_system_info() -> SystemInfo:
     system_marketing_name = _get_marketing_name_from_system()
     system_board_id = _get_board_id_from_ioreg()
 
-    # Fall back to SMBIOS database for fields the system doesn't provide
-    smbios_data = get_smbios_data(model_id)
-    marketing_name = system_marketing_name or (
-        smbios_data.get("marketing_name") if smbios_data else None
-    )
-    board_id = system_board_id or (smbios_data.get("board_id") if smbios_data else None)
-    cpu_generation = smbios_data.get("cpu_generation") if smbios_data else None
-    max_os_supported = smbios_data.get("max_os_supported") if smbios_data else None
-
-    if marketing_name:
-        source = "system" if system_marketing_name else "SMBIOS"
-        verbose_log(
-            f"Model: {marketing_name} (source: {source}, Board: {board_id}, "
-            f"CPU gen: {cpu_generation}, Max OS: {max_os_supported})"
-        )
+    if system_marketing_name:
+        verbose_log(f"Model: {system_marketing_name} (source: system, Board: {system_board_id})")
 
     return {
         "os": "Darwin",
@@ -267,10 +253,8 @@ def collect_system_info() -> SystemInfo:
         "macos_name": macos_name,
         "model_name": model_name,
         "model_identifier": model_id,
-        "marketing_name": marketing_name,
-        "board_id": board_id,
-        "cpu_generation": cpu_generation,
-        "max_os_supported": max_os_supported,
+        "marketing_name": system_marketing_name,
+        "board_id": system_board_id,
         "kernel": run(["uname", "-r"]),
         "architecture": platform.machine(),
         "uptime": _parse_uptime(run(["uptime"]).split("load")[0]),

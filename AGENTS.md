@@ -8,7 +8,7 @@ Instructions for AI coding agents (Claude, Cursor, Copilot, etc.) when working w
 
 **Key Capabilities:**
 
-- **System**: Darwin/macOS version (SMBIOS enrichment), SIP/FileVault/Gatekeeper, thermal, memory pressure, Time Machine, EDID display parsing
+- **System**: Darwin/macOS version, SIP/FileVault/Gatekeeper, thermal, memory pressure, Time Machine, EDID display parsing
 - **Developer**: 8 languages, 3 SDKs, 5 cloud tools, 5 databases, 10 version managers, 5 IDEs, 8 browsers, 8 terminal emulators, 7 shell frameworks
 - **Package Management**: Homebrew (formula + cask + service), MacPorts, npm, yarn, pnpm, bun, pipx
 - **Network**: Public/local IP, DNS, Wi-Fi, VPN detection, firewall
@@ -22,7 +22,6 @@ Instructions for AI coding agents (Claude, Cursor, Copilot, etc.) when working w
 
 - `macos_system_report.json` — Structured data
 - `macos_system_report.txt` — Optimized prompt for LLMs (OCLP-aware)
-- `macos_system_report.html` — Visual dashboard (dark theme)
 
 ## Project Architecture
 
@@ -35,11 +34,10 @@ macos-system-prose/
 │   ├── exceptions.py          # Custom exceptions
 │   ├── iokit.py               # NVRAM access via subprocess
 │   ├── macos_versions.py      # macOS version detection and mapping
-│   ├── html_report.py         # HTML dashboard generation
 │   ├── diff.py                # Report comparison logic
 │   ├── py.typed               # PEP 561 type marker
 │   ├── datasets/
-│   │   └── smbios.py          # SMBIOS database and legacy Mac detection
+│   │   └── smbios.py          # Legacy Mac detection
 │   └── collectors/            # 7 data collector modules
 │       ├── system.py          # System, hardware, display, disk, EDID
 │       ├── network.py         # Network, DNS, firewall, Wi-Fi, VPN
@@ -48,24 +46,21 @@ macos-system-prose/
 │       ├── environment.py     # Processes, launch items, security, NVRAM, apps
 │       ├── advanced.py        # Storage, fonts, OCLP, preferences, logs
 │       └── ioregistry.py      # IORegistry: PCIe, USB, audio codecs
-├── tests/                     # 10 test files + conftest.py (~107 tests)
+├── tests/                     # 9 test files + conftest.py (~93 tests)
 │   ├── conftest.py            # Factory functions creating 5 in-memory fixture profiles
 │   ├── test_collection.py     # Collector integration tests
 │   ├── test_display.py        # EDID parsing and display detection
 │   ├── test_exceptions.py     # Exception handling
 │   ├── test_fixtures.py       # Schema validation with factory fixtures
 │   ├── test_ioregistry.py     # IORegistry collector
-│   ├── test_smbios.py         # SMBIOS database and legacy Mac detection
+│   ├── test_smbios.py         # Legacy Mac detection
 │   ├── test_utils.py          # Utility functions
-│   ├── test_html_report.py    # HTML generation tests
 │   ├── test_engine.py         # Engine orchestration tests
 │   └── test_diff.py           # Diff logic tests
 ├── scripts/
-│   ├── scrape_macos_versions.py # Scrape macOS versions from Apple Support
-│   └── scrape_smbios_models.py  # Scrape Mac models from EveryMac
+│   └── scrape_macos_versions.py # Scrape macOS versions from Apple Support
 ├── data/                      # Runtime data (DO NOT EDIT MANUALLY)
-│   ├── macos_versions.json    # 22 macOS versions
-│   └── smbios_models.json     # 70+ Mac models
+│   └── macos_versions.json    # 22 macOS versions
 ├── .github/workflows/ci.yml   # CI/CD: lint, test, integration, security scan
 ├── run.py                     # Development entry point
 ├── pyproject.toml             # Metadata, dependencies, tool config
@@ -106,7 +101,7 @@ pytest --cov=src/prose
 
 | Module | Functions | Functionality |
 | --- | --- | --- |
-| `system.py` | 17 | System info + SMBIOS, hardware + memory pressure, display + EDID, disk + S.M.A.R.T., Time Machine |
+| `system.py` | 17 | System info, hardware + memory pressure, display + EDID, disk + S.M.A.R.T., Time Machine |
 | `network.py` | 4 | Network interfaces, VPN detection, DNS, firewall, Wi-Fi |
 | `packages.py` | 9 | Homebrew (formula + cask + service), MacPorts, pipx, npm, yarn, pnpm, bun |
 | `developer.py` | 13 | Languages, SDKs, clouds, Docker, browsers, extensions, editors, Git config, terminals, shell frameworks |
@@ -152,10 +147,8 @@ pytest --cov=src/prose
 | `get_oclp_nvram_settings()` | Get OCLP settings from NVRAM |
 | `get_secure_boot_model()` | Get SecureBootModel from NVRAM |
 
-**`datasets/smbios.py` (5 functions):**
+**`datasets/smbios.py` (1 function):**
 
-- 70+ Mac models with marketing name, board ID, CPU generation, max OS supported, stock GPU.
-- `get_smbios_data(model_identifier)` — Lookup model metadata.
 - `is_legacy_mac(model_identifier, current_macos_version)` — Check for unsupported OS.
 
 ### Security and Privacy
@@ -167,7 +160,7 @@ pytest --cov=src/prose
 
 ## Testing
 
-**10 Test Files + conftest.py (~107 tests):**
+**9 Test Files + conftest.py (~93 tests):**
 
 | File | Content |
 | --- | --- |
@@ -177,8 +170,7 @@ pytest --cov=src/prose
 | `test_display.py` | EDID parsing and display info collection (mock + real data) |
 | `test_fixtures.py` | Schema validation with 5 fixture profiles |
 | `test_ioregistry.py` | IORegistry collector (PCIe, USB, audio) with mock plist |
-| `test_smbios.py` | SMBIOS database integrity, lookup, legacy Mac detection |
-| `test_html_report.py` | HTML reporting logic |
+| `test_smbios.py` | Legacy Mac detection |
 | `test_diff.py` | Report comparison logic |
 | `test_engine.py` | Engine orchestration and prompt generation logic |
 
@@ -248,7 +240,6 @@ python3 run.py --verbose       # Verbose run
 python3 run.py --no-prompt     # JSON only
 python3 run.py -o report.json  # Custom output path
 python3 run.py --quiet         # Minimum output
-python3 run.py --html          # HTML output
 macos-prose --verbose          # Installed package entry point
 ```
 
@@ -267,12 +258,11 @@ ruff check . && ruff format --check . && pytest --cov=src/prose  # Full CI simul
 
 ### Engine Flow (engine.py)
 
-1. `main()` — Parse CLI arguments (`-v`, `-q`, `--no-prompt`, `-o`, `--diff`, `--html`)
+1. `main()` — Parse CLI arguments (`-v`, `-q`, `--no-prompt`, `-o`, `--diff`)
 2. `collect_all()` — Orchestrate collectors → `SystemReport`
 3. If `--diff`: `diff_reports()` compares with baseline
-4. If `--html`: `generate_html_report()` creates dashboard
-5. `generate_ai_prompt(data)` — Create OCLP-aware prompt for LLMs
-6. Write `macos_system_report.json`, `macos_system_report.txt`, and optionally `.html`
+4. `generate_ai_prompt(data)` — Create OCLP-aware prompt for LLMs
+5. Write `macos_system_report.json` and `macos_system_report.txt`
 
 ### OCLP Detection (advanced.py — 7 methods)
 
@@ -287,7 +277,6 @@ ruff check . && ruff format --check . && pytest --cov=src/prose  # Full CI simul
 ### Runtime Data (`data/` directory)
 
 - `macos_versions.json` — 22 macOS versions with metadata. Updated via `python3 scripts/scrape_macos_versions.py --write`.
-- `smbios_models.json` — 70 Mac models. Updated via `python3 scripts/scrape_smbios_models.py --write`.
 - **DO NOT EDIT JSON FILES MANUALLY** unless absolutely necessary.
 
 ### Package
@@ -330,12 +319,12 @@ ruff check . && ruff format --check . && pytest --cov=src/prose  # Full CI simul
 
 | Metric | Value |
 | --- | --- |
-| Total Source Lines | ~4,800 (16 Python modules) |
+| Total Source Lines | ~4,500 (15 Python modules) |
 | Collector Lines | ~2,800 (7 modules) |
 | TypedDict Classes | 47 |
-| Total Functions | ~110 |
-| SMBIOS Models | 70+ |
-| Tests | 107 (10 files + conftest.py) |
+| Total Functions | ~100 |
+| SMBIOS Models | 0 |
+| Tests | 93 (9 files + conftest.py) |
 | Fixture Profiles | 5 (in-memory) |
 | SystemReport Sections | 27 |
 | Platform | Darwin (macOS) |

@@ -28,8 +28,6 @@ class SystemInfo(TypedDict):
     model_identifier: str
     marketing_name: Optional[str]  # SMBIOS: "MacBook Air (13-inch, Mid 2013)"
     board_id: Optional[str]  # SMBIOS: "Mac-7DF21CB3ED6977E5"
-    cpu_generation: Optional[str]  # SMBIOS: "Haswell"
-    max_os_supported: Optional[str]  # SMBIOS: "Big Sur"
     kernel: str
     architecture: str
     uptime: str

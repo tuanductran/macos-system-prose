@@ -37,7 +37,7 @@ def _load_smbios_database() -> dict[str, SMBIOSData]:
 SMBIOS_DATABASE: dict[str, SMBIOSData] = _load_smbios_database()
 
 
-def get_smbios_data(model_identifier: str) -> SMBIOSData | None:
+def _get_smbios_data(model_identifier: str) -> SMBIOSData | None:
     """
     Get SMBIOS metadata for a Mac model identifier.
 
@@ -48,7 +48,7 @@ def get_smbios_data(model_identifier: str) -> SMBIOSData | None:
         SMBIOS metadata dictionary or None if not found
 
     Example:
-        >>> data = get_smbios_data("MacBookAir6,2")
+        >>> data = _get_smbios_data("MacBookAir6,2")
         >>> data["marketing_name"]
         'MacBook Air (13-inch, Mid 2013)'
     """
@@ -102,7 +102,7 @@ def is_legacy_mac(model_identifier: str, current_macos_version: str) -> bool:
         >>> is_legacy_mac("MacBookAir6,2", "12.7.6")  # Big Sur max, running Monterey
         True
     """
-    data = get_smbios_data(model_identifier)
+    data = _get_smbios_data(model_identifier)
     if not data:
         return False
 
@@ -124,4 +124,4 @@ def is_legacy_mac(model_identifier: str, current_macos_version: str) -> bool:
     return current_tuple > max_version
 
 
-__all__ = ["SMBIOS_DATABASE", "SMBIOSData", "get_smbios_data", "is_legacy_mac"]
+__all__ = ["is_legacy_mac"]

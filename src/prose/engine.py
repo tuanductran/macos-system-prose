@@ -45,7 +45,6 @@ from prose.collectors.network import collect_network_info
 from prose.collectors.packages import collect_package_managers
 from prose.collectors.system import collect_disk_info, collect_hardware_info, collect_system_info
 from prose.diff import diff_reports, format_diff
-from prose.html_report import generate_html_report
 from prose.schema import SystemReport
 
 
@@ -216,7 +215,6 @@ def main() -> int:
     parser.add_argument("--no-prompt", action="store_true")
     parser.add_argument("-o", "--output", default="macos_system_report.json")
     parser.add_argument("--diff", help="Compare current report with a previous JSON report")
-    parser.add_argument("--html", action="store_true", help="Generate a beautiful HTML dashboard")
     args = parser.parse_args()
 
     utils.VERBOSE = args.verbose
@@ -266,16 +264,6 @@ def main() -> int:
                 utils.log(f"Failed to compare reports: {e}", "error")
         else:
             utils.log(f"Diff target not found: {args.diff}", "error")
-
-    if args.html:
-        html_file = Path(args.output).with_suffix(".html")
-        try:
-            html_content = generate_html_report(cast(Dict[str, Any], report))
-            with open(html_file, "w", encoding="utf-8") as f:
-                f.write(html_content)
-            utils.log(f"HTML Dashboard saved to: {os.path.abspath(html_file)}", "success")
-        except Exception as e:
-            utils.log(f"Failed to generate HTML dashboard: {e}", "error")
 
     utils.log("Collection complete.", "success")
     return 0

@@ -13,7 +13,6 @@ A **read-only** introspection tool for Darwin (macOS) that collects comprehensiv
 
 1. **`macos_system_report.json`** — Structured data for programmatic analysis.
 2. **`macos_system_report.txt`** — Optimized prompt for LLMs (OCLP-aware).
-3. **`macos_system_report.html`** — Visual dashboard for human review.
 
 ### AI Prompt
 
@@ -30,7 +29,7 @@ The generated prompt is context-aware:
 
 ### System & Hardware
 
-- Darwin/macOS version with marketing name and **SMBIOS enrichment** (board ID, CPU generation, max supported OS).
+- Darwin/macOS version with marketing name and model enrichment (board ID).
 - Hardware model, identifier, architecture (Intel/Apple Silicon).
 - CPU, GPU, memory stats.
 - **Memory Pressure**: Real-time statistics (wired/active/inactive/free, swap usage).
@@ -100,8 +99,7 @@ Advanced detection methods for unsupported Macs running newer macOS versions:
 3. Root patch marker plist.
 4. OCLP signature kexts (AMFIPass, RestrictEvents, Lilu, WhateverGreen, etc.).
 5. Patched system frameworks.
-6. SMBIOS-based unsupported OS detection (70+ Mac models in database).
-7. Boot-args AMFI configuration parsing.
+6. Boot-args AMFI configuration parsing.
 
 ### Advanced Analysis
 
@@ -142,9 +140,6 @@ pip install -e ".[dev]"
 # Generate JSON + AI Prompt (default)
 python3 run.py
 
-# Generate beautiful HTML Dashboard
-python3 run.py --html
-
 # Compare with a previous report
 python3 run.py --diff baseline.json
 
@@ -159,15 +154,12 @@ python3 run.py -o report.json
 
 # Minimal output
 python3 run.py --quiet
-
-# Only installed package usage
-macos-prose --verbose --html
 ```
 
 ### Command Line Options
 
 ```text
-usage: run.py [-h] [-v] [-q] [--no-prompt] [-o OUTPUT] [--diff DIFF] [--html]
+usage: run.py [-h] [-v] [-q] [--no-prompt] [-o OUTPUT] [--diff DIFF]
 
 macOS System Prose Collector
 
@@ -178,24 +170,9 @@ options:
   --no-prompt           Skip AI prompt generation
   -o, --output OUTPUT   Custom output path for JSON report
   --diff DIFF           Compare current report with a baseline JSON
-  --html                Generate HTML dashboard with dark theme
 ```
 
 ## New Features
-
-### 🎨 HTML Dashboard
-
-Generate a stunning HTML report with:
-
-- Dark theme with glassmorphism effects.
-- Gradient backgrounds and hover animations.
-- Responsive grid layout.
-- Status badges (Enabled/Disabled).
-
-```bash
-python3 run.py --html
-# Generates: macos_system_report.html
-```
 
 ### 🔍 Diff Mode
 
@@ -217,18 +194,6 @@ Output shows:
 - `-` Removed items
 - `*` Changed items
 
-### 🔄 Data Scrapers
-
-Update internal databases automatically:
-
-```bash
-# Update macOS versions from Apple Support
-python3 scripts/scrape_macos_versions.py --write
-
-# Update SMBIOS models from EveryMac
-python3 scripts/scrape_smbios_models.py --write
-```
-
 ## Example Output
 
 ### JSON Report Structure
@@ -236,19 +201,15 @@ python3 scripts/scrape_smbios_models.py --write
 ```json
 {
   "timestamp": 1738908295.123,
-  "system": {
-    "os": "Darwin",
-    "macos_version": "12.7.6",
-    "macos_name": "macOS Monterey",
-    "model_name": "MacBook Air",
-    "model_identifier": "MacBookAir6,2",
-    "marketing_name": "MacBook Air (13-inch, Early 2014)",
-    "cpu_generation": "Haswell",
-    "max_os_supported": "Big Sur",
-    "sip_enabled": false,
-    "gatekeeper_enabled": true
-  },
-  "hardware": {
+      "system": {
+      "os": "Darwin",
+      "macos_version": "12.7.6",
+      "macos_name": "macOS Monterey",
+      "model_name": "MacBook Air",
+      "model_identifier": "MacBookAir6,2",
+      "sip_enabled": false,
+      "gatekeeper_enabled": true
+    },  "hardware": {
     "cpu": "Intel(R) Core(TM) i5-4260U CPU @ 1.40GHz",
     "memory_pressure": {
       "level": "normal",
@@ -315,7 +276,7 @@ pytest                          # Run tests
 ## Comparisons & Roadmap
 
 - [x] Comparison mode (diff two reports)
-- [x] HTML/Web dashboard output
+- [ ] HTML/Web dashboard output
 - [ ] Export as PyPI package
 - [ ] Homebrew formula
 - [ ] Plugin architecture for custom collectors
