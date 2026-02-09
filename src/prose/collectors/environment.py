@@ -4,6 +4,7 @@ import os
 import re
 from pathlib import Path
 
+from prose.constants import Timeouts
 from prose.iokit import get_boot_args, get_csr_active_config, read_nvram  # Phase 5
 from prose.schema import (
     ApplicationsInfo,
@@ -23,7 +24,7 @@ from prose.schema import (
     SystemExtension,
     TCCPermission,
 )
-from prose.utils import get_app_version, log, run, verbose_log
+from prose.utils import get_app_version, has_full_disk_access, log, run, verbose_log
 
 
 def collect_processes() -> list[ProcessInfo]:
@@ -43,7 +44,11 @@ def collect_processes() -> list[ProcessInfo]:
                     }
                 )
         return processes
-    except Exception:
+    except (ValueError, IndexError) as e:
+        verbose_log(f"Error parsing process data: {e}")
+        return []
+    except OSError as e:
+        verbose_log(f"Failed to execute ps command: {e}")
         return []
 
 
@@ -64,9 +69,10 @@ def collect_launch_items() -> LaunchItems:
 def collect_login_items() -> list[str]:
     script = 'tell application "System Events" to get name of every login item'
     try:
-        out = run(["osascript", "-e", script], timeout=10)
+        out = run(["osascript", "-e", script], timeout=Timeouts.FAST)
         return [item for item in out.split(", ") if item] if out else []
-    except Exception:
+    except OSError as e:
+        verbose_log(f"Failed to get login items: {e}")
         return []
 
 
@@ -77,7 +83,7 @@ def collect_launchd_services() -> list[LaunchdService]:
 
     try:
         # Get user domain services
-        output = run(["launchctl", "list"], timeout=15)
+        output = run(["launchctl", "list"], timeout=Timeouts.STANDARD)
         for line in output.splitlines()[1:]:  # Skip header
             parts = line.split()
             if len(parts) >= 3:
@@ -114,8 +120,8 @@ def collect_launchd_services() -> list[LaunchdService]:
 
         # Limit to top 50 services to avoid huge output
         services = services[:50]
-    except Exception:
-        pass
+    except (OSError, ValueError, IndexError) as e:
+        verbose_log(f"Failed to collect launchd services: {e}")
 
     return services
 
@@ -124,12 +130,12 @@ def collect_environment_info() -> EnvironmentInfo:
     log("Collecting environment info...")
     path_entries = os.environ.get("PATH", "").split(":")
     seen = set()
-    dupes = []
-    for x in path_entries:
-        if x in seen:
-            dupes.append(x)
+    duplicates = []
+    for path_entry in path_entries:
+        if path_entry in seen:
+            duplicates.append(path_entry)
         else:
-            seen.add(x)
+            seen.add(path_entry)
 
     ports = []
     try:
@@ -140,15 +146,15 @@ def collect_environment_info() -> EnvironmentInfo:
                 port = parts[3] if len(parts) > 3 else "Unknown"
                 if port not in ports:
                     ports.append(port)
-    except Exception:
-        pass
+    except (OSError, IndexError) as e:
+        verbose_log(f"Failed to get listening ports: {e}")
 
     return {
         "shell": os.environ.get("SHELL"),
         "python_executable": "/usr/bin/python3",  # System Python, not venv
         "python_version": run(["/usr/bin/python3", "--version"]),
         "path_entries": path_entries,
-        "path_duplicates": list(set(dupes)),
+        "path_duplicates": list(set(duplicates)),
         "listening_ports": sorted(ports),
         "launchd_services": collect_launchd_services(),
     }
@@ -160,6 +166,9 @@ def collect_battery_info() -> BatteryInfo:
     present = "InternalBattery" in out
     cycle_count = None
     condition = None
+    percentage = None
+    power_source = "Unknown"
+
     if present:
         try:
             data = run(["system_profiler", "SPPowerDataType"])
@@ -169,14 +178,35 @@ def collect_battery_info() -> BatteryInfo:
                     cycle_count = int(line.split(":")[1].strip())
                 elif "Condition:" in line:
                     condition = line.split(":")[1].strip()
-        except Exception:
-            pass
+        except (OSError, ValueError, IndexError) as e:
+            verbose_log(f"Failed to get battery details: {e}")
+
+        # Parse battery percentage safely
+        if "\t" in out:
+            try:
+                parts = out.split("\t")
+                if len(parts) >= 2:
+                    percentage_parts = parts[1].split(";")
+                    if percentage_parts:
+                        percentage = percentage_parts[0].strip()
+            except (IndexError, ValueError) as e:
+                verbose_log(f"Failed to parse battery percentage: {e}")
+
+        # Parse power source safely
+        if "'" in out:
+            try:
+                quote_parts = out.split("'")
+                if len(quote_parts) >= 2:
+                    power_source = quote_parts[1]
+            except IndexError as e:
+                verbose_log(f"Failed to parse power source: {e}")
+
     return {
         "present": present,
-        "percentage": out.split("\t")[1].split(";")[0] if present and "\t" in out else None,
+        "percentage": percentage,
         "cycle_count": cycle_count,
         "condition": condition,
-        "power_source": out.split("'")[1] if "'" in out else "Unknown",
+        "power_source": power_source,
     }
 
 
@@ -186,17 +216,35 @@ def collect_cron_jobs() -> CronInfo:
         # Suppress errors as it's common to have no crontab
         out = run(["crontab", "-l"], log_errors=False)
         return {"user_crontab": out.splitlines()} if out else {"user_crontab": []}
-    except Exception:
+    except OSError:
+        # Common case: no crontab configured
         return {"user_crontab": []}
 
 
 def collect_diagnostics() -> DiagnosticsInfo:
+    """Collect diagnostic crash reports.
+
+    May require Full Disk Access on some macOS versions.
+    """
     log("Collecting diagnostic logs...")
     diag_dir = Path("~/Library/Logs/DiagnosticReports").expanduser()
-    crashes = []
-    if diag_dir.exists():
+    crashes: list[str] = []
+
+    if not diag_dir.exists():
+        verbose_log("DiagnosticReports directory not found")
+        return {"recent_crashes": crashes}
+
+    try:
         files = sorted(diag_dir.glob("*.ips"), key=os.path.getmtime, reverse=True)
         crashes = [f.name for f in files[:5]]
+    except (OSError, PermissionError) as e:
+        verbose_log(f"Cannot access diagnostic reports: {e}")
+        if not has_full_disk_access():
+            log(
+                "⚠️  Full Disk Access may be required to read crash reports on this macOS version.",
+                level="warning",
+            )
+
     return {"recent_crashes": crashes}
 
 
@@ -206,7 +254,7 @@ def collect_system_extensions() -> list[SystemExtension]:
     extensions: list[SystemExtension] = []
 
     try:
-        output = run(["systemextensionsctl", "list"], timeout=10, log_errors=False)
+        output = run(["systemextensionsctl", "list"], timeout=Timeouts.FAST, log_errors=False)
         # Parse output which has format like:
         # enabled	active	teamID	bundleID (version)	name	[state]
         for line in output.splitlines():
@@ -220,12 +268,12 @@ def collect_system_extensions() -> list[SystemExtension]:
                         ext: SystemExtension = {
                             "identifier": match.group(2),
                             "version": match.group(3),
-                            "state": parts[0] if len(parts) > 0 else "unknown",
+                            "state": parts[0] if len(parts) > 0 else "Unknown",
                             "team_id": match.group(1),
                         }
                         extensions.append(ext)
-    except Exception:
-        pass
+    except (OSError, IndexError) as e:
+        verbose_log(f"Failed to collect system extensions: {e}")
 
     return extensions
 
@@ -240,8 +288,8 @@ def collect_kexts() -> KernelExtensionsInfo:
                 match = re.search(r"([a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+)\s\(([^)]+)\)", line)
                 if match:
                     kexts.append(f"{match.group(1)} ({match.group(2)})")
-    except Exception:
-        pass
+    except OSError as e:
+        verbose_log(f"Failed to collect kernel extensions: {e}")
     return {
         "third_party_kexts": kexts,
         "system_extensions": collect_system_extensions(),
@@ -263,7 +311,8 @@ def collect_all_applications() -> list[str]:
                     all_apps.append(f"{app_name}@{ver}")
                 else:
                     all_apps.append(app_name)
-            except Exception:
+            except (OSError, ValueError):
+                # Skip apps that can't be read
                 continue
 
     # Scan ~/Applications
@@ -277,10 +326,11 @@ def collect_all_applications() -> list[str]:
                     all_apps.append(f"{app_name}@{ver}")
                 else:
                     all_apps.append(app_name)
-            except Exception:
+            except (OSError, ValueError):
+                # Skip apps that can't be read
                 continue
 
-    return sorted(list(set(all_apps)))
+    return sorted(set(all_apps))
 
 
 def collect_electron_apps() -> ApplicationsInfo:
@@ -293,7 +343,8 @@ def collect_electron_apps() -> ApplicationsInfo:
                 if (app / "Contents/Frameworks/Electron Framework.framework").exists():
                     ver = get_app_version(app)
                     electron_apps.append(f"{app.name}@{ver}" if ver else app.name)
-            except Exception:
+            except (OSError, ValueError):
+                # Skip apps that can't be read
                 continue
 
     verbose_log("Collecting all installed applications...")
@@ -362,25 +413,39 @@ def collect_security_tools() -> SecurityInfo:
 
 
 def collect_tcc_permissions() -> list[TCCPermission]:
-    """Collect TCC (Transparency, Consent, Control) privacy permissions."""
+    """Collect TCC (Transparency, Consent, Control) privacy permissions.
+
+    Requires Full Disk Access to read TCC database.
+    """
     verbose_log("Checking TCC privacy permissions...")
     permissions: list[TCCPermission] = []
 
+    # Check if we have Full Disk Access
+    if not has_full_disk_access():
+        log(
+            "⚠️  Full Disk Access not granted. TCC permissions collection will be skipped.",
+            level="warning",
+        )
+        verbose_log(
+            "To enable TCC collection: System Settings → Privacy & Security → Full Disk Access"
+        )
+        return permissions
+
     # Note: Reading TCC database requires Full Disk Access permission
-    # We'll try common services via tccutil if available
     try:
-        # Alternative: Check if we can read the TCC database (requires FDA)
         tcc_db = Path.home() / "Library/Application Support/com.apple.TCC/TCC.db"
         if tcc_db.exists():
-            verbose_log("TCC database found but requires Full Disk Access to read")
-            # We can't reliably read this without FDA, so skip
+            verbose_log("TCC database accessible with Full Disk Access")
+            # We can now read this with FDA
+            # For now, we return empty as actual parsing requires SQL
+            # Future enhancement: Parse SQLite TCC.db
         else:
-            verbose_log("TCC database not accessible")
-    except Exception:
-        pass
+            verbose_log("TCC database not found")
+    except (OSError, PermissionError) as e:
+        verbose_log(f"Cannot access TCC database: {e}")
 
-    # Return empty list as we can't reliably get this without FDA
-    # Users can enable this manually if needed
+    # Return empty list as actual TCC parsing requires SQLite support
+    # Future enhancement: Parse TCC.db with sqlite3
     return permissions
 
 
@@ -399,7 +464,7 @@ def collect_code_signing_sample() -> list[CodeSigningInfo]:
                     # codesign -dvv writes to stderr, not stdout
                     output = run(
                         ["codesign", "-dvv", str(app)],
-                        timeout=3,  # Reduced from 5s to 3s
+                        timeout=Timeouts.FAST,  # Reduced from 5s to 3s
                         log_errors=False,
                         capture_stderr=True,
                     )
@@ -421,7 +486,7 @@ def collect_code_signing_sample() -> list[CodeSigningInfo]:
                     # Check if signature is valid (also writes to stderr)
                     verify_output = run(
                         ["codesign", "--verify", "--verbose", str(app)],
-                        timeout=3,  # Reduced from 5s to 3s
+                        timeout=Timeouts.FAST,  # Reduced from 5s to 3s
                         log_errors=False,
                         capture_stderr=True,
                     )
@@ -436,10 +501,11 @@ def collect_code_signing_sample() -> list[CodeSigningInfo]:
                             "team_id": team_id,
                         }
                     )
-                except Exception:
+                except (OSError, ValueError, IndexError):
+                    # Skip apps with code signing issues
                     continue
-    except Exception:
-        pass
+    except OSError as e:
+        verbose_log(f"Failed to collect code signing info: {e}")
 
     return signing_info
 
@@ -463,7 +529,7 @@ def collect_cloud_sync() -> CloudInfo:
             sync_info["drive_enabled"] = True
 
         # Try to get iCloud status via brctl (requires macOS 10.15+)
-        brctl_output = run(["brctl", "status"], timeout=5, log_errors=False)
+        brctl_output = run(["brctl", "status"], timeout=Timeouts.FAST, log_errors=False)
         if brctl_output:
             # Check for container count (indicates active sync)
             if "container" in brctl_output.lower():
@@ -493,8 +559,8 @@ def collect_cloud_sync() -> CloudInfo:
                     if len(parts) > 1:
                         sync_info["storage_used"] = " ".join(parts[1:])
                         break
-    except Exception:
-        pass
+    except (OSError, ValueError, IndexError) as e:
+        verbose_log(f"Failed to get iCloud sync status: {e}")
 
     return {"sync_status": sync_info}
 
@@ -566,7 +632,7 @@ def collect_nvram_variables() -> NVRAMInfo:
             verbose_log(f"HardwareModel: {hardware_model}")
 
         # Count total NVRAM variables
-        nvram_all = run(["nvram", "-p"], timeout=5, log_errors=False)
+        nvram_all = run(["nvram", "-p"], timeout=Timeouts.FAST, log_errors=False)
         if nvram_all:
             # Count lines that look like "key\tvalue"
             count = len([line for line in nvram_all.splitlines() if "\t" in line])

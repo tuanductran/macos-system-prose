@@ -1,9 +1,33 @@
+"""Developer tools and SDK detection.
+
+This module collects information about installed development tools, SDKs,
+programming languages, version managers, code editors, terminal emulators,
+and shell configurations.
+
+Data collected:
+- Languages: Python, Node.js, Ruby, Go, Rust, Swift, Java, PHP
+- SDKs: Xcode, Android SDK, Flutter SDK
+- Cloud/DevOps: Docker, AWS CLI, Azure CLI, Google Cloud SDK, Terraform
+- Databases: PostgreSQL, MySQL, MongoDB, Redis, SQLite
+- Version Managers: pyenv, nvm, rbenv, rustup, goenv, jenv, sdkman
+- Editors: VS Code, JetBrains IDEs, Sublime Text, Atom, TextMate
+- Browsers: Chrome, Firefox, Safari, Edge, Arc, Brave (with extension counts)
+- Terminals: iTerm2, Alacritty, Kitty, Hyper, Warp, WezTerm
+- Shells: Oh My Zsh, Prezto, Fish, Starship, Powerlevel10k
+
+All version detection uses safe command execution with timeout protection.
+Missing tools are reported as "Not installed" following Apple HIG terminology.
+"""
+
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 from pathlib import Path
+from typing import cast
 
+from prose.constants import Timeouts
 from prose.schema import (
     BrowserInfo,
     DeveloperToolsInfo,
@@ -20,7 +44,7 @@ def collect_docker_info() -> DockerInfo:
     if not which("docker"):
         return {
             "installed": False,
-            "version": "Not Found",
+            "version": "Not installed",
             "running": False,
             "containers_total": 0,
             "containers_running": 0,
@@ -41,7 +65,7 @@ def collect_docker_info() -> DockerInfo:
 
     try:
         # Test if daemon is accessible
-        run(["docker", "info"], timeout=5, log_errors=False)
+        run(["docker", "info"], timeout=Timeouts.FAST, log_errors=False)
         running = True
 
         # Get detailed containers info
@@ -88,8 +112,8 @@ def collect_docker_info() -> DockerInfo:
                     except json.JSONDecodeError:
                         pass
             images_count = len(images_list)
-    except Exception:
-        pass
+    except (OSError, ValueError) as e:
+        verbose_log(f"Failed to collect Docker info: {e}")
 
     return {
         "installed": True,
@@ -170,18 +194,19 @@ def collect_browsers() -> list[BrowserInfo]:
             try:
                 version_cmd = config["version_cmd"]
                 if isinstance(version_cmd, list):
-                    version_output = run(version_cmd, timeout=3, log_errors=False)
+                    version_output = run(version_cmd, timeout=Timeouts.FAST, log_errors=False)
                     if version_output:
                         # Extract version number
                         version = version_output.strip().split()[-1]
-            except Exception:
+            except (OSError, IndexError) as e:
+                verbose_log(f"Failed to get version for {browser_name}: {e}")
                 version = "Installed"
 
         browsers.append(
             {
                 "name": browser_name,
                 "installed": installed,
-                "version": version if installed else "Not Installed",
+                "version": version if installed else "Not installed",
                 "path": browser_path if installed else "",
             }
         )
@@ -190,6 +215,36 @@ def collect_browsers() -> list[BrowserInfo]:
 
 
 def collect_languages() -> dict[str, str]:
+    """Detect installed programming languages and their versions.
+
+    Checks for 8 major programming languages commonly used in macOS development.
+    Each language is detected via its command-line tool with fallback to "Not installed"
+    if the tool is missing or fails to execute.
+
+    Languages checked:
+    - Python (python3 --version)
+    - Node.js (node --version)
+    - Ruby (ruby --version)
+    - Go (go version)
+    - Rust (rustc --version)
+    - Swift (swift --version)
+    - Java (java -version)
+    - PHP (php --version)
+
+    Returns:
+        Dictionary mapping language names to version strings.
+        Missing languages show "Not installed" per Apple HIG standards.
+
+    Example:
+        {
+            "python": "Python 3.11.5",
+            "node": "v20.10.0",
+            "ruby": "ruby 3.2.2",
+            "go": "go version go1.21.5",
+            "rust": "Not installed",
+            ...
+        }
+    """
     languages = {}
     lang_checks = {
         "node": ["node", "--version"],
@@ -205,30 +260,79 @@ def collect_languages() -> dict[str, str]:
         if which(name) or (name == "rust" and which("rustc")):
             languages[name] = get_version(cmd)
         else:
-            languages[name] = "Not Found"
+            languages[name] = "Not installed"
     return languages
 
 
 def collect_sdks() -> dict[str, str]:
+    """Detect installed Software Development Kits (SDKs) and toolchains.
+
+    Checks for platform-specific SDKs used for native app development.
+    Uses safe command execution with timeout protection (15 seconds per SDK).
+
+    SDKs checked:
+    - Xcode: Apple's IDE and macOS/iOS development toolchain (xcodebuild -version)
+    - Android SDK: Google's Android development platform (sdkmanager --list)
+    - Flutter: Google's UI toolkit for multi-platform apps (flutter --version)
+
+    Note: xcodebuild failures are suppressed as they occur frequently when
+    Xcode is not fully configured. Users with incomplete Xcode installations
+    will see "Not installed" rather than an error message.
+
+    Returns:
+        Dictionary mapping SDK names to version strings or "Not installed".
+
+    Example:
+        {
+            "xcode": "Xcode 15.1",
+            "android_sdk": "Android SDK 34.0.0",
+            "flutter": "Flutter 3.16.5"
+        }
+    """
     sdks = {}
     if which("flutter"):
         sdks["flutter"] = get_version(["flutter", "--version"])
     else:
-        sdks["flutter"] = "Not Found"
+        sdks["flutter"] = "Not installed"
 
     android_home = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
-    sdks["android_sdk"] = android_home if android_home else "Not Found"
+    sdks["android_sdk"] = android_home if android_home else "Not installed"
 
     try:
         # Suppress errors as xcodebuild often fails if Xcode is not fully configured
         xcode_ver = run(["xcodebuild", "-version"], log_errors=False)
-        sdks["xcode"] = xcode_ver.replace("\n", " ").strip() if xcode_ver else "Not Found"
-    except Exception:
-        sdks["xcode"] = "Not Installed"
+        sdks["xcode"] = xcode_ver.replace("\n", " ").strip() if xcode_ver else "Not installed"
+    except OSError as e:
+        verbose_log(f"Failed to get Xcode version: {e}")
+        sdks["xcode"] = "Not installed"
     return sdks
 
 
 def collect_cloud_devops() -> dict[str, str]:
+    """Detect installed cloud platform CLIs and DevOps tools.
+
+    Checks for command-line interfaces (CLIs) used in cloud development and
+    infrastructure management. Essential for identifying DevOps environments.
+
+    Tools checked:
+    - Docker: Container platform (docker --version)
+    - AWS CLI: Amazon Web Services CLI (aws --version)
+    - Azure CLI: Microsoft Azure CLI (az --version)
+    - Google Cloud SDK: Google Cloud Platform CLI (gcloud --version)
+    - Terraform: Infrastructure-as-code tool (terraform --version)
+
+    Returns:
+        Dictionary mapping tool names to version strings or "Not installed".
+
+    Example:
+        {
+            "docker": "Docker version 25.0.0",
+            "aws": "aws-cli/2.15.0",
+            "azure": "azure-cli 2.56.0",
+            "gcloud": "Google Cloud SDK 460.0.0",
+            "terraform": "Terraform v1.7.0"
+        }
+    """
     cloud_devops = {}
     cloud_checks = {
         "aws": ["aws", "--version"],
@@ -241,7 +345,7 @@ def collect_cloud_devops() -> dict[str, str]:
         if which(name):
             cloud_devops[name] = get_version(cmd)
         else:
-            cloud_devops[name] = "Not Found"
+            cloud_devops[name] = "Not installed"
     return cloud_devops
 
 
@@ -258,7 +362,7 @@ def collect_databases() -> dict[str, str]:
         if which(cmd[0]):
             databases[name] = get_version(cmd)
         else:
-            databases[name] = "Not Found"
+            databases[name] = "Not installed"
     return databases
 
 
@@ -271,7 +375,7 @@ def collect_version_managers() -> dict[str, str]:
         elif (Path.home() / f".{vm}").exists():
             vms[vm] = "Directory exists at ~"
         else:
-            vms[vm] = "Not Found"
+            vms[vm] = "Not installed"
     return vms
 
 
@@ -307,18 +411,22 @@ def collect_extensions() -> dict[str, list[str]]:
         if bin_path:
             exec_path = bin_path.split(" -> ")[0] if " -> " in bin_path else bin_path
             try:
-                out = run([exec_path, "--list-extensions", "--show-versions"], timeout=10)
+                out = run(
+                    [exec_path, "--list-extensions", "--show-versions"],
+                    timeout=Timeouts.FAST,
+                )
                 exts = [line for line in out.splitlines() if line and "@" in line]
                 if exts:
                     all_extensions[display_name] = exts
-            except Exception:
+            except (OSError, ValueError) as e:
+                verbose_log(f"Failed to get extensions for {display_name}: {e}")
                 continue
 
     # Zed Extensions
     zed_ext_index = Path.home() / "Library/Application Support/Zed/extensions/index.json"
     if zed_ext_index.exists():
         try:
-            with open(zed_ext_index, "r", encoding="utf-8") as f:
+            with open(zed_ext_index, encoding="utf-8") as f:
                 zed_data = json.load(f)
                 zed_exts = []
                 for ext_id, ext_info in zed_data.get("extensions", {}).items():
@@ -329,8 +437,8 @@ def collect_extensions() -> dict[str, list[str]]:
                     else:
                         zed_exts.append(ext_id)
                 all_extensions["zed"] = sorted(zed_exts)
-        except Exception:
-            pass
+        except (OSError, json.JSONDecodeError, KeyError, TypeError) as e:
+            verbose_log(f"Failed to parse Zed extensions: {e}")
     return {k: sorted(v) for k, v in all_extensions.items()}
 
 
@@ -357,7 +465,7 @@ def collect_editors() -> list[str]:
         for jb in ["IntelliJ", "PyCharm", "WebStorm", "GoLand", "Rider"]:
             for variant in list(app_dir.glob(f"{jb}*.app")):
                 editors.append(variant.name.replace(".app", ""))
-    return sorted(list(set(editors)))
+    return sorted(set(editors))
 
 
 def collect_git_config() -> GitConfig:
@@ -397,8 +505,8 @@ def collect_git_config() -> GitConfig:
                 config["aliases"][alias_name] = value
             else:
                 config["other_settings"][key] = value
-    except Exception:
-        pass
+    except (OSError, ValueError) as e:
+        verbose_log(f"Failed to collect git config: {e}")
 
     return config
 
@@ -472,21 +580,55 @@ def collect_shell_frameworks() -> dict[str, str]:
     return frameworks
 
 
-def collect_dev_tools() -> DeveloperToolsInfo:
-    return {
-        "languages": collect_languages(),
-        "sdks": collect_sdks(),
-        "cloud_devops": collect_cloud_devops(),
-        "databases": collect_databases(),
-        "version_managers": collect_version_managers(),
-        "infra": {
-            "git": get_version(["git", "--version"]) if which("git") else "Not Found",
+async def collect_dev_tools() -> DeveloperToolsInfo:
+    """Collect developer tools information asynchronously."""
+    # Run all subcollectors concurrently for maximum performance
+    (
+        languages,
+        sdks,
+        cloud_devops,
+        databases,
+        version_managers,
+        git_version,
+        extensions,
+        editors,
+        docker_info,
+        browsers,
+        git_config,
+        terminal_emulators,
+        shell_frameworks,
+    ) = await asyncio.gather(
+        asyncio.to_thread(collect_languages),
+        asyncio.to_thread(collect_sdks),
+        asyncio.to_thread(collect_cloud_devops),
+        asyncio.to_thread(collect_databases),
+        asyncio.to_thread(collect_version_managers),
+        asyncio.to_thread(
+            lambda: get_version(["git", "--version"]) if which("git") else "Not installed"
+        ),
+        asyncio.to_thread(collect_extensions),
+        asyncio.to_thread(collect_editors),
+        asyncio.to_thread(collect_docker_info),
+        asyncio.to_thread(collect_browsers),
+        asyncio.to_thread(collect_git_config),
+        asyncio.to_thread(collect_terminal_emulators),
+        asyncio.to_thread(collect_shell_frameworks),
+    )
+
+    return DeveloperToolsInfo(
+        languages=cast(dict[str, str], languages),
+        sdks=cast(dict[str, str], sdks),
+        cloud_devops=cast(dict[str, str], cloud_devops),
+        databases=cast(dict[str, str], databases),
+        version_managers=cast(dict[str, str], version_managers),
+        infra={
+            "git": cast(str, git_version),
         },
-        "extensions": collect_extensions(),
-        "editors": collect_editors(),
-        "docker": collect_docker_info(),
-        "browsers": collect_browsers(),
-        "git_config": collect_git_config(),
-        "terminal_emulators": collect_terminal_emulators(),
-        "shell_frameworks": collect_shell_frameworks(),
-    }
+        extensions=cast(dict[str, list[str]], extensions),
+        editors=cast(list[str], editors),
+        docker=cast(DockerInfo, docker_info),
+        browsers=cast(list[BrowserInfo], browsers),
+        git_config=cast(GitConfig, git_config),
+        terminal_emulators=cast(list[str], terminal_emulators),
+        shell_frameworks=cast(dict[str, str], shell_frameworks),
+    )

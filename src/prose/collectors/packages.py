@@ -1,67 +1,75 @@
 from __future__ import annotations
 
 import re
-from typing import Union, cast
 
+from prose.constants import Timeouts
 from prose.schema import BrewService, NotInstalled, PackageManagers, PackageVersionInfo
 from prose.utils import get_json_output, log, run, verbose_log, which
 
 
-def homebrew_info() -> Union[PackageVersionInfo, NotInstalled]:
+def homebrew_info() -> PackageVersionInfo | NotInstalled:
+    """Get Homebrew package manager information."""
     log("Checking Homebrew...")
     if not which("brew"):
-        return cast(NotInstalled, {"installed": False})
-    return cast(
-        PackageVersionInfo,
-        {
-            "installed": True,
-            "version": run(["brew", "--version"]).splitlines()[0],
-            "bin_path": which("brew") or "Unknown",
-            "prefix": run(["brew", "--prefix"]),
-            "formula": run(["brew", "list", "--formula"], timeout=30).splitlines(),
-            "casks": run(["brew", "list", "--cask"], timeout=30).splitlines(),
-        },
+        return NotInstalled(installed=False)
+    return PackageVersionInfo(
+        installed=True,
+        version=run(["brew", "--version"]).splitlines()[0],
+        bin_path=which("brew") or "Unknown",
+        prefix=run(["brew", "--prefix"]),
+        formula=run(["brew", "list", "--formula"], timeout=Timeouts.SLOW).splitlines(),
+        casks=run(["brew", "list", "--cask"], timeout=Timeouts.SLOW).splitlines(),
+        globals=None,
+        active_ports=None,
+        packages=None,
     )
 
 
-def macports_info() -> Union[PackageVersionInfo, NotInstalled]:
+def macports_info() -> PackageVersionInfo | NotInstalled:
+    """Get MacPorts package manager information."""
     log("Checking MacPorts...")
     if not which("port"):
-        return cast(NotInstalled, {"installed": False})
+        return NotInstalled(installed=False)
     lines = run(["port", "installed", "active"]).splitlines()
     prose_lines = [line.strip() for line in lines if line.strip()]
-    return cast(
-        PackageVersionInfo,
-        {
-            "installed": True,
-            "version": run(["port", "version"]).lower().replace("version:", "").strip(),
-            "bin_path": which("port") or "Unknown",
-            "active_ports": prose_lines,
-        },
+    return PackageVersionInfo(
+        installed=True,
+        version=run(["port", "version"]).lower().replace("version:", "").strip(),
+        bin_path=which("port") or "Unknown",
+        active_ports=prose_lines,
+        globals=None,
+        prefix=None,
+        formula=None,
+        casks=None,
+        packages=None,
     )
 
 
-def pipx_info() -> Union[PackageVersionInfo, NotInstalled]:
+def pipx_info() -> PackageVersionInfo | NotInstalled:
+    """Get pipx package manager information."""
     log("Checking pipx...")
     if not which("pipx"):
-        return cast(NotInstalled, {"installed": False})
-    return cast(
-        PackageVersionInfo,
-        {
-            "installed": True,
-            "version": run(["pipx", "--version"]),
-            "bin_path": which("pipx") or "Unknown",
-            "packages": [
-                line for line in run(["pipx", "list"]).splitlines() if line.startswith("package")
-            ],
-        },
+        return NotInstalled(installed=False)
+    return PackageVersionInfo(
+        installed=True,
+        version=run(["pipx", "--version"]),
+        bin_path=which("pipx") or "Unknown",
+        packages=[
+            line for line in run(["pipx", "list"]).splitlines() if line.startswith("package")
+        ],
+        globals=None,
+        prefix=None,
+        formula=None,
+        casks=None,
+        active_ports=None,
     )
 
 
-def npm_global_info() -> Union[PackageVersionInfo, NotInstalled]:
+def npm_global_info() -> PackageVersionInfo | NotInstalled:
+    """Get npm package manager and global packages information."""
     log("Checking npm globals...")
     if not which("npm"):
-        return cast(NotInstalled, {"installed": False})
+        return NotInstalled(installed=False)
     globals_list = []
     data = get_json_output(["npm", "list", "-g", "--depth=0", "--json"])
     if data and isinstance(data, dict):
@@ -69,23 +77,26 @@ def npm_global_info() -> Union[PackageVersionInfo, NotInstalled]:
         if isinstance(dependencies, dict):
             for name, info in dependencies.items():
                 if isinstance(info, dict):
-                    version = info.get("version", "unknown")
+                    version = info.get("version", "Unknown")
                     globals_list.append(f"{name}@{version}")
-    return cast(
-        PackageVersionInfo,
-        {
-            "installed": True,
-            "version": run(["npm", "--version"]),
-            "bin_path": which("npm") or "Unknown",
-            "globals": sorted(globals_list),
-        },
+    return PackageVersionInfo(
+        installed=True,
+        version=run(["npm", "--version"]),
+        bin_path=which("npm") or "Unknown",
+        globals=sorted(globals_list),
+        prefix=None,
+        formula=None,
+        casks=None,
+        active_ports=None,
+        packages=None,
     )
 
 
-def yarn_global_info() -> Union[PackageVersionInfo, NotInstalled]:
+def yarn_global_info() -> PackageVersionInfo | NotInstalled:
+    """Get Yarn package manager and global packages information."""
     log("Checking Yarn globals...")
     if not which("yarn"):
-        return cast(NotInstalled, {"installed": False})
+        return NotInstalled(installed=False)
     version = run(["yarn", "--version"])
     globals_list = []
     # Yarn v2+ (Berry) removed `yarn global` command
@@ -99,21 +110,24 @@ def yarn_global_info() -> Union[PackageVersionInfo, NotInstalled]:
                     globals_list.append(parts[1])
             elif line.strip().startswith("- "):
                 globals_list.append(line.strip().replace("- ", ""))
-    return cast(
-        PackageVersionInfo,
-        {
-            "installed": True,
-            "version": version,
-            "bin_path": which("yarn") or "Unknown",
-            "globals": sorted(globals_list),
-        },
+    return PackageVersionInfo(
+        installed=True,
+        version=version,
+        bin_path=which("yarn") or "Unknown",
+        globals=sorted(globals_list),
+        prefix=None,
+        formula=None,
+        casks=None,
+        active_ports=None,
+        packages=None,
     )
 
 
-def pnpm_global_info() -> Union[PackageVersionInfo, NotInstalled]:
+def pnpm_global_info() -> PackageVersionInfo | NotInstalled:
+    """Get PNPM package manager and global packages information."""
     log("Checking PNPM globals...")
     if not which("pnpm"):
-        return cast(NotInstalled, {"installed": False})
+        return NotInstalled(installed=False)
     globals_list = []
     data = get_json_output(["pnpm", "list", "-g", "--depth=0", "--json"])
     if data and isinstance(data, list):
@@ -123,23 +137,26 @@ def pnpm_global_info() -> Union[PackageVersionInfo, NotInstalled]:
                 if isinstance(dependencies, dict):
                     for name, info in dependencies.items():
                         if isinstance(info, dict):
-                            version = info.get("version", "unknown")
+                            version = info.get("version", "Unknown")
                             globals_list.append(f"{name}@{version}")
-    return cast(
-        PackageVersionInfo,
-        {
-            "installed": True,
-            "version": run(["pnpm", "--version"]),
-            "bin_path": which("pnpm") or "Unknown",
-            "globals": sorted(list(set(globals_list))),
-        },
+    return PackageVersionInfo(
+        installed=True,
+        version=run(["pnpm", "--version"]),
+        bin_path=which("pnpm") or "Unknown",
+        globals=sorted(set(globals_list)),
+        prefix=None,
+        formula=None,
+        casks=None,
+        active_ports=None,
+        packages=None,
     )
 
 
-def bun_global_info() -> Union[PackageVersionInfo, NotInstalled]:
+def bun_global_info() -> PackageVersionInfo | NotInstalled:
+    """Get Bun package manager and global packages information."""
     log("Checking Bun globals...")
     if not which("bun"):
-        return cast(NotInstalled, {"installed": False})
+        return NotInstalled(installed=False)
     globals_list = []
     # Suppress errors as bun might be installed but not fully configured
     output = run(["bun", "pm", "ls", "-g"], log_errors=False).splitlines()
@@ -153,14 +170,16 @@ def bun_global_info() -> Union[PackageVersionInfo, NotInstalled]:
                 clean_cand = re.sub(r"[^\w@\./-]", "", candidate)
                 if clean_cand:
                     globals_list.append(clean_cand)
-    return cast(
-        PackageVersionInfo,
-        {
-            "installed": True,
-            "version": run(["bun", "--version"]),
-            "bin_path": which("bun") or "Unknown",
-            "globals": globals_list,
-        },
+    return PackageVersionInfo(
+        installed=True,
+        version=run(["bun", "--version"]),
+        bin_path=which("bun") or "Unknown",
+        globals=sorted(set(globals_list)),
+        prefix=None,
+        formula=None,
+        casks=None,
+        active_ports=None,
+        packages=None,
     )
 
 
@@ -173,7 +192,7 @@ def collect_homebrew_services() -> list[BrewService]:
         return services
 
     try:
-        output = run(["brew", "services", "list"], timeout=15)
+        output = run(["brew", "services", "list"], timeout=Timeouts.STANDARD)
         lines = output.splitlines()
 
         # Skip header line
@@ -192,8 +211,8 @@ def collect_homebrew_services() -> list[BrewService]:
                     "file": file_path,
                 }
                 services.append(service)
-    except Exception:
-        pass
+    except (OSError, ValueError, IndexError) as e:
+        verbose_log(f"Failed to collect Homebrew services: {e}")
 
     return services
 

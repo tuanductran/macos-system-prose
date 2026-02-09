@@ -1,10 +1,8 @@
 """
 SMBIOS database for Mac model identification and enrichment.
 
-Data is loaded from data/smbios_models.json at runtime.
-To update: edit data/smbios_models.json directly.
-
-Reference: https://github.com/dortania/OpenCore-Legacy-Patcher
+Model data is loaded from data/smbios_models.json at runtime.
+To update: run `python3 scripts/scrape_smbios_models.py --write`.
 """
 
 from __future__ import annotations
@@ -14,8 +12,11 @@ from pathlib import Path
 from typing import TypedDict
 
 
-class SMBIOSData(TypedDict, total=False):
-    """SMBIOS metadata for a Mac model."""
+class SMBIOSData(TypedDict):
+    """SMBIOS metadata for a Mac model.
+
+    All fields are required and populated from data/smbios_models.json.
+    """
 
     marketing_name: str
     board_id: str

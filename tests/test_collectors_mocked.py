@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from prose.collectors.advanced import collect_opencore_patcher
@@ -98,6 +99,7 @@ class TestPackagesCollectorMocked:
         info = collect_package_managers()
         assert info["homebrew"]["installed"] is True
         assert info["homebrew"]["version"] == "Homebrew 4.2.5"
+        assert info["homebrew"]["formula"] is not None
         assert "git" in info["homebrew"]["formula"]
         assert info["npm"]["installed"] is True
         assert info["npm"]["version"] == "10.2.4"
@@ -108,11 +110,13 @@ class TestDeveloperCollectorMocked:
     @patch("prose.collectors.developer.which")
     @patch("prose.collectors.developer.os.path.exists")
     def test_collect_dev_tools(self, mock_exists, mock_which, mock_run):
+        import asyncio
+
         mock_run.return_value = "v1.2.3"
         mock_which.return_value = "/path/to/tool"
         mock_exists.return_value = True
 
-        info = collect_dev_tools()
+        info = asyncio.run(collect_dev_tools())
         assert isinstance(info, dict)
         assert "languages" in info
         assert "docker" in info

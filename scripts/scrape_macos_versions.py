@@ -21,6 +21,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.request import Request, urlopen
 
+
 APPLE_SUPPORT_URL = "https://support.apple.com/en-us/109033"
 DATA_FILE = Path(__file__).resolve().parent.parent / "data" / "macos_versions.json"
 

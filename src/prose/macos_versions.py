@@ -2,7 +2,7 @@
 macOS version detection and mapping utilities.
 
 Version names and metadata are loaded from data/macos_versions.json at runtime.
-To update: run ``python3 scripts/scrape_macos_versions.py``.
+To update: run `python3 scripts/scrape_macos_versions.py --write`.
 """
 
 from __future__ import annotations
@@ -115,7 +115,8 @@ def get_version_name_from_system() -> str:
             if name:
                 verbose_log(f"Detected macOS name from sw_vers: {name}")
                 return name
-    except Exception:
+    except (OSError, ValueError):
+        # Fallback silently if command execution or string parsing fails
         pass
 
     # Method 2: Parse SystemVersion.plist
@@ -131,7 +132,8 @@ def get_version_name_from_system() -> str:
                 version_match = re.search(r"(\d+\.\d+)", visible_version)
                 if version_match:
                     return get_version_name_from_number(version_match.group(1))
-    except Exception:
+    except (OSError, ValueError, KeyError):
+        # Fallback silently if plist parsing fails or key is missing
         pass
 
     # Method 3: Search in Setup Assistant license files
@@ -151,16 +153,19 @@ def get_version_name_from_system() -> str:
                     name = match.group(1)
                     verbose_log(f"Detected macOS name from license: {name}")
                     return name
-            except Exception:
+            except (OSError, ValueError):
+                # Silently skip this license path if it cannot be read or parsed
                 continue
-    except Exception:
+    except (OSError, ValueError):
+        # Fallback silently if license file enumeration fails
         pass
 
     # Method 4: Fallback to version number mapping
     try:
         version = run(["sw_vers", "-productVersion"], log_errors=False).strip()
         return get_version_name_from_number(version)
-    except Exception:
+    except (OSError, ValueError):
+        # Fallback silently if command execution or version parsing fails
         pass
 
     return "macOS"
@@ -217,11 +222,11 @@ def get_all_macos_versions() -> list[dict[str, object]]:
 
 
 __all__ = [
+    "VERSION_NAMES",
     "MacOSVersion",
-    "parse_version_string",
+    "get_all_macos_versions",
+    "get_macos_version_info",
     "get_version_name_from_number",
     "get_version_name_from_system",
-    "get_macos_version_info",
-    "get_all_macos_versions",
-    "VERSION_NAMES",
+    "parse_version_string",
 ]
