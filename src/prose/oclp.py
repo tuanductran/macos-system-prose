@@ -20,6 +20,8 @@ class OCLPCompatibilityInfo(TypedDict):
     oclp_target_os_max: int
     root_patch_required: bool | None
     root_patch_state: str
+    root_patch_domains: list[str]
+    required_packages: list[str]
     knowledge_schema_version: int
     knowledge_checked_at: str
     knowledge_sources: list[str]
@@ -58,6 +60,7 @@ def build_oclp_compatibility(
     model_identifier: str,
     architecture: str,
     current_macos_version: str,
+    gpu_models: list[str],
     max_os_supported: str | None,
     oclp_model_supported: bool,
     root_patch_marker_detected: bool,
@@ -82,9 +85,34 @@ def build_oclp_compatibility(
 
     root_patch_state = "detected" if root_patch_marker_detected or root_patch_evidence else "not_detected"
 
-    # A requirement cannot be safely inferred from OCLP presence alone.
-    # This phase only marks it unknown; hardware-specific patch matrices are added later.
-    root_patch_required: bool | None = None
+    gpu_text = " ".join(gpu_models).lower()
+    os_names = {
+        11: "big_sur",
+        12: "monterey",
+        13: "ventura",
+        14: "sonoma",
+        15: "sequoia",
+    }
+    gpu_rules = _KNOWLEDGE.get("root_patch", {})
+    requirements = gpu_rules.get("gpu_requirements", {}) if isinstance(gpu_rules, dict) else {}
+    package_rules = gpu_rules.get("package_requirements", {}) if isinstance(gpu_rules, dict) else {}
+    os_key = os_names.get(current_major or 0)
+    matches = requirements.get(os_key, []) if isinstance(requirements, dict) and os_key else []
+    root_patch_domains = ["graphics"] if any(token in gpu_text for token in matches) else []
+    required_packages = [
+        package
+        for package, tokens in package_rules.items()
+        if isinstance(tokens, list) and any(token in gpu_text for token in tokens)
+        and (
+            package != "kdk"
+            or (current_major is not None and current_major >= 13)
+        )
+        and (
+            package != "metallib_support_pkg"
+            or (current_major is not None and current_major >= 15)
+        )
+    ]
+    root_patch_required: bool | None = bool(root_patch_domains) if oclp_os_supported else None
 
     source_values = [value for value in _SOURCES.values() if isinstance(value, str)]
     return {
@@ -95,6 +123,8 @@ def build_oclp_compatibility(
         "oclp_target_os_max": target_max,
         "root_patch_required": root_patch_required,
         "root_patch_state": root_patch_state,
+        "root_patch_domains": root_patch_domains,
+        "required_packages": required_packages,
         "knowledge_schema_version": int(_KNOWLEDGE.get("schema_version", 1)),
         "knowledge_checked_at": str(_KNOWLEDGE.get("checked_at", "")),
         "knowledge_sources": source_values,
