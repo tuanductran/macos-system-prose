@@ -12,11 +12,11 @@
 
 ## v1.2 — OCLP-aware knowledge model
 
-- [ ] Separate Apple-native compatibility from OCLP compatibility.
-- [ ] Track OpenCore bootloader version independently from OCLP version.
-- [ ] Model root-patch requirements and observed patch state separately.
+- [x] Separate Apple-native compatibility from OCLP compatibility.
+- [x] Track OpenCore bootloader version independently from OCLP version.
+- [x] Model root-patch requirements and observed patch state separately.
 - [ ] Add hardware-specific GPU, Wi-Fi, Bluetooth, T1 and USB compatibility facts.
-- [ ] Add versioned OCLP knowledge fixtures sourced from official Dortania documentation.
+- [x] Add versioned OCLP knowledge fixtures sourced from official Dortania documentation.
 
 ## v1.3 — Diagnostics quality
 
