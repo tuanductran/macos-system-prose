@@ -127,16 +127,17 @@ def collect_network_info(*, include_sensitive: bool = False) -> NetworkInfo:
 
     public_ip = "Not collected"
     if include_sensitive:
-        public_ip = run(
-            ["curl", "-s", "--max-time", "2", "https://ifconfig.me"],
-            log_errors=False,
-        ) or "Timeout/Unknown"
+        public_ip = (
+            run(
+                ["curl", "-s", "--max-time", "2", "https://ifconfig.me"],
+                log_errors=False,
+            )
+            or "Timeout/Unknown"
+        )
 
     wifi_ssid = None
     if include_sensitive:
-        airport_path = (
-            "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
-        )
+        airport_path = "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
         if os.path.exists(airport_path):
             airport_out = run([airport_path, "-I"])
             for line in airport_out.splitlines():
