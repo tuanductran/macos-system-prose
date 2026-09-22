@@ -48,6 +48,7 @@ class TestFixtureSchema:
             "fonts",
             "shell_customization",
             "opencore_patcher",
+            "oclp_compatibility",
             "system_preferences",
             "kernel_params",
             "system_logs",
@@ -120,6 +121,27 @@ class TestFixtureSchema:
             assert isinstance(oclp["detection_signals"], list)
             assert isinstance(oclp["loaded_kexts"], list)
             assert isinstance(oclp["patched_frameworks"], list)
+
+    def test_oclp_compatibility_structure(self, fixtures_data):
+        """Validate the separate Apple/OCLP compatibility model."""
+        required_fields = {
+            "apple_native_supported",
+            "oclp_model_supported",
+            "oclp_os_supported",
+            "oclp_target_os_min",
+            "oclp_target_os_max",
+            "root_patch_required",
+            "root_patch_state",
+            "knowledge_schema_version",
+            "knowledge_checked_at",
+            "knowledge_sources",
+        }
+        for fixture in fixtures_data:
+            name = fixture["_fixture_name"]
+            compatibility = fixture["oclp_compatibility"]
+            missing = required_fields - set(compatibility.keys())
+            assert not missing, f"Fixture {name} compatibility missing: {missing}"
+            assert compatibility["root_patch_state"] in {"not_detected", "detected", "unknown"}
 
     def test_network_privacy_structure(self, fixtures_data):
         """Network fixtures must declare their privacy mode explicitly."""
