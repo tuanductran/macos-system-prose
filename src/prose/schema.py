@@ -381,6 +381,19 @@ class AMFIConfig(TypedDict):
     lv_enforce_third_party: bool
 
 
+class OCLPCompatibilityInfo(TypedDict):
+    apple_native_supported: bool | None
+    oclp_model_supported: bool
+    oclp_os_supported: bool
+    oclp_target_os_min: int
+    oclp_target_os_max: int
+    root_patch_required: bool | None
+    root_patch_state: str
+    knowledge_schema_version: int
+    knowledge_checked_at: str
+    knowledge_sources: list[str]
+
+
 class OpenCorePatcherInfo(TypedDict):
     detected: bool
     detection_confidence: str
@@ -439,6 +452,7 @@ class SystemReport(TypedDict):
     fonts: FontInfo
     shell_customization: ShellCustomization
     opencore_patcher: OpenCorePatcherInfo
+    oclp_compatibility: OCLPCompatibilityInfo
     system_preferences: SystemPreferences
     kernel_params: KernelParameters
     system_logs: SystemLogs
