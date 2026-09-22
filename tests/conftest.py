@@ -469,6 +469,8 @@ def _make_fixture(fixture_name: str, overrides: dict[str, Any] | None = None) ->
             },
         ),
         "ioregistry": o.get("ioregistry", _base_ioregistry()),
+        "collection_errors": o.get("collection_errors", []),
+        "collection_status": o.get("collection_status", {}),
         "_fixture_name": fixture_name,
     }
     return data
