@@ -49,6 +49,8 @@ async def async_test_collect_all_structure():
         assert "top_processes" in report
         assert "package_managers" in report
         assert "opencore_patcher" in report
+        assert "collection_status" in report
+        assert report["collection_status"]["system_info"]["status"] == "ok"
 
 
 def test_collect_all_structure():
@@ -229,5 +231,12 @@ def test_collect_all_exception_handling():
             assert report["kexts"]["third_party_kexts"] == []
             assert report["kexts"]["system_extensions"] == []
             assert not isinstance(report["kexts"], Exception)
+
+            status = report["collection_status"]
+            assert status["system_info"]["status"] == "error"
+            assert status["top_processes"]["status"] == "error"
+            assert status["login_items"]["status"] == "error"
+            assert status["kext_info"]["status"] == "error"
+            assert status["package_managers"]["status"] == "ok"
 
     asyncio.run(run_test())
