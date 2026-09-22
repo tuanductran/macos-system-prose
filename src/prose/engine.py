@@ -49,7 +49,7 @@ from prose.diff import diff_reports, format_diff
 from prose.schema import KernelExtensionsInfo, OpenCorePatcherInfo, SystemReport
 
 
-async def collect_all() -> SystemReport:
+async def collect_all(*, include_sensitive_network: bool = False) -> SystemReport:
     """Execute all data collectors concurrently and compile a complete system report.
 
     This function orchestrates all data collection activities across
@@ -83,7 +83,7 @@ async def collect_all() -> SystemReport:
         asyncio.to_thread(collect_kexts),
         asyncio.to_thread(collect_electron_apps),
         asyncio.to_thread(collect_environment_info),
-        asyncio.to_thread(collect_network_info),
+        asyncio.to_thread(collect_network_info, include_sensitive=include_sensitive_network),
         asyncio.to_thread(collect_battery_info),
         asyncio.to_thread(collect_cron_jobs),
         asyncio.to_thread(collect_diagnostics),
@@ -306,8 +306,9 @@ which enables newer macOS versions on unsupported hardware.
 - Patched Frameworks: {len(oclp["patched_frameworks"])} detected
 
 **IMPORTANT - OCLP-Specific Recommendations:**
-- DO NOT recommend disabling SIP (required for OCLP root patches)
-- DO NOT recommend removing "unsigned" kexts (OCLP patches are intentional)
+- Do not assume SIP must be fully disabled; OCLP SIP requirements depend on the macOS version, model, and whether root patches are required.
+- Do not recommend removing OCLP-managed kexts or patches merely because they are third-party.
+- Distinguish OpenCore bootloader detection from OCLP root-patch state before making remediation advice.
 - Consider hardware limitations of unsupported Mac models
 - Wi-Fi/Bluetooth patches may be present and necessary
 - Graphics acceleration patches are critical for performance
@@ -425,6 +426,11 @@ async def async_main() -> int:
         help="Suppress all console output",
     )
     parser.add_argument(
+        "--include-sensitive-network",
+        action="store_true",
+        help="Opt in to collecting network identity data and public IP (default: redacted)",
+    )
+    parser.add_argument(
         "--no-prompt",
         action="store_true",
         help="Skip generating AI-optimized text prompt",
@@ -493,7 +499,7 @@ async def async_main() -> int:
             return 1
 
     utils.log(" Starting macOS System Prose Report Collection...", "header")
-    report = await collect_all()
+    report = await collect_all(include_sensitive_network=args.include_sensitive_network)
 
     try:
         with open(args.output, "w", encoding="utf-8") as f:
