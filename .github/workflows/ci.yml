@@ -64,12 +64,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@bfe8cc55a7890e3d6672eda6460ef37bfcc70755 # v6
         with:
           python-version: "3.14.x"
 
