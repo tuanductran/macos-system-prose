@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-09-22",
+  "sources": {
+    "faq": "https://dortania.github.io/OpenCore-Legacy-Patcher/FAQ",
+    "models": "https://dortania.github.io/OpenCore-Legacy-Patcher/MODELS.html",
+    "post_install": "https://dortania.github.io/OpenCore-Legacy-Patcher/POST-INSTALL.html",
+    "patch_explain": "https://dortania.github.io/OpenCore-Legacy-Patcher/PATCHEXPLAIN.html"
+  },
+  "target_os": {
+    "minimum_major": 11,
+    "maximum_major": 15,
+    "statement": "Current official OCLP documentation targets macOS Big Sur 11.x through macOS Sequoia 15.x. Versions outside this range are not supported by the documented target range."
+  },
+  "root_patch": {
+    "state_model": ["not_detected", "detected", "unknown"],
+    "domains": ["graphics", "wifi", "bluetooth", "t1", "camera", "usb"]
+  }
+}
