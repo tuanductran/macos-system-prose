@@ -13,7 +13,12 @@ from pathlib import Path
 from prose import utils
 from prose.constants import Timeouts
 from prose.datasets.smbios import is_legacy_mac
-from prose.iokit import get_boot_args, get_oclp_nvram_version, parse_amfi_boot_arg
+from prose.iokit import (
+    get_boot_args,
+    get_oclp_nvram_version,
+    get_opencore_nvram_version,
+    parse_amfi_boot_arg,
+)
 from prose.schema import (
     FontInfo,
     KernelParameters,
