@@ -4,7 +4,7 @@
 
 ## Project Overview
 
-`macos-system-prose` is a **production-grade, read-only** macOS introspection tool that collects comprehensive system data through **105 specialized functions** across **7 collector modules** and generates optimized output formats for AI analysis, security auditing, and development environment optimization.
+`macos-system-prose` is a **read-only** macOS introspection tool that collects comprehensive system data through **specialized collector functions** across **7 collector modules** and generates optimized output formats for AI analysis, security auditing, and development environment optimization.
 
 ### Core Statistics
 
