@@ -241,9 +241,10 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
 
     system_identifier = system_info.get("model_identifier", "")
     smbios_data = SMBIOS_DATABASE.get(system_identifier)
-    oclp_model_supported = bool(smbios_data) and not system_identifier.startswith("Mac")
+    oclp_model_supported = bool(smbios_data) and system_info.get("architecture") == "x86_64"
     oclp_compatibility = build_oclp_compatibility(
         model_identifier=system_identifier,
+        architecture=system_info.get("architecture", ""),
         current_macos_version=system_info.get("macos_version", ""),
         max_os_supported=smbios_data.get("max_os_supported") if smbios_data else None,
         oclp_model_supported=oclp_model_supported,
