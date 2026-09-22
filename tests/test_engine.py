@@ -137,9 +137,13 @@ def test_generate_ai_prompt_with_oclp():
             "system": {"sip_enabled": False},
             "opencore_patcher": {
                 "detected": True,
+                "detection_confidence": "high",
+                "detection_signals": ["oclp_nvram_version"],
                 "version": "2.2.0",
                 "nvram_version": "2.2.0",
+                "opencore_version": "0.9.9",
                 "unsupported_os_detected": True,
+                "root_patch_marker_detected": True,
                 "loaded_kexts": ["Lilu", "WhateverGreen"],
                 "patched_frameworks": [],
                 "amfi_configuration": {"amfi_value": "0x80"},
