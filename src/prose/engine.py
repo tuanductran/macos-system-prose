@@ -224,9 +224,13 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
         utils.verbose_log(f"Collector failed: {error_msg}")
         opencore_patcher = OpenCorePatcherInfo(
             detected=False,
+            detection_confidence="none",
+            detection_signals=[],
             version=None,
             nvram_version=None,
+            opencore_version=None,
             unsupported_os_detected=False,
+            root_patch_marker_detected=False,
             loaded_kexts=[],
             patched_frameworks=[],
             amfi_configuration=None,
@@ -298,7 +302,11 @@ This system is running **OpenCore Legacy Patcher v{oclp["version"]}**,
 which enables newer macOS versions on unsupported hardware.
 
 **OCLP Configuration:**
-- NVRAM Version: {oclp["nvram_version"] or "Unknown"}
+- OCLP NVRAM Version: {oclp["nvram_version"] or "Unknown"}
+- OpenCore Version: {oclp["opencore_version"] or "Unknown"}
+- Detection confidence: {oclp["detection_confidence"]}
+- Detection signals: {", ".join(oclp["detection_signals"]) or "None"}
+- Root-patch marker observed: {"Yes" if oclp["root_patch_marker_detected"] else "No"}
 - Unsupported OS: {"✓ Yes" if oclp["unsupported_os_detected"] else "✗ No"}
 - AMFI Config: {amfi_str}
 - Boot Args: {oclp["boot_args"] or "None"}
