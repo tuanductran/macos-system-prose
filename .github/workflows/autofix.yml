@@ -14,33 +14,36 @@ jobs:
   autofix:
     name: Auto-fix Code Quality Issues
     runs-on: macos-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      
+        with:
+          persist-credentials: false
+
       - name: Set up Python 3.9
         uses: actions/setup-python@v6
         with:
-          python-version: "3.9.x"  # Use minimum supported version
+          python-version: "3.9.x"
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-      
+
       - name: Auto-fix with Ruff (lint)
         run: |
           ruff check . --fix
         continue-on-error: true
-      
+
       - name: Auto-fix with Ruff (format)
         run: |
           ruff format .
         continue-on-error: true
-      
+
       - name: Commit and push fixes
         uses: autofix-ci/action@v1.3.3
