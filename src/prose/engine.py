@@ -317,7 +317,8 @@ which enables newer macOS versions on unsupported hardware.
 - Do not assume SIP must be fully disabled; OCLP SIP requirements depend on the \
 macOS version, model, and whether root patches are required.
 - Do not recommend removing OCLP-managed kexts or patches merely because they are third-party.
-- Distinguish OpenCore bootloader detection from OCLP root-patch state before making remediation advice.
+- Distinguish OpenCore bootloader detection from OCLP root-patch state before \
+making remediation advice.
 - Consider hardware limitations of unsupported Mac models
 - Wi-Fi/Bluetooth patches may be present and necessary
 - Graphics acceleration patches are critical for performance
