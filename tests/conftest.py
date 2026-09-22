@@ -436,6 +436,8 @@ def _make_fixture(fixture_name: str, overrides: dict[str, Any] | None = None) ->
                 "oclp_target_os_max": 15,
                 "root_patch_required": False,
                 "root_patch_state": "not_detected",
+                "root_patch_domains": [],
+                "required_packages": [],
                 "knowledge_schema_version": 1,
                 "knowledge_checked_at": "2026-09-22",
                 "knowledge_sources": [],
