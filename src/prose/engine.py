@@ -246,6 +246,7 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
         model_identifier=system_identifier,
         architecture=system_info.get("architecture", ""),
         current_macos_version=system_info.get("macos_version", ""),
+        gpu_models=hardware_info.get("gpu", []),
         max_os_supported=smbios_data.get("max_os_supported") if smbios_data else None,
         oclp_model_supported=oclp_model_supported,
         root_patch_marker_detected=opencore_patcher["root_patch_marker_detected"],
