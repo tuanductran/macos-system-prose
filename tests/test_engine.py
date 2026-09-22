@@ -32,7 +32,22 @@ async def async_test_collect_all_structure():
         "collect_storage_analysis": MagicMock(return_value={}),
         "collect_fonts": MagicMock(return_value={}),
         "collect_shell_customization": MagicMock(return_value={}),
-        "collect_opencore_patcher": MagicMock(return_value={"detected": False, "detection_confidence": "none", "detection_signals": [], "version": None, "nvram_version": None, "opencore_version": None, "unsupported_os_detected": False, "root_patch_marker_detected": False, "loaded_kexts": [], "patched_frameworks": [], "amfi_configuration": None, "boot_args": None}),
+        "collect_opencore_patcher": MagicMock(
+            return_value={
+                "detected": False,
+                "detection_confidence": "none",
+                "detection_signals": [],
+                "version": None,
+                "nvram_version": None,
+                "opencore_version": None,
+                "unsupported_os_detected": False,
+                "root_patch_marker_detected": False,
+                "loaded_kexts": [],
+                "patched_frameworks": [],
+                "amfi_configuration": None,
+                "boot_args": None,
+            }
+        ),
         "collect_system_preferences": MagicMock(return_value={}),
         "collect_kernel_parameters": MagicMock(return_value={}),
         "collect_system_logs": MagicMock(return_value={}),
