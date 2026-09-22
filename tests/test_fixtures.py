@@ -53,6 +53,8 @@ class TestFixtureSchema:
             "kernel_params",
             "system_logs",
             "ioregistry",
+            "collection_errors",
+            "collection_status",
         }
 
         for fixture in fixtures_data:
