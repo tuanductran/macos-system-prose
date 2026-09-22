@@ -12,9 +12,9 @@ import json
 import os
 import sys
 import time
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from dataclasses import dataclass
 from typing import Awaitable, Callable, cast
 
 from prose import utils
@@ -217,7 +217,11 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
     system_identifier = str(system_info.get("model_identifier", ""))
     smbios_data = SMBIOS_DATABASE.get(system_identifier)
     raw_gpu_models = hardware_info.get("gpu", [])
-    gpu_models = [str(model) for model in raw_gpu_models] if isinstance(raw_gpu_models, list) else []
+    gpu_models = (
+        [str(model) for model in raw_gpu_models]
+        if isinstance(raw_gpu_models, list)
+        else []
+    )
     oclp_model_supported = bool(smbios_data) and system_info.get("architecture") == "x86_64"
     oclp_compatibility = build_oclp_compatibility(
         model_identifier=system_identifier,
@@ -226,7 +230,9 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
         gpu_models=gpu_models,
         max_os_supported=smbios_data.get("max_os_supported") if smbios_data else None,
         oclp_model_supported=oclp_model_supported,
-        root_patch_marker_detected=bool(opencore_patcher.get("root_patch_marker_detected", False)),
+        root_patch_marker_detected=bool(
+            opencore_patcher.get("root_patch_marker_detected", False)
+        ),
         root_patch_evidence=bool(opencore_patcher.get("patched_frameworks", [])),
     )
 
