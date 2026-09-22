@@ -56,6 +56,7 @@ def _native_supported(max_os_supported: str, current_version: str) -> bool | Non
 def build_oclp_compatibility(
     *,
     model_identifier: str,
+    architecture: str,
     current_macos_version: str,
     max_os_supported: str | None,
     oclp_model_supported: bool,
@@ -84,8 +85,6 @@ def build_oclp_compatibility(
     # A requirement cannot be safely inferred from OCLP presence alone.
     # This phase only marks it unknown; hardware-specific patch matrices are added later.
     root_patch_required: bool | None = None
-    if not oclp_os_supported:
-        root_patch_required = False
 
     source_values = [value for value in _SOURCES.values() if isinstance(value, str)]
     return {
