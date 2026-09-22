@@ -78,15 +78,11 @@ def build_oclp_compatibility(
     )
 
     apple_native_supported = (
-        _native_supported(max_os_supported, current_macos_version)
-        if max_os_supported
-        else None
+        _native_supported(max_os_supported, current_macos_version) if max_os_supported else None
     )
 
     root_patch_state = (
-        "detected"
-        if root_patch_marker_detected or root_patch_evidence
-        else "not_detected"
+        "detected" if root_patch_marker_detected or root_patch_evidence else "unknown"
     )
 
     gpu_text = " ".join(gpu_models).lower()
@@ -106,14 +102,11 @@ def build_oclp_compatibility(
     required_packages = [
         package
         for package, tokens in package_rules.items()
-        if isinstance(tokens, list) and any(token in gpu_text for token in tokens)
+        if isinstance(tokens, list)
+        and any(token in gpu_text for token in tokens)
+        and (package != "kdk" or (current_major is not None and current_major >= 13))
         and (
-            package != "kdk"
-            or (current_major is not None and current_major >= 13)
-        )
-        and (
-            package != "metallib_support_pkg"
-            or (current_major is not None and current_major >= 15)
+            package != "metallib_support_pkg" or (current_major is not None and current_major >= 15)
         )
     ]
     root_patch_required: bool | None = bool(root_patch_domains) if oclp_os_supported else None
