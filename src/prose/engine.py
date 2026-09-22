@@ -64,15 +64,14 @@ class CollectorSpec:
 
 def _async_collector(collector: Callable[[], object]) -> Callable[[], Awaitable[object]]:
     """Adapt a synchronous collector to the async collector registry."""
+
     async def run_collector() -> object:
         return await asyncio.to_thread(collector)
 
     return run_collector
 
 
-def _build_collector_registry(
-    *, include_sensitive_network: bool
-) -> tuple[CollectorSpec, ...]:
+def _build_collector_registry(*, include_sensitive_network: bool) -> tuple[CollectorSpec, ...]:
     """Return the single source of truth for independent collectors."""
     return (
         CollectorSpec("system_info", collect_system_info, {}),
@@ -105,12 +104,8 @@ def _build_collector_registry(
         CollectorSpec("nvram", _async_collector(collect_nvram_variables), {}),
         CollectorSpec("storage_analysis", _async_collector(collect_storage_analysis), {}),
         CollectorSpec("fonts", _async_collector(collect_fonts), {}),
-        CollectorSpec(
-            "shell_customization", _async_collector(collect_shell_customization), {}
-        ),
-        CollectorSpec(
-            "system_preferences", _async_collector(collect_system_preferences), {}
-        ),
+        CollectorSpec("shell_customization", _async_collector(collect_shell_customization), {}),
+        CollectorSpec("system_preferences", _async_collector(collect_system_preferences), {}),
         CollectorSpec("kernel_params", _async_collector(collect_kernel_parameters), {}),
         CollectorSpec("system_logs", _async_collector(collect_system_logs), {}),
         CollectorSpec("ioregistry", _async_collector(collect_ioregistry_info), {}),
@@ -120,9 +115,7 @@ def _build_collector_registry(
 async def collect_all(*, include_sensitive_network: bool = False) -> SystemReport:
     """Execute all independent collectors and compile a complete system report."""
     timestamp = time.time()
-    registry = _build_collector_registry(
-        include_sensitive_network=include_sensitive_network
-    )
+    registry = _build_collector_registry(include_sensitive_network=include_sensitive_network)
 
     results = await asyncio.gather(
         *(spec.run() for spec in registry),
@@ -219,9 +212,7 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
     smbios_data = SMBIOS_DATABASE.get(system_identifier)
     raw_gpu_models = hardware_info.get("gpu", [])
     gpu_models = (
-        [str(model) for model in raw_gpu_models]
-        if isinstance(raw_gpu_models, list)
-        else []
+        [str(model) for model in raw_gpu_models] if isinstance(raw_gpu_models, list) else []
     )
     oclp_model_supported = bool(smbios_data) and system_info.get("architecture") == "x86_64"
     oclp_compatibility = build_oclp_compatibility(
@@ -231,9 +222,7 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
         gpu_models=gpu_models,
         max_os_supported=smbios_data.get("max_os_supported") if smbios_data else None,
         oclp_model_supported=oclp_model_supported,
-        root_patch_marker_detected=bool(
-            opencore_patcher.get("root_patch_marker_detected", False)
-        ),
+        root_patch_marker_detected=bool(opencore_patcher.get("root_patch_marker_detected", False)),
         root_patch_evidence=bool(opencore_patcher.get("patched_frameworks", [])),
     )
 
