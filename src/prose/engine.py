@@ -306,6 +306,7 @@ def generate_ai_prompt(data: SystemReport) -> str:
     is_oclp_user = oclp["detected"]
 
     # OpenCore context
+    compatibility = data.get("oclp_compatibility", {})
     oclp_context = ""
     if is_oclp_user:
         kexts_str = ", ".join(oclp["loaded_kexts"][:3]) if oclp["loaded_kexts"] else "None"
@@ -329,6 +330,12 @@ which enables newer macOS versions on unsupported hardware.
 - Boot Args: {oclp["boot_args"] or "None"}
 - Loaded Kexts: {len(oclp["loaded_kexts"])} installed ({kexts_str})
 - Patched Frameworks: {len(oclp["patched_frameworks"])} detected
+- Apple-native compatibility: {compatibility.get("apple_native_supported", "Unknown")}
+- OCLP documented OS compatibility: {compatibility.get("oclp_os_supported", "Unknown")}
+- Root patch required: {compatibility.get("root_patch_required", "Unknown")}
+- Root patch observed: {compatibility.get("root_patch_state", "Unknown")}
+- Root patch domains: {", ".join(compatibility.get("root_patch_domains", [])) or "None"}
+- Required support packages: {", ".join(compatibility.get("required_packages", [])) or "None"}
 
 **IMPORTANT - OCLP-Specific Recommendations:**
 - Do not assume SIP must be fully disabled; OCLP SIP requirements depend on the \
