@@ -208,6 +208,7 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
             amfi_configuration=None,
             boot_args=None,
         )
+    else:
         collection_status["opencore_patcher"] = {
             "status": "ok",
             "error": None,
@@ -220,8 +221,8 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
     oclp_model_supported = bool(smbios_data) and system_info.get("architecture") == "x86_64"
     oclp_compatibility = build_oclp_compatibility(
         model_identifier=system_identifier,
-        architecture=system_info.get("architecture", ""),
-        current_macos_version=system_info.get("macos_version", ""),
+        architecture=str(system_info.get("architecture", "")),
+        current_macos_version=str(system_info.get("macos_version", "")),
         gpu_models=gpu_models,
         max_os_supported=smbios_data.get("max_os_supported") if smbios_data else None,
         oclp_model_supported=oclp_model_supported,
