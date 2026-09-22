@@ -153,8 +153,13 @@ SECURE_BOOT_UUID = "94B73556-2197-4702-82A8-3E1337DAFBFB"
 
 
 def get_oclp_nvram_version() -> str | None:
-    """Get OCLP-Version from NVRAM (indicates OCLP boot)."""
+    """Get OCLP-Version from NVRAM (one OCLP detection signal)."""
     return read_nvram("OCLP-Version", OCLP_NVRAM_UUID)
+
+
+def get_opencore_nvram_version() -> str | None:
+    """Get OpenCore bootloader version from OCLP's NVRAM namespace."""
+    return read_nvram("opencore-version", OCLP_NVRAM_UUID)
 
 
 def get_oclp_nvram_settings() -> str | None:
@@ -174,6 +179,7 @@ __all__ = [
     "get_csr_active_config",
     "get_oclp_nvram_settings",
     "get_oclp_nvram_version",
+    "get_opencore_nvram_version",
     "get_secure_boot_model",
     "parse_amfi_boot_arg",
     "read_nvram",
