@@ -267,6 +267,7 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
         "boot_args": boot_args,
     }
 
+
 def collect_system_preferences() -> SystemPreferences:
     """Collect key system preferences.
 
