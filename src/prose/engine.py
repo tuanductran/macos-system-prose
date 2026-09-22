@@ -46,7 +46,9 @@ from prose.collectors.network import collect_network_info
 from prose.collectors.packages import collect_package_managers
 from prose.collectors.system import collect_disk_info, collect_hardware_info, collect_system_info
 from prose.diff import diff_reports, format_diff
+from prose.oclp import build_oclp_compatibility
 from prose.schema import KernelExtensionsInfo, OpenCorePatcherInfo, SystemReport
+from prose.datasets.smbios import SMBIOS_DATABASE
 
 
 async def collect_all(*, include_sensitive_network: bool = False) -> SystemReport:
@@ -237,6 +239,18 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
             boot_args=None,
         )
 
+    system_identifier = system_info.get("model_identifier", "")
+    smbios_data = SMBIOS_DATABASE.get(system_identifier)
+    oclp_model_supported = bool(smbios_data) and not system_identifier.startswith("Mac")
+    oclp_compatibility = build_oclp_compatibility(
+        model_identifier=system_identifier,
+        current_macos_version=system_info.get("macos_version", ""),
+        max_os_supported=smbios_data.get("max_os_supported") if smbios_data else None,
+        oclp_model_supported=oclp_model_supported,
+        root_patch_marker_detected=opencore_patcher["root_patch_marker_detected"],
+        root_patch_evidence=bool(opencore_patcher["patched_frameworks"]),
+    )
+
     # mypy cannot infer types from asyncio.gather with return_exceptions=True
     # All results are runtime-validated above and guaranteed to be correct types
     # The type:ignore comments document this limitation rather than hide bugs
@@ -264,6 +278,7 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
         "fonts": fonts,  # type: ignore[typeddict-item]
         "shell_customization": shell_customization,  # type: ignore[typeddict-item]
         "opencore_patcher": opencore_patcher,
+        "oclp_compatibility": oclp_compatibility,
         "system_preferences": system_preferences,  # type: ignore[typeddict-item]
         "kernel_params": kernel_params,  # type: ignore[typeddict-item]
         "system_logs": system_logs,  # type: ignore[typeddict-item]
