@@ -12,10 +12,11 @@ import json
 import os
 import sys
 import time
+from collections.abc import Awaitable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Awaitable, Callable, cast
+from typing import Callable, cast
 
 from prose import utils
 from prose.collectors.advanced import (
@@ -46,10 +47,10 @@ from prose.collectors.ioregistry import collect_ioregistry_info  # Phase 3
 from prose.collectors.network import collect_network_info
 from prose.collectors.packages import collect_package_managers
 from prose.collectors.system import collect_disk_info, collect_hardware_info, collect_system_info
+from prose.datasets.smbios import SMBIOS_DATABASE
 from prose.diff import diff_reports, format_diff
 from prose.oclp import build_oclp_compatibility
 from prose.schema import KernelExtensionsInfo, OpenCorePatcherInfo, SystemReport
-from prose.datasets.smbios import SMBIOS_DATABASE
 
 
 @dataclass(frozen=True)
