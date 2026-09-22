@@ -152,7 +152,7 @@ def test_generate_ai_prompt_with_oclp():
 
     assert "OpenCore Legacy Patcher Detected" in prompt
     assert "2.2.0" in prompt
-    assert "DO NOT recommend disabling SIP" in prompt
+    assert "Do not assume SIP must be fully disabled" in prompt
 
 
 def test_collect_all_exception_handling():
