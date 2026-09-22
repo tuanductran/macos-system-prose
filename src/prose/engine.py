@@ -314,7 +314,8 @@ which enables newer macOS versions on unsupported hardware.
 - Patched Frameworks: {len(oclp["patched_frameworks"])} detected
 
 **IMPORTANT - OCLP-Specific Recommendations:**
-- Do not assume SIP must be fully disabled; OCLP SIP requirements depend on the macOS version, model, and whether root patches are required.
+- Do not assume SIP must be fully disabled; OCLP SIP requirements depend on the \
+macOS version, model, and whether root patches are required.
 - Do not recommend removing OCLP-managed kexts or patches merely because they are third-party.
 - Distinguish OpenCore bootloader detection from OCLP root-patch state before making remediation advice.
 - Consider hardware limitations of unsupported Mac models
