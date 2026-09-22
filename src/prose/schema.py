@@ -383,9 +383,13 @@ class AMFIConfig(TypedDict):
 
 class OpenCorePatcherInfo(TypedDict):
     detected: bool
+    detection_confidence: str
+    detection_signals: list[str]
     version: str | None
     nvram_version: str | None  # From NVRAM OCLP-Version
+    opencore_version: str | None  # From OpenCore NVRAM
     unsupported_os_detected: bool
+    root_patch_marker_detected: bool
     loaded_kexts: list[str]
     patched_frameworks: list[str]
     amfi_configuration: AMFIConfig | None
