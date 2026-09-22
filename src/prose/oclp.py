@@ -83,7 +83,11 @@ def build_oclp_compatibility(
         else None
     )
 
-    root_patch_state = "detected" if root_patch_marker_detected or root_patch_evidence else "not_detected"
+    root_patch_state = (
+        "detected"
+        if root_patch_marker_detected or root_patch_evidence
+        else "not_detected"
+    )
 
     gpu_text = " ".join(gpu_models).lower()
     os_names = {
