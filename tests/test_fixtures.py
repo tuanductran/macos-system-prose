@@ -132,6 +132,8 @@ class TestFixtureSchema:
             "oclp_target_os_max",
             "root_patch_required",
             "root_patch_state",
+            "root_patch_domains",
+            "required_packages",
             "knowledge_schema_version",
             "knowledge_checked_at",
             "knowledge_sources",
