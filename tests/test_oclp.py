@@ -19,7 +19,7 @@ def test_apple_native_and_oclp_compatibility_are_distinct():
     assert result["oclp_model_supported"] is True
     assert result["oclp_os_supported"] is True
     assert result["root_patch_required"] is None
-    assert result["root_patch_state"] == "not_detected"
+    assert result["root_patch_state"] == "unknown"
 
 
 def test_outside_documented_oclp_range_is_not_supported():
