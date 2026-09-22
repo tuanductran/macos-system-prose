@@ -181,3 +181,5 @@ class TestAdvancedCollectorMocked:
             info = collect_opencore_patcher()
             assert info["detected"] is True
             assert info["version"] == "2.2.0"
+            assert info["detection_confidence"] == "high"
+            assert "oclp_nvram_version" in info["detection_signals"]
