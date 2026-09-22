@@ -96,9 +96,13 @@ class TestFixtureSchema:
         """Validate OpenCore Patcher info structure."""
         required_fields = {
             "detected",
+            "detection_confidence",
+            "detection_signals",
             "version",
             "nvram_version",
+            "opencore_version",
             "unsupported_os_detected",
+            "root_patch_marker_detected",
             "loaded_kexts",
             "patched_frameworks",
             "amfi_configuration",
@@ -112,6 +116,8 @@ class TestFixtureSchema:
             assert not missing, f"Fixture {name} OCLP info missing: {missing}"
 
             assert isinstance(oclp["detected"], bool)
+            assert oclp["detection_confidence"] in {"none", "low", "high"}
+            assert isinstance(oclp["detection_signals"], list)
             assert isinstance(oclp["loaded_kexts"], list)
             assert isinstance(oclp["patched_frameworks"], list)
 
