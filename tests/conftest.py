@@ -157,6 +157,7 @@ def _base_network(*, vpn: bool = False) -> dict[str, Any]:
         "vpn_status": vpn,
         "vpn_connections": [],
         "vpn_apps": [],
+        "privacy_mode": "redacted",
     }
 
 
@@ -276,9 +277,13 @@ def _base_opencore_patcher(*, detected: bool = False, **kwargs: Any) -> dict[str
     """OpenCorePatcherInfo TypedDict."""
     return {
         "detected": detected,
+        "detection_confidence": kwargs.get("detection_confidence", "none"),
+        "detection_signals": kwargs.get("detection_signals", []),
         "version": kwargs.get("version"),
         "nvram_version": kwargs.get("nvram_version"),
+        "opencore_version": kwargs.get("opencore_version"),
         "unsupported_os_detected": kwargs.get("unsupported_os_detected", False),
+        "root_patch_marker_detected": kwargs.get("root_patch_marker_detected", False),
         "loaded_kexts": kwargs.get("loaded_kexts", []),
         "patched_frameworks": kwargs.get("patched_frameworks", []),
         "amfi_configuration": kwargs.get("amfi_configuration"),
