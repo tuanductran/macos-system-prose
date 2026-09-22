@@ -132,7 +132,7 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
     collection_status: dict[str, dict[str, object]] = {}
     collected: dict[str, object] = {}
 
-    for spec, result in zip(registry, results, strict=True):
+    for spec, result in zip(registry, results):
         if isinstance(result, Exception):
             error_message = f"{type(result).__name__}: {result!s}"
             collection_errors.append(f"{spec.name}: {error_message}")
@@ -189,6 +189,10 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
     except Exception as e:
         error_msg = f"opencore_patcher: {type(e).__name__} - {e!s}"
         collection_errors.append(error_msg)
+        collection_status["opencore_patcher"] = {
+            "status": "error",
+            "error": f"{type(e).__name__}: {e!s}",
+        }
         utils.verbose_log(f"Collector failed: {error_msg}")
         opencore_patcher = OpenCorePatcherInfo(
             detected=False,
@@ -204,19 +208,25 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
             amfi_configuration=None,
             boot_args=None,
         )
+        collection_status["opencore_patcher"] = {
+            "status": "ok",
+            "error": None,
+        }
 
-    system_identifier = system_info.get("model_identifier", "")
+    system_identifier = str(system_info.get("model_identifier", ""))
     smbios_data = SMBIOS_DATABASE.get(system_identifier)
+    raw_gpu_models = hardware_info.get("gpu", [])
+    gpu_models = [str(model) for model in raw_gpu_models] if isinstance(raw_gpu_models, list) else []
     oclp_model_supported = bool(smbios_data) and system_info.get("architecture") == "x86_64"
     oclp_compatibility = build_oclp_compatibility(
         model_identifier=system_identifier,
         architecture=system_info.get("architecture", ""),
         current_macos_version=system_info.get("macos_version", ""),
-        gpu_models=hardware_info.get("gpu", []),
+        gpu_models=gpu_models,
         max_os_supported=smbios_data.get("max_os_supported") if smbios_data else None,
         oclp_model_supported=oclp_model_supported,
-        root_patch_marker_detected=opencore_patcher["root_patch_marker_detected"],
-        root_patch_evidence=bool(opencore_patcher["patched_frameworks"]),
+        root_patch_marker_detected=bool(opencore_patcher.get("root_patch_marker_detected", False)),
+        root_patch_evidence=bool(opencore_patcher.get("patched_frameworks", [])),
     )
 
     # mypy cannot infer types from asyncio.gather with return_exceptions=True
