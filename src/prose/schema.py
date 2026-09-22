@@ -213,6 +213,7 @@ class NetworkInfo(TypedDict):
     vpn_status: bool
     vpn_connections: list[str]
     vpn_apps: list[str]
+    privacy_mode: str
 
 
 class BatteryInfo(TypedDict):
