@@ -458,3 +458,4 @@ class SystemReport(TypedDict):
     system_logs: SystemLogs
     ioregistry: IORegistryInfo  # Phase 3: IORegistry hardware detection
     collection_errors: list[str]  # Track any errors during data collection
+    collection_status: dict[str, dict[str, object]]  # Per-collector success/failure metadata
