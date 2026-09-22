@@ -426,6 +426,21 @@ def _make_fixture(fixture_name: str, overrides: dict[str, Any] | None = None) ->
             },
         ),
         "opencore_patcher": o.get("opencore_patcher", _base_opencore_patcher()),
+        "oclp_compatibility": o.get(
+            "oclp_compatibility",
+            {
+                "apple_native_supported": True,
+                "oclp_model_supported": False,
+                "oclp_os_supported": False,
+                "oclp_target_os_min": 11,
+                "oclp_target_os_max": 15,
+                "root_patch_required": False,
+                "root_patch_state": "not_detected",
+                "knowledge_schema_version": 1,
+                "knowledge_checked_at": "2026-09-22",
+                "knowledge_sources": [],
+            },
+        ),
         "system_preferences": o.get(
             "system_preferences",
             {
