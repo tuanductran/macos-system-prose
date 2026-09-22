@@ -382,8 +382,10 @@ def collect_system_logs() -> SystemLogs:
         [
             "bash",
             "-c",
-            'log show --predicate \'messageType == "Error" OR messageType == "Fault"\' '
-            "--style syslog --last 1h 2>/dev/null | tail -20",  # Reduced from 24h to 1h, 50 to 20
+            (
+                'log show --predicate \'messageType == "Error" OR messageType == "Fault"\' '
+                "--style syslog --last 1h 2>/dev/null | tail -20"
+            ),  # Reduced from 24h to 1h, 50 to 20
         ],
         timeout=Timeouts.STANDARD,  # Reduced from 30s to 15s
         log_errors=False,
@@ -403,8 +405,10 @@ def collect_system_logs() -> SystemLogs:
         [
             "bash",
             "-c",
-            "log show --predicate 'messageType == \"Default\"' "
-            "--style syslog --last 1h 2>/dev/null | grep -i warning | tail -10",
+            (
+                "log show --predicate 'messageType == \"Default\"' "
+                "--style syslog --last 1h 2>/dev/null | grep -i warning | tail -10"
+            ),
         ],
         timeout=Timeouts.STANDARD,  # Reduced from 30s to 15s
         log_errors=False,
