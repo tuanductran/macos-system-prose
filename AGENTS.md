@@ -741,9 +741,9 @@ grep -r "from typing import.*Any" src/prose/ --include="*.py"
 ```python
 class SystemInfo(TypedDict):
     """System information from system_profiler."""
-    os: str                    # Operating system name (always "Darwin")
-    macos_version: str         # macOS version (e.g., "12.7.6")
-    model_identifier: str      # Mac model ID (e.g., "MacBookAir6,2")
+    os: str  # Operating system name (always "Darwin")
+    macos_version: str  # macOS version (e.g., "12.7.6")
+    model_identifier: str  # Mac model ID (e.g., "MacBookAir6,2")
 ```
 
 ### src/prose/engine.py
