@@ -6,8 +6,8 @@
 - [x] Make network identity/public-IP collection opt-in.
 - [x] Distinguish OCLP detection evidence from root-patch evidence.
 - [x] Add macOS 27 metadata.
-- [ ] Add collector status/error metadata so missing data is distinguishable from collector failure.
-- [ ] Replace parallel collector/default arrays with a typed collector registry.
+- [x] Add collector status/error metadata so missing data is distinguishable from collector failure.
+- [x] Replace parallel collector/default arrays with a typed collector registry.
 - [ ] Add privacy/redaction contract tests for every sensitive collector.
 
 ## v1.2 — OCLP-aware knowledge model
@@ -28,7 +28,7 @@
 
 ## Security and maintenance
 
-- [ ] Pin all third-party GitHub Actions to immutable commit SHAs.
-- [ ] Minimize workflow write permissions.
-- [ ] Add a security policy and reproducible CI audit checklist.
+- [x] Pin all third-party GitHub Actions to immutable commit SHAs.
+- [x] Minimize workflow write permissions.
+- [x] Add a security policy and reproducible CI audit checklist.
 - [ ] Keep Apple and OCLP knowledge explicitly dated and source-attributed.
