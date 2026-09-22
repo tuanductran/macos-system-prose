@@ -121,6 +121,12 @@ class TestFixtureSchema:
             assert isinstance(oclp["loaded_kexts"], list)
             assert isinstance(oclp["patched_frameworks"], list)
 
+    def test_network_privacy_structure(self, fixtures_data):
+        """Network fixtures must declare their privacy mode explicitly."""
+        for fixture in fixtures_data:
+            network = fixture["network"]
+            assert network["privacy_mode"] in {"redacted", "full"}
+
     def test_developer_tools_structure(self, fixtures_data):
         """Validate developer tools structure."""
         required_fields = {
