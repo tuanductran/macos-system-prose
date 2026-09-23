@@ -202,6 +202,21 @@ async def collect_all(
     collection_status: dict[str, CollectionStatus] = {}
     collected: dict[str, object] = {}
 
+    if mode == "fast":
+        deep_registry = _build_collector_registry(
+            include_sensitive_network=include_sensitive_network, mode="deep"
+        )
+        active_names = {spec.name for spec in registry}
+        for spec in deep_registry:
+            if spec.name not in active_names:
+                collection_status[spec.name] = {
+                    "status": "skipped",
+                    "error": None,
+                    "duration_ms": None,
+                    "timeout_seconds": spec.timeout_seconds,
+                }
+                collected[spec.name] = spec.default
+
     for spec, result in zip(registry, results):
         if isinstance(result, BaseException):
             error_message = f"{type(result).__name__}: {result!s}"
