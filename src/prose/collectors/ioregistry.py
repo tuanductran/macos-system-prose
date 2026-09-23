@@ -9,7 +9,18 @@ from __future__ import annotations
 import plistlib
 
 from prose.constants import Timeouts
-from prose.schema import AudioCodec, IORegistryInfo, PCIeDevice, USBDevice
+from prose.schema import (
+    AudioCodec,
+    BluetoothEvidence,
+    CameraEvidence,
+    HardwareComponentEvidence,
+    IORegistryInfo,
+    PCIeDevice,
+    T1Evidence,
+    USB11Evidence,
+    USBDevice,
+    WiFiEvidence,
+)
 from prose.utils import log, run, verbose_log
 
 
@@ -294,16 +305,90 @@ def collect_audio_codecs() -> list[AudioCodec]:
     return codecs
 
 
-def collect_ioregistry_info() -> IORegistryInfo:
-    """Collect comprehensive IORegistry hardware information.
+def _component_from_pcie(device: PCIeDevice) -> HardwareComponentEvidence:
+    """Normalize a PCIe device as hardware evidence without compatibility rules."""
+    return {
+        "name": device["name"],
+        "vendor_id": device["vendor_id"],
+        "device_id": device["device_id"],
+        "product_id": None,
+        "class_name": device["class_code"],
+        "source": "ioreg:IOPCIDevice",
+    }
 
-    Returns:
-        IORegistryInfo dictionary with PCIe, USB, and audio codec data.
-    """
+
+def _component_from_usb(device: USBDevice) -> HardwareComponentEvidence:
+    """Normalize a USB device as hardware evidence without compatibility rules."""
+    return {
+        "name": device["name"],
+        "vendor_id": device["vendor_id"],
+        "device_id": None,
+        "product_id": device["product_id"],
+        "class_name": device["speed"],
+        "source": "ioreg:IOUSBHostDevice",
+    }
+
+
+def _text(device: HardwareComponentEvidence) -> str:
+    return " ".join(
+        value.lower()
+        for value in (device["name"], device["class_name"] or "")
+        if value
+    )
+
+
+def _build_hardware_evidence(
+    pcie_devices: list[PCIeDevice],
+    usb_devices: list[USBDevice],
+) -> tuple[WiFiEvidence, BluetoothEvidence, T1Evidence, USB11Evidence, CameraEvidence]:
+    """Extract hardware observations; absence of a match remains unknown."""
+    pcie = [_component_from_pcie(device) for device in pcie_devices]
+    usb = [_component_from_usb(device) for device in usb_devices]
+    all_devices = pcie + usb
+
+    wifi = [device for device in all_devices if any(
+        token in _text(device)
+        for token in ("wifi", "wi-fi", "airport", "bcm943", "atheros", "wireless")
+    )]
+    bluetooth = [device for device in usb if any(
+        token in _text(device)
+        for token in ("bluetooth", "bcm207", "bcm204", "bluetoothhost")
+    )]
+    t1 = [device for device in all_devices if "t1" in _text(device) or "apple security" in _text(device)]
+    usb_11 = [
+        device for device in pcie
+        if any(token in _text(device) for token in ("ohci", "uhci", "usb 1.1"))
+    ]
+    camera = [device for device in all_devices if any(
+        token in _text(device)
+        for token in ("isight", "facetime camera", "applecamera", "camera")
+    )]
+
+    return (
+        {"present": True if wifi else None, "components": wifi},
+        {"present": True if bluetooth else None, "controllers": bluetooth},
+        {"present": True if t1 else None, "components": t1},
+        {"present": True if usb_11 else None, "controllers": usb_11},
+        {"present": True if camera else None, "components": camera},
+    )
+
+
+def collect_ioregistry_info() -> IORegistryInfo:
+    """Collect comprehensive IORegistry hardware observations."""
     log("Collecting IORegistry hardware information...")
 
+    pcie_devices = collect_pcie_devices()
+    usb_devices = collect_usb_devices()
+    audio_codecs = collect_audio_codecs()
+    wifi, bluetooth, t1, usb_11, camera = _build_hardware_evidence(pcie_devices, usb_devices)
+
     return {
-        "pcie_devices": collect_pcie_devices(),
-        "usb_devices": collect_usb_devices(),
-        "audio_codecs": collect_audio_codecs(),
+        "pcie_devices": pcie_devices,
+        "usb_devices": usb_devices,
+        "audio_codecs": audio_codecs,
+        "wifi": wifi,
+        "bluetooth": bluetooth,
+        "t1": t1,
+        "usb_1_1": usb_11,
+        "camera": camera,
     }
