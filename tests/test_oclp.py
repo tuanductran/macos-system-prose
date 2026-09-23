@@ -18,7 +18,7 @@ def test_apple_native_and_oclp_compatibility_are_distinct():
     assert result["apple_native_supported"] is False
     assert result["oclp_model_supported"] is True
     assert result["oclp_os_supported"] is True
-    assert result["root_patch_required"] is None
+    assert result["root_patch_required"] is False
     assert result["root_patch_state"] == "unknown"
 
 
