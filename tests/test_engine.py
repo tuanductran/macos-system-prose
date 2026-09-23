@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from prose.engine import collect_all, generate_ai_prompt
@@ -351,7 +352,7 @@ def test_failure_injection_covers_every_registered_collector():
             }
         return spec.default
 
-    def _default_collector_factory(default: object) -> object:
+    def _default_collector_factory(default: object) -> Callable[[], Awaitable[object]]:
         async def run_default() -> object:
             return default
 
