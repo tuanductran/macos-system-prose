@@ -256,7 +256,7 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
             ),
             timeout=opencore_timeout,
         )
-    except asyncio.TimeoutError as e:
+    except asyncio.TimeoutError:
         duration_ms = (time.perf_counter() - opencore_started) * 1000
         error_message = f"TimeoutError: collector exceeded {opencore_timeout:g}s timeout"
         collection_errors.append(f"opencore_patcher: {error_message}")
