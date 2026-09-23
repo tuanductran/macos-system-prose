@@ -518,7 +518,9 @@ def collect_git_config() -> GitConfig:
                 config["credential_helper"] = "[CONFIGURED]"
             elif key.startswith("alias."):
                 alias_name = key.replace("alias.", "")
-                config["aliases"][alias_name] = "[REDACTED]" if _is_sensitive_git_key(key, value) else value
+                config["aliases"][alias_name] = (
+                    "[REDACTED]" if _is_sensitive_git_key(key, value) else value
+                )
             else:
                 config["other_settings"][key] = (
                     "[REDACTED]" if _is_sensitive_git_key(key, value) else value
