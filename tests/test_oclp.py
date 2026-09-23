@@ -82,7 +82,6 @@ def test_haswell_on_sequoia_requires_graphics_patch_and_metallib():
     assert "metallib_support_pkg" in result["required_packages"]
 
 
-
 def test_usb_11_evidence_maps_to_root_patch_on_ventura_and_newer():
     result = build_oclp_compatibility(
         model_identifier="MacBook5,1",
