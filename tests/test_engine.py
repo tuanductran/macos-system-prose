@@ -429,6 +429,7 @@ def test_collector_timeout_and_execution_metadata():
             _slow_collector
             if candidate.name == target_name
             else _default_collector_factory(candidate.default),
+            candidate.default,
             0.01 if candidate.name == target_name else candidate.timeout_seconds,
         )
         for candidate in _build_collector_registry(include_sensitive_network=False)
