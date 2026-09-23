@@ -156,6 +156,12 @@ macos-prose --include-sensitive-network
 
 # Verbose mode (detailed logging)
 macos-prose --verbose
+
+# Fast mode: skip expensive storage/font/log collectors
+macos-prose --mode fast
+
+# Deep mode: collect every report section (default)
+macos-prose --mode deep
 ```
 
 ### Development Mode
@@ -176,6 +182,9 @@ from prose.engine import collect_all
 
 # Collect system data
 report = asyncio.run(collect_all())
+# Fast mode skips expensive storage/font/log collectors:
+# report = asyncio.run(collect_all(mode="fast"))
+# Deep mode is the default and collects every section.
 # Opt in to network identity only when required:
 # report = asyncio.run(collect_all(include_sensitive_network=True))
 
