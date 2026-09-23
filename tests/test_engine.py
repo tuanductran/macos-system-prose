@@ -135,7 +135,6 @@ def test_collect_all_structure_old():
 
     asyncio.run(run_test())
 
-
 def test_generate_ai_prompt_without_oclp():
     """Test AI prompt generation for standard macOS."""
     from typing import cast
