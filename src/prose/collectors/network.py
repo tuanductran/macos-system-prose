@@ -168,10 +168,14 @@ def collect_network_info(*, include_sensitive: bool = False) -> NetworkInfo:
 
     if not include_sensitive:
         hostname = _REDACTED
+        interface = _REDACTED
         ipv4 = _REDACTED
         gateway = _REDACTED
         mask = _REDACTED
         mac = _REDACTED
+        dns = []
+        vpn_conns = []
+        vpn_apps_list = []
         local_interfaces = [
             {"name": item["name"], "device": item["device"], "ipv4": _REDACTED}
             for item in local_interfaces
