@@ -379,12 +379,15 @@ def test_failure_injection_covers_every_registered_collector():
             "amfi_configuration": None,
             "boot_args": None,
         }
-        with patch(
-            "prose.engine._build_collector_registry",
-            return_value=registry,
-        ), patch(
-            "prose.engine.collect_opencore_patcher",
-            return_value=deterministic_opencore,
+        with (
+            patch(
+                "prose.engine._build_collector_registry",
+                return_value=registry,
+            ),
+            patch(
+                "prose.engine.collect_opencore_patcher",
+                return_value=deterministic_opencore,
+            ),
         ):
             report = await collect_all()
         assert report[report_keys.get(spec.name, spec.name)] == spec.default
