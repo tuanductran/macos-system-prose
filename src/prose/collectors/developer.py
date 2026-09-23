@@ -468,8 +468,21 @@ def collect_editors() -> list[str]:
     return sorted(set(editors))
 
 
+_SENSITIVE_GIT_KEY_PARTS = (
+    "credential",
+    "extraheader",
+    "proxy",
+)
+
+
+def _is_sensitive_git_key(key: str) -> bool:
+    """Identify Git config keys whose values may contain credentials or secrets."""
+    lowered = key.lower()
+    return any(part in lowered for part in _SENSITIVE_GIT_KEY_PARTS)
+
+
 def collect_git_config() -> GitConfig:
-    """Collect Git global configuration."""
+    """Collect Git global configuration without exporting credential material."""
     verbose_log("Collecting Git configuration...")
 
     config: GitConfig = {
@@ -499,12 +512,14 @@ def collect_git_config() -> GitConfig:
             elif key == "core.editor":
                 config["core_editor"] = value
             elif key == "credential.helper":
-                config["credential_helper"] = value
+                config["credential_helper"] = "[CONFIGURED]"
             elif key.startswith("alias."):
                 alias_name = key.replace("alias.", "")
-                config["aliases"][alias_name] = value
+                config["aliases"][alias_name] = "[REDACTED]" if _is_sensitive_git_key(key) else value
             else:
-                config["other_settings"][key] = value
+                config["other_settings"][key] = (
+                    "[REDACTED]" if _is_sensitive_git_key(key) else value
+                )
     except (OSError, ValueError) as e:
         verbose_log(f"Failed to collect git config: {e}")
 
