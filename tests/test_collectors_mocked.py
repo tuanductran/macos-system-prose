@@ -218,6 +218,7 @@ class TestIORegistryHardwareEvidence:
 <dict><key>USB Product Name</key><string>FaceTime Camera</string>
 <key>idVendor</key><integer>1452</integer><key>idProduct</key><integer>2</integer></dict>
 </array></plist>"""
+
         def side_effect(cmd, **kwargs):
             if "-c" in cmd and "IOPCIDevice" in cmd:
                 return pcie
