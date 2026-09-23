@@ -67,10 +67,14 @@ def build_oclp_compatibility(
     root_patch_evidence: bool,
 ) -> OCLPCompatibilityInfo:
     """Build compatibility facts without conflating requirements and observed state."""
+    del model_identifier, architecture
+
     current_major = _parse_major(current_macos_version)
     target_os = cast(dict[str, object], _TARGET_OS) if isinstance(_TARGET_OS, dict) else {}
-    target_min = int(target_os.get("minimum_major", 11))
-    target_max = int(target_os.get("maximum_major", 15))
+    target_min_value = target_os.get("minimum_major", 11)
+    target_max_value = target_os.get("maximum_major", 15)
+    target_min = int(target_min_value) if isinstance(target_min_value, (int, str)) else 11
+    target_max = int(target_max_value) if isinstance(target_max_value, (int, str)) else 15
 
     oclp_os_supported = (
         current_major is not None
@@ -124,7 +128,13 @@ def build_oclp_compatibility(
             required_packages.append(package)
     root_patch_required: bool | None = bool(root_patch_domains) if oclp_os_supported else None
 
-    source_values = [value for value in _SOURCES.values() if isinstance(value, str)]
+    source_map = cast(dict[str, object], _SOURCES) if isinstance(_SOURCES, dict) else {}
+    source_values = [value for value in source_map.values() if isinstance(value, str)]
+    schema_version_value = _KNOWLEDGE.get("schema_version", 1)
+    schema_version = (
+        int(schema_version_value) if isinstance(schema_version_value, (int, str)) else 1
+    )
+    checked_at = _KNOWLEDGE.get("checked_at", "")
     return {
         "apple_native_supported": apple_native_supported,
         "oclp_model_supported": oclp_model_supported,
@@ -135,8 +145,8 @@ def build_oclp_compatibility(
         "root_patch_state": root_patch_state,
         "root_patch_domains": root_patch_domains,
         "required_packages": required_packages,
-        "knowledge_schema_version": int(_KNOWLEDGE.get("schema_version", 1)),
-        "knowledge_checked_at": str(_KNOWLEDGE.get("checked_at", "")),
+        "knowledge_schema_version": schema_version,
+        "knowledge_checked_at": str(checked_at),
         "knowledge_sources": source_values,
     }
 
