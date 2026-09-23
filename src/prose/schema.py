@@ -471,6 +471,15 @@ class SystemLogs(TypedDict):
     log_period: str  # e.g. "last 1 hour"
 
 
+class CollectionStatus(TypedDict):
+    """Execution metadata for one collector invocation."""
+
+    status: str
+    error: str | None
+    duration_ms: float | None
+    timeout_seconds: float
+
+
 class SystemReport(TypedDict):
     timestamp: float
     system: SystemInfo
@@ -501,4 +510,4 @@ class SystemReport(TypedDict):
     system_logs: SystemLogs
     ioregistry: IORegistryInfo  # Phase 3: IORegistry hardware detection
     collection_errors: list[str]  # Track any errors during data collection
-    collection_status: dict[str, dict[str, object]]  # Per-collector success/failure metadata
+    collection_status: dict[str, CollectionStatus]  # Per-collector execution metadata
