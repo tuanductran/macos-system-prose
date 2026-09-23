@@ -129,10 +129,8 @@ def build_oclp_compatibility(
         ):
             required_packages.append(package)
     hardware_facts = hardware_evidence or {}
-    for domain in ("wifi", "bluetooth", "t1", "usb", "camera"):
-        if hardware_facts.get(domain) is True and domain not in root_patch_domains:
-            root_patch_domains.append(domain)
-
+    # Hardware evidence is reported separately. It must not be promoted to a
+    # root-patch requirement without a source-backed OS/model rule.
     root_patch_required = bool(root_patch_domains) if oclp_os_supported else None
 
     source_map = cast(dict[str, object], _SOURCES) if isinstance(_SOURCES, dict) else {}
