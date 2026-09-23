@@ -225,6 +225,7 @@ class TestIORegistryHardwareEvidence:
             if "IOUSBHostDevice" in cmd:
                 return usb
             return ""
+
         mock_run.side_effect = side_effect
 
         info = collect_ioregistry_info()
