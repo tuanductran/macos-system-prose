@@ -358,6 +358,13 @@ def test_failure_injection_covers_every_registered_collector():
 
         return run_default
 
+    report_keys = {
+        "system_info": "system",
+        "hardware_info": "hardware",
+        "disk_info": "disk",
+        "kext_info": "kexts",
+    }
+
     async def run_case(spec: CollectorSpec) -> None:
         registry = tuple(
             CollectorSpec(
@@ -371,7 +378,7 @@ def test_failure_injection_covers_every_registered_collector():
         )
         with patch("prose.engine._build_collector_registry", return_value=registry):
             report = await collect_all()
-        assert report[spec.name] == spec.default
+        assert report[report_keys.get(spec.name, spec.name)] == spec.default
         assert report["collection_status"][spec.name]["status"] == "error"
         assert report["collection_status"][spec.name]["error"] == (
             "RuntimeError: injected collector failure"
