@@ -23,6 +23,7 @@ class OCLPCompatibilityInfo(TypedDict):
     root_patch_domains: list[str]
     required_packages: list[str]
     hardware_evidence: dict[str, bool | None]
+    hardware_patch_requirements: dict[str, bool | None]
     knowledge_schema_version: int
     knowledge_checked_at: str
     knowledge_sources: list[str]
@@ -54,6 +55,29 @@ def _native_supported(max_os_supported: str, current_version: str) -> bool | Non
     if current is None or max_version is None:
         return None
     return current <= max_version
+
+
+def _hardware_patch_requirements(
+    *,
+    current_major: int | None,
+    hardware_evidence: dict[str, bool | None],
+) -> dict[str, bool | None]:
+    """Map observed hardware to only rules where source evidence supports the inference."""
+    usb11 = hardware_evidence.get("usb")
+    usb_rule = (
+        True
+        if usb11 is True and current_major is not None and current_major >= 13
+        else False
+        if usb11 is True and current_major is not None and current_major < 13
+        else None
+    )
+    return {
+        "wifi": None,
+        "bluetooth": None,
+        "t1": None,
+        "usb": usb_rule,
+        "camera": None,
+    }
 
 
 def build_oclp_compatibility(
@@ -128,9 +152,21 @@ def build_oclp_compatibility(
             )
         ):
             required_packages.append(package)
-    hardware_facts = hardware_evidence or {}
-    # Hardware evidence is reported separately. It must not be promoted to a
-    # root-patch requirement without a source-backed OS/model rule.
+
+    hardware_facts = {
+        key: value
+        for key, value in (hardware_evidence or {}).items()
+        if key in {"wifi", "bluetooth", "t1", "usb", "camera"}
+    }
+    hardware_patch_requirements = _hardware_patch_requirements(
+        current_major=current_major,
+        hardware_evidence=hardware_facts,
+    )
+    for domain, required in hardware_patch_requirements.items():
+        if required is True and domain not in root_patch_domains:
+            root_patch_domains.append(domain)
+
+    # Requirements are only emitted when the model/OS is inside the documented OCLP range.
     root_patch_required = bool(root_patch_domains) if oclp_os_supported else None
 
     source_map = cast(dict[str, object], _SOURCES) if isinstance(_SOURCES, dict) else {}
@@ -150,11 +186,8 @@ def build_oclp_compatibility(
         "root_patch_state": root_patch_state,
         "root_patch_domains": root_patch_domains,
         "required_packages": required_packages,
-        "hardware_evidence": {
-            key: value
-            for key, value in hardware_facts.items()
-            if key in {"wifi", "bluetooth", "t1", "usb", "camera"}
-        },
+        "hardware_evidence": hardware_facts,
+        "hardware_patch_requirements": hardware_patch_requirements,
         "knowledge_schema_version": schema_version,
         "knowledge_checked_at": str(checked_at),
         "knowledge_sources": source_values,
