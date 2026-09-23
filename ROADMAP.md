@@ -19,6 +19,7 @@
 - [x] Keep hardware compatibility evidence typed and separate from collector compatibility rules.
 - [x] Add versioned OCLP knowledge fixtures sourced from official Dortania documentation.
 - [x] Normalize hardware evidence into source-backed root-patch requirements without promoting unknown evidence.
+- [x] Propagate OCLP hardware evidence and patch requirements into the AI prompt contract.
 
 ## v1.3 — Diagnostics quality
 

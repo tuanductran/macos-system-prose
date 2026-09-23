@@ -315,6 +315,10 @@ def generate_ai_prompt(data: SystemReport) -> str:
     # OpenCore context
     compatibility = data["oclp_compatibility"]
     oclp_context = ""
+    hardware_patch_requirements_json = json.dumps(
+        compatibility.get("hardware_patch_requirements", {}), sort_keys=True
+    )
+
     if is_oclp_user:
         kexts_str = (
             ", ".join(str(kext) for kext in oclp["loaded_kexts"][:3])
@@ -349,6 +353,8 @@ Use documented compatibility data; OCLP does not imply support for every newer m
 - Root patch observed: {compatibility.get("root_patch_state", "Unknown")}
 - Root patch domains: {", ".join(compatibility.get("root_patch_domains", [])) or "None"}
 - Required support packages: {", ".join(compatibility.get("required_packages", [])) or "None"}
+- Hardware evidence: {json.dumps(compatibility.get("hardware_evidence", {}), sort_keys=True)}
+- Hardware patch requirements: {hardware_patch_requirements_json}
 
 **IMPORTANT - OCLP-Specific Recommendations:**
 - Do not assume SIP must be fully disabled; OCLP SIP requirements depend on the \
