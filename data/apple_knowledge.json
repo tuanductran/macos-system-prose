@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-09-23",
+  "scope": "Apple/macOS open-source implementation references used to validate command and subsystem terminology in this project.",
+  "sources": {
+    "apple_oss_distributions": "https://github.com/apple-oss-distributions",
+    "distribution_macos": "https://github.com/apple-oss-distributions/distribution-macOS",
+    "xnu": "https://github.com/apple-oss-distributions/xnu",
+    "launchd": "https://github.com/apple-oss-distributions/launchd",
+    "system_cmds": "https://github.com/apple-oss-distributions/system_cmds",
+    "iokit_user": "https://github.com/apple-oss-distributions/IOKitUser",
+    "iokit_tools": "https://github.com/apple-oss-distributions/IOKitTools"
+  },
+  "facts": [
+    {
+      "topic": "Darwin/XNU",
+      "statement": "Apple describes XNU as the kernel of Darwin used by macOS and iOS; its source tree combines Mach, BSD components, and IOKit-related code."
+    },
+    {
+      "topic": "launchd",
+      "statement": "Apple's launchd source and launchctl manual document launchctl as the interface to launchd and identify LaunchAgents and LaunchDaemons as macOS job domains."
+    },
+    {
+      "topic": "macOS open-source distribution",
+      "statement": "Apple's distribution-macOS repository enumerates released open-source components including IOKit families, DiskArbitration, Libc, Libsystem, dyld, PowerManagement, Security, and system configuration components."
+    },
+    {
+      "topic": "system commands",
+      "statement": "Apple's system_cmds repository contains Darwin/macOS command sources including nvram and sysctl, which are directly relevant to this project's NVRAM and kernel-parameter collectors."
+    },
+    {
+      "topic": "IOKit",
+      "statement": "Apple's distribution-macOS manifest includes IOKitUser, IOKitTools, IOGraphics, IONetworkingFamily, IOPCIFamily and IOStorageFamily, supporting the project's use of IORegistry/IOKit-derived hardware evidence."
+    }
+  ]
+}
