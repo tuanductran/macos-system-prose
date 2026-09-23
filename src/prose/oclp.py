@@ -107,8 +107,9 @@ def build_oclp_compatibility(
     required_packages: list[str] = []
     for package, tokens_value in package_rules.items():
         tokens = cast(list[str], tokens_value) if isinstance(tokens_value, list) else []
-        if any(token in gpu_text for token in tokens)
-        and (package != "kdk" or (current_major is not None and current_major >= 13))
+        if (
+            any(token in gpu_text for token in tokens)
+            and (package != "kdk" or (current_major is not None and current_major >= 13))
         and (
             package != "metallib_support_pkg" or (current_major is not None and current_major >= 15)
         ):
