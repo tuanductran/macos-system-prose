@@ -53,6 +53,7 @@ from prose.oclp import build_oclp_compatibility
 from prose.schema import (
     ApplicationsInfo,
     BatteryInfo,
+    CollectionStatus,
     CloudInfo,
     CronInfo,
     DeveloperToolsInfo,
@@ -187,11 +188,11 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
     )
 
     collection_errors: list[str] = []
-    collection_status: dict[str, dict[str, object]] = {}
+    collection_status: dict[str, CollectionStatus] = {}
     collected: dict[str, object] = {}
 
     for spec, result in zip(registry, results):
-        if isinstance(result, Exception):
+        if isinstance(result, BaseException):
             error_message = f"{type(result).__name__}: {result!s}"
             status = "timeout" if isinstance(result, TimeoutError) else "error"
             collection_errors.append(f"{spec.name}: {error_message}")
