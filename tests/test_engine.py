@@ -492,10 +492,17 @@ def test_fast_mode_reports_skipped_collectors():
     from prose.engine import CollectorSpec, _build_collector_registry
 
     deep = _build_collector_registry(include_sensitive_network=False, mode="deep")
+
+    def _default_collector_factory(default: object):
+        async def run_default() -> object:
+            return default
+
+        return run_default
+
     active = tuple(
         CollectorSpec(
             spec.name,
-            (lambda default=spec.default: _default_collector_factory(default))(),
+            _default_collector_factory(spec.default),
             spec.default,
             spec.timeout_seconds,
         )
