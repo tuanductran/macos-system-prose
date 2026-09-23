@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, cast
 
 
 class OCLPCompatibilityInfo(TypedDict):
@@ -32,7 +32,7 @@ def _load_knowledge() -> dict[str, object]:
     if not path.exists():
         return {}
     with path.open(encoding="utf-8") as handle:
-        return json.load(handle)
+        return cast(dict[str, object], json.load(handle))
 
 
 _KNOWLEDGE = _load_knowledge()
@@ -68,8 +68,9 @@ def build_oclp_compatibility(
 ) -> OCLPCompatibilityInfo:
     """Build compatibility facts without conflating requirements and observed state."""
     current_major = _parse_major(current_macos_version)
-    target_min = int(_TARGET_OS.get("minimum_major", 11))
-    target_max = int(_TARGET_OS.get("maximum_major", 15))
+    target_os = cast(dict[str, object], _TARGET_OS) if isinstance(_TARGET_OS, dict) else {}
+    target_min = int(target_os.get("minimum_major", 11))
+    target_max = int(target_os.get("maximum_major", 15))
 
     oclp_os_supported = (
         current_major is not None
@@ -94,21 +95,24 @@ def build_oclp_compatibility(
         15: "sequoia",
     }
     gpu_rules = _KNOWLEDGE.get("root_patch", {})
-    requirements = gpu_rules.get("gpu_requirements", {}) if isinstance(gpu_rules, dict) else {}
-    package_rules = gpu_rules.get("package_requirements", {}) if isinstance(gpu_rules, dict) else {}
+    root_patch = cast(dict[str, object], gpu_rules) if isinstance(gpu_rules, dict) else {}
+    requirements_value = root_patch.get("gpu_requirements", {})
+    package_rules_value = root_patch.get("package_requirements", {})
+    requirements = cast(dict[str, object], requirements_value) if isinstance(requirements_value, dict) else {}
+    package_rules = cast(dict[str, object], package_rules_value) if isinstance(package_rules_value, dict) else {}
     os_key = os_names.get(current_major or 0)
-    matches = requirements.get(os_key, []) if isinstance(requirements, dict) and os_key else []
+    matches_value = requirements.get(os_key, []) if os_key else []
+    matches = cast(list[str], matches_value) if isinstance(matches_value, list) else []
     root_patch_domains = ["graphics"] if any(token in gpu_text for token in matches) else []
-    required_packages = [
-        package
-        for package, tokens in package_rules.items()
-        if isinstance(tokens, list)
-        and any(token in gpu_text for token in tokens)
+    required_packages: list[str] = []
+    for package, tokens_value in package_rules.items():
+        tokens = cast(list[str], tokens_value) if isinstance(tokens_value, list) else []
+        if any(token in gpu_text for token in tokens)
         and (package != "kdk" or (current_major is not None and current_major >= 13))
         and (
             package != "metallib_support_pkg" or (current_major is not None and current_major >= 15)
-        )
-    ]
+        ):
+            required_packages.append(package)
     root_patch_required: bool | None = bool(root_patch_domains) if oclp_os_supported else None
 
     source_values = [value for value in _SOURCES.values() if isinstance(value, str)]
