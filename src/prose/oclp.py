@@ -79,9 +79,7 @@ def build_oclp_compatibility(
     )
 
     apple_native_supported = (
-        _native_supported(max_os_supported, current_macos_version)
-        if max_os_supported
-        else None
+        _native_supported(max_os_supported, current_macos_version) if max_os_supported else None
     )
 
     root_patch_state = (
@@ -101,9 +99,7 @@ def build_oclp_compatibility(
     requirements_value = root_patch.get("gpu_requirements", {})
     package_rules_value = root_patch.get("package_requirements", {})
     requirements = (
-        cast(dict[str, object], requirements_value)
-        if isinstance(requirements_value, dict)
-        else {}
+        cast(dict[str, object], requirements_value) if isinstance(requirements_value, dict) else {}
     )
     package_rules = (
         cast(dict[str, object], package_rules_value)
@@ -113,29 +109,20 @@ def build_oclp_compatibility(
     os_key = os_names.get(current_major or 0)
     matches_value = requirements.get(os_key, []) if os_key else []
     matches = cast(list[str], matches_value) if isinstance(matches_value, list) else []
-    root_patch_domains = ["graphics"] if any(
-        token in gpu_text for token in matches
-    ) else []
+    root_patch_domains = ["graphics"] if any(token in gpu_text for token in matches) else []
     required_packages: list[str] = []
     for package, tokens_value in package_rules.items():
-        tokens = (
-            cast(list[str], tokens_value) if isinstance(tokens_value, list) else []
-        )
+        tokens = cast(list[str], tokens_value) if isinstance(tokens_value, list) else []
         if (
             any(token in gpu_text for token in tokens)
-            and (
-                package != "kdk"
-                or (current_major is not None and current_major >= 13)
-            )
+            and (package != "kdk" or (current_major is not None and current_major >= 13))
             and (
                 package != "metallib_support_pkg"
                 or (current_major is not None and current_major >= 15)
             )
         ):
             required_packages.append(package)
-    root_patch_required: bool | None = (
-        bool(root_patch_domains) if oclp_os_supported else None
-    )
+    root_patch_required: bool | None = bool(root_patch_domains) if oclp_os_supported else None
 
     source_values = [value for value in _SOURCES.values() if isinstance(value, str)]
     return {
