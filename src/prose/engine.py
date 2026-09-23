@@ -111,7 +111,9 @@ def _async_collector(collector: Callable[[], object]) -> Callable[[], Awaitable[
     return run_collector
 
 
-def _build_collector_registry(*, include_sensitive_network: bool, mode: CollectionMode = "deep") -> tuple[CollectorSpec, ...]:
+def _build_collector_registry(
+    *, include_sensitive_network: bool, mode: CollectionMode = "deep"
+) -> tuple[CollectorSpec, ...]:
     """Return the single source of truth for independent collectors."""
     registry = (
         CollectorSpec("system_info", collect_system_info, {}, 30),
@@ -595,7 +597,10 @@ async def async_main() -> int:
         "--mode",
         choices=("fast", "deep"),
         default="deep",
-        help="Collection depth: fast skips expensive filesystem/log collectors; deep collects all sections",
+        help=(
+            "Collection depth: fast skips expensive filesystem/log collectors; "
+            "deep collects all sections"
+        ),
     )
     parser.add_argument(
         "--no-prompt",
