@@ -8,11 +8,11 @@ from prose.schema import NetworkInfo
 from prose.utils import log, run, verbose_log, which
 
 
-def _hex_mask_to_dotted(hex_mask: str) -> str:
-    """Convert hex subnet mask to dotted-decimal notation.
+_REDACTED = "[REDACTED]"
 
-    Example: '0xffffff00' → '255.255.255.0'
-    """
+
+def _hex_mask_to_dotted(hex_mask: str) -> str:
+    """Convert a hex subnet mask to dotted-decimal notation."""
     try:
         val = int(hex_mask, 16)
         return ".".join(str(b) for b in struct.pack("!I", val))
@@ -21,11 +21,7 @@ def _hex_mask_to_dotted(hex_mask: str) -> str:
 
 
 def _parse_firewall_status(raw: str) -> str:
-    """Parse socketfilterfw output into clean status string.
-
-    Input:  'Firewall is enabled. (State = 1)'
-    Output: 'Enabled'
-    """
+    """Parse socketfilterfw output into clean status string."""
     raw = raw.strip().lower()
     if "enabled" in raw:
         return "Enabled"
@@ -37,11 +33,10 @@ def _parse_firewall_status(raw: str) -> str:
 def collect_vpn_info() -> tuple[bool, list[str], list[str]]:
     """Detect VPN connections and VPN applications."""
     vpn_active = False
-    vpn_connections = []
-    vpn_apps = []
+    vpn_connections: list[str] = []
+    vpn_apps: list[str] = []
 
     try:
-        # Check for VPN interfaces (utun, ppp, ipsec)
         ifconfig_output = run(["ifconfig"])
         for line in ifconfig_output.splitlines():
             if line.startswith(("utun", "ppp", "ipsec")):
@@ -49,17 +44,14 @@ def collect_vpn_info() -> tuple[bool, list[str], list[str]]:
                 vpn_connections.append(interface)
                 vpn_active = True
 
-        # Check scutil for VPN services
         scutil_output = run(["scutil", "--nc", "list"], log_errors=False)
         for line in scutil_output.splitlines():
             if "Connected" in line or "Connecting" in line:
                 vpn_active = True
-                # Extract service name
                 parts = line.strip().split('"')
                 if len(parts) >= 2:
                     vpn_connections.append(parts[1])
 
-        # Check for common VPN apps
         vpn_app_paths = {
             "Tailscale": "/Applications/Tailscale.app",
             "WireGuard": "/Applications/WireGuard.app",
@@ -75,7 +67,6 @@ def collect_vpn_info() -> tuple[bool, list[str], list[str]]:
             if os.path.exists(vpn_path):
                 vpn_apps.append(vpn_name)
 
-        # Check if tailscale daemon is running
         if which("tailscale"):
             status = run(["tailscale", "status"], timeout=Timeouts.FAST, log_errors=False)
             if status and "Logged out" not in status:
@@ -89,20 +80,23 @@ def collect_vpn_info() -> tuple[bool, list[str], list[str]]:
     return vpn_active, list(set(vpn_connections)), vpn_apps
 
 
-def collect_network_info() -> NetworkInfo:
+def collect_network_info(*, include_sensitive: bool = False) -> NetworkInfo:
+    """Collect network facts.
+
+    By default, identifying network data is redacted and no external network
+    request is made. Set include_sensitive=True to opt in.
+    """
     log("Collecting detailed network information...")
 
-    # 1. Primary Interface & Gateway
     route_out = run(["route", "-n", "get", "default"])
     interface = "Unknown"
     gateway = "Unknown"
     for line in route_out.splitlines():
         if "interface:" in line:
-            interface = line.split(":")[1].strip()
+            interface = line.split(":", 1)[1].strip()
         if "gateway:" in line:
-            gateway = line.split(":")[1].strip()
+            gateway = line.split(":", 1)[1].strip()
 
-    # 2. Local IP, Mask, MAC
     ipv4 = "Unknown"
     mask = "Unknown"
     mac = "Unknown"
@@ -122,7 +116,6 @@ def collect_network_info() -> NetworkInfo:
                 if len(parts) >= 2:
                     mac = parts[1]
 
-    # 3. DNS Servers
     dns: list[str] = []
     scutil_dns = run(["scutil", "--dns"])
     for line in scutil_dns.splitlines():
@@ -132,30 +125,35 @@ def collect_network_info() -> NetworkInfo:
             if server and server not in dns:
                 dns.append(server)
 
-    # 4. Public IP
-    public_ip = run(["curl", "-s", "--max-time", "2", "https://ifconfig.me"]) or "Timeout/Unknown"
+    public_ip = "Not collected"
+    if include_sensitive:
+        public_ip = (
+            run(
+                ["curl", "-s", "--max-time", "2", "https://ifconfig.me"],
+                log_errors=False,
+            )
+            or "Timeout/Unknown"
+        )
 
-    # 5. Wi-Fi SSID
     wifi_ssid = None
-    airport_path = (
-        "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
-    )
-    if os.path.exists(airport_path):
-        airport_out = run([airport_path, "-I"])
-        for line in airport_out.splitlines():
-            if " SSID:" in line and " BSSID:" not in line:
-                wifi_ssid = line.split(":")[1].strip()
+    if include_sensitive:
+        airport_framework = "/System/Library/PrivateFrameworks/Apple80211.framework"
+        airport_path = os.path.join(airport_framework, "Versions/Current/Resources/airport")
+        if os.path.exists(airport_path):
+            airport_out = run([airport_path, "-I"])
+            for line in airport_out.splitlines():
+                if " SSID:" in line and " BSSID:" not in line:
+                    wifi_ssid = line.split(":", 1)[1].strip()
 
-    # 6. Local Interfaces
-    local_interfaces = []
+    local_interfaces: list[dict[str, str]] = []
     try:
         hw_ports = run(["networksetup", "-listallhardwareports"])
         current_port = ""
         for line in hw_ports.splitlines():
             if "Hardware Port:" in line:
-                current_port = line.split(":")[1].strip()
+                current_port = line.split(":", 1)[1].strip()
             if "Device:" in line:
-                dev = line.split(":")[1].strip()
+                dev = line.split(":", 1)[1].strip()
                 status = run(["ifconfig", dev])
                 ip = "None"
                 for s_line in status.splitlines():
@@ -166,11 +164,27 @@ def collect_network_info() -> NetworkInfo:
     except (OSError, IndexError) as e:
         verbose_log(f"Failed to collect local interface information: {e}")
 
-    # VPN Information
     vpn_status, vpn_conns, vpn_apps_list = collect_vpn_info()
 
+    if not include_sensitive:
+        hostname = _REDACTED
+        interface = _REDACTED
+        ipv4 = _REDACTED
+        gateway = _REDACTED
+        mask = _REDACTED
+        mac = _REDACTED
+        dns = []
+        vpn_conns = []
+        vpn_apps_list = []
+        local_interfaces = [
+            {"name": item["name"], "device": item["device"], "ipv4": _REDACTED}
+            for item in local_interfaces
+        ]
+    else:
+        hostname = run(["hostname"])
+
     return {
-        "hostname": run(["hostname"]),
+        "hostname": hostname,
         "primary_interface": interface,
         "ipv4_address": ipv4,
         "public_ip": public_ip,
@@ -186,4 +200,5 @@ def collect_network_info() -> NetworkInfo:
         "vpn_status": vpn_status,
         "vpn_connections": vpn_conns,
         "vpn_apps": vpn_apps_list,
+        "privacy_mode": "full" if include_sensitive else "redacted",
     }

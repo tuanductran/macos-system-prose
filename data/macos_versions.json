@@ -1,5 +1,12 @@
 {
   "version_names": {
+    "11": "Big Sur",
+    "12": "Monterey",
+    "13": "Ventura",
+    "14": "Sonoma",
+    "15": "Sequoia",
+    "26": "Tahoe",
+    "27": "Golden Gate",
     "10.0": "Cheetah",
     "10.1": "Puma",
     "10.2": "Jaguar",
@@ -15,15 +22,16 @@
     "10.12": "Sierra",
     "10.13": "High Sierra",
     "10.14": "Mojave",
-    "10.15": "Catalina",
-    "11": "Big Sur",
-    "12": "Monterey",
-    "13": "Ventura",
-    "14": "Sonoma",
-    "15": "Sequoia",
-    "26": "Tahoe"
+    "10.15": "Catalina"
   },
   "versions": [
+    {
+      "major": 27,
+      "version": "27",
+      "name": "Golden Gate",
+      "release_year": 2026,
+      "latest": "27.0"
+    },
     {
       "major": 26,
       "version": "26",

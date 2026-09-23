@@ -63,12 +63,49 @@ class TestNetworkCollectorMocked:
         mock_run.side_effect = side_effect
         mock_exists.return_value = False
 
-        info = collect_network_info()
+        info = collect_network_info(include_sensitive=True)
         assert info["hostname"] == "Test-Mac"
         assert info["ipv4_address"] == "192.168.1.10"
         assert info["public_ip"] == "1.2.3.4"
         assert info["dns_servers"] == ["1.1.1.1", "8.8.8.8"]
         assert info["firewall_status"] == "Enabled"
+        assert info["privacy_mode"] == "full"
+
+    @patch("prose.collectors.network.run")
+    def test_collect_network_info_redacts_identity(self, mock_run):
+        def side_effect(cmd, **kwargs):
+            if cmd == ["route", "-n", "get", "default"]:
+                return "interface: en0\ngateway: 192.168.1.1"
+            if cmd == ["ifconfig", "en0"]:
+                return "en0:\n\\tinet 192.168.1.10 netmask 0xffffff00\n\\tether a1:b2:c3:d4:e5:f6"
+            if cmd == ["scutil", "--dns"]:
+                return "nameserver[0] : 1.1.1.1"
+            if cmd == ["networksetup", "-listallhardwareports"]:
+                return "Hardware Port: Wi-Fi\nDevice: en0"
+            if cmd == ["ifconfig"]:
+                return "en0: ..."
+            if cmd == ["scutil", "--nc", "list"]:
+                return ""
+            if cmd == ["/usr/libexec/ApplicationFirewall/socketfilterfw", "--getglobalstate"]:
+                return "Firewall is enabled. (State = 1)"
+            if cmd[0] == "curl":
+                raise AssertionError("public IP must not be requested in redacted mode")
+            if cmd == ["hostname"]:
+                raise AssertionError("hostname must not be requested in redacted mode")
+            return ""
+
+        mock_run.side_effect = side_effect
+        info = collect_network_info()
+        assert info["privacy_mode"] == "redacted"
+        assert info["hostname"] == "[REDACTED]"
+        assert info["public_ip"] == "Not collected"
+        assert info["primary_interface"] == "[REDACTED]"
+        assert info["mac_address"] == "[REDACTED]"
+        assert info["dns_servers"] == []
+        assert info["vpn_connections"] == []
+        assert info["vpn_apps"] == []
+        assert info["wifi_ssid"] is None
+        assert all(item["ipv4"] == "[REDACTED]" for item in info["local_interfaces"])
 
 
 class TestPackagesCollectorMocked:
@@ -149,3 +186,5 @@ class TestAdvancedCollectorMocked:
             info = collect_opencore_patcher()
             assert info["detected"] is True
             assert info["version"] == "2.2.0"
+            assert info["detection_confidence"] == "high"
+            assert "oclp_nvram_version" in info["detection_signals"]

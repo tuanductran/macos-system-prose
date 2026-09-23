@@ -12,9 +12,11 @@ import json
 import os
 import sys
 import time
+from collections.abc import Awaitable
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import cast
+from typing import Callable, cast
 
 from prose import utils
 from prose.collectors.advanced import (
@@ -45,175 +47,161 @@ from prose.collectors.ioregistry import collect_ioregistry_info  # Phase 3
 from prose.collectors.network import collect_network_info
 from prose.collectors.packages import collect_package_managers
 from prose.collectors.system import collect_disk_info, collect_hardware_info, collect_system_info
+from prose.datasets.smbios import SMBIOS_DATABASE
 from prose.diff import diff_reports, format_diff
-from prose.schema import KernelExtensionsInfo, OpenCorePatcherInfo, SystemReport
+from prose.oclp import build_oclp_compatibility
+from prose.schema import (
+    ApplicationsInfo,
+    BatteryInfo,
+    CloudInfo,
+    CronInfo,
+    DeveloperToolsInfo,
+    DiagnosticsInfo,
+    DiskInfo,
+    EnvironmentInfo,
+    FontInfo,
+    HardwareInfo,
+    IORegistryInfo,
+    KernelExtensionsInfo,
+    KernelParameters,
+    LaunchItems,
+    NetworkInfo,
+    NVRAMInfo,
+    OpenCorePatcherInfo,
+    PackageManagers,
+    ProcessInfo,
+    SecurityInfo,
+    ShellCustomization,
+    StorageAnalysis,
+    SystemInfo,
+    SystemLogs,
+    SystemPreferences,
+    SystemReport,
+)
 
 
-async def collect_all() -> SystemReport:
-    """Execute all data collectors concurrently and compile a complete system report.
+@dataclass(frozen=True)
+class CollectorSpec:
+    """Typed registration for one independent report collector."""
 
-    This function orchestrates all data collection activities across
-    system, hardware, network, packages, and developer tools using asyncio
-    for parallel execution. Synchronous collectors are run in thread pools
-    to achieve true parallelism.
+    name: str
+    run: Callable[[], Awaitable[object]]
+    default: object
 
-    Returns:
-        A complete SystemReport dictionary with all collected data.
 
-    Raises:
-        CollectorError: If any critical collector fails (non-critical failures
-                       are logged but don't stop execution).
-    """
-    # Collect timestamp at the start
+def _async_collector(collector: Callable[[], object]) -> Callable[[], Awaitable[object]]:
+    """Adapt a synchronous collector to the async collector registry."""
+
+    async def run_collector() -> object:
+        return await asyncio.to_thread(collector)
+
+    return run_collector
+
+
+def _build_collector_registry(*, include_sensitive_network: bool) -> tuple[CollectorSpec, ...]:
+    """Return the single source of truth for independent collectors."""
+    return (
+        CollectorSpec("system_info", collect_system_info, {}),
+        CollectorSpec("hardware_info", collect_hardware_info, {}),
+        CollectorSpec("disk_info", _async_collector(collect_disk_info), {}),
+        CollectorSpec("top_processes", _async_collector(collect_processes), []),
+        CollectorSpec("startup", _async_collector(collect_launch_items), {}),
+        CollectorSpec("login_items", _async_collector(collect_login_items), []),
+        CollectorSpec("package_managers", _async_collector(collect_package_managers), {}),
+        CollectorSpec("developer_tools", collect_dev_tools, {}),
+        CollectorSpec(
+            "kext_info",
+            _async_collector(collect_kexts),
+            {"third_party_kexts": [], "system_extensions": []},
+        ),
+        CollectorSpec("applications", _async_collector(collect_electron_apps), {}),
+        CollectorSpec("environment", _async_collector(collect_environment_info), {}),
+        CollectorSpec(
+            "network",
+            lambda: asyncio.to_thread(
+                collect_network_info, include_sensitive=include_sensitive_network
+            ),
+            {},
+        ),
+        CollectorSpec("battery", _async_collector(collect_battery_info), {}),
+        CollectorSpec("cron", _async_collector(collect_cron_jobs), {}),
+        CollectorSpec("diagnostics", _async_collector(collect_diagnostics), {}),
+        CollectorSpec("security", _async_collector(collect_security_tools), {}),
+        CollectorSpec("cloud", _async_collector(collect_cloud_sync), {}),
+        CollectorSpec("nvram", _async_collector(collect_nvram_variables), {}),
+        CollectorSpec("storage_analysis", _async_collector(collect_storage_analysis), {}),
+        CollectorSpec("fonts", _async_collector(collect_fonts), {}),
+        CollectorSpec("shell_customization", _async_collector(collect_shell_customization), {}),
+        CollectorSpec("system_preferences", _async_collector(collect_system_preferences), {}),
+        CollectorSpec("kernel_params", _async_collector(collect_kernel_parameters), {}),
+        CollectorSpec("system_logs", _async_collector(collect_system_logs), {}),
+        CollectorSpec("ioregistry", _async_collector(collect_ioregistry_info), {}),
+    )
+
+
+async def collect_all(*, include_sensitive_network: bool = False) -> SystemReport:
+    """Execute all independent collectors and compile a complete system report."""
     timestamp = time.time()
+    registry = _build_collector_registry(include_sensitive_network=include_sensitive_network)
 
-    # Run all independent collectors concurrently
-    # Native async collectors run directly without thread overhead
-    # Sync collectors still use asyncio.to_thread for backward compatibility
-    # Using return_exceptions=True to prevent one failure from crashing the entire report
     results = await asyncio.gather(
-        collect_system_info(),  # Native async - no thread wrapper
-        collect_hardware_info(),  # Native async - no thread wrapper
-        asyncio.to_thread(collect_disk_info),
-        asyncio.to_thread(collect_processes),
-        asyncio.to_thread(collect_launch_items),
-        asyncio.to_thread(collect_login_items),
-        asyncio.to_thread(collect_package_managers),
-        collect_dev_tools(),  # Native async - no thread wrapper
-        asyncio.to_thread(collect_kexts),
-        asyncio.to_thread(collect_electron_apps),
-        asyncio.to_thread(collect_environment_info),
-        asyncio.to_thread(collect_network_info),
-        asyncio.to_thread(collect_battery_info),
-        asyncio.to_thread(collect_cron_jobs),
-        asyncio.to_thread(collect_diagnostics),
-        asyncio.to_thread(collect_security_tools),
-        asyncio.to_thread(collect_cloud_sync),
-        asyncio.to_thread(collect_nvram_variables),
-        asyncio.to_thread(collect_storage_analysis),
-        asyncio.to_thread(collect_fonts),
-        asyncio.to_thread(collect_shell_customization),
-        asyncio.to_thread(collect_system_preferences),
-        asyncio.to_thread(collect_kernel_parameters),
-        asyncio.to_thread(collect_system_logs),
-        asyncio.to_thread(collect_ioregistry_info),
+        *(spec.run() for spec in registry),
         return_exceptions=True,
     )
 
-    # Track collection errors
     collection_errors: list[str] = []
-    collector_names = [
-        "system_info",
-        "hardware_info",
-        "disk_info",
-        "top_processes",
-        "startup",
-        "login_items",
-        "package_managers",
-        "developer_tools",
-        "kext_info",
-        "applications",
-        "environment",
-        "network",
-        "battery",
-        "cron",
-        "diagnostics",
-        "security",
-        "cloud",
-        "nvram",
-        "storage_analysis",
-        "fonts",
-        "shell_customization",
-        "system_preferences",
-        "kernel_params",
-        "system_logs",
-        "ioregistry",
-    ]
+    collection_status: dict[str, dict[str, object]] = {}
+    collected: dict[str, object] = {}
 
-    # Define type-appropriate defaults for each collector
-    # Most are TypedDict (use {}), but some are lists or have special requirements
-    default_values: list[dict[str, object] | list[object]] = [
-        {},  # system_info: SystemInfo
-        {},  # hardware_info: HardwareInfo
-        {},  # disk_info: DiskInfo
-        [],  # top_processes: list[ProcessInfo]
-        {},  # startup: LaunchItems
-        [],  # login_items: list[str]
-        {},  # package_managers: PackageManagers
-        {},  # developer_tools: DeveloperToolsInfo
-        {"third_party_kexts": [], "system_extensions": []},  # kext_info: KernelExtensionsInfo
-        {},  # applications: ApplicationsInfo
-        {},  # environment: EnvironmentInfo
-        {},  # network: NetworkInfo
-        {},  # battery: BatteryInfo
-        {},  # cron: CronInfo
-        {},  # diagnostics: DiagnosticsInfo
-        {},  # security: SecurityInfo
-        {},  # cloud: CloudInfo
-        {},  # nvram: NVRAMInfo
-        {},  # storage_analysis: StorageAnalysis
-        {},  # fonts: FontInfo
-        {},  # shell_customization: ShellCustomization
-        {},  # system_preferences: SystemPreferences
-        {},  # kernel_params: KernelParameters
-        {},  # system_logs: SystemLogs
-        {},  # ioregistry: IORegistryInfo
-    ]
-
-    # Ensure lists are synchronized to prevent silent mis-mapping
-    assert len(results) == len(collector_names) == len(default_values), (
-        f"Mismatch in collector configuration: "
-        f"results={len(results)}, names={len(collector_names)}, defaults={len(default_values)}"
-    )
-
-    # Replace exceptions with type-appropriate defaults BEFORE unpacking
-    # This ensures that unpacked variables never contain Exception objects
-    # Mypy cannot infer the correct types after modification, so we use type: ignore
-    for idx, result in enumerate(results):
+    for spec, result in zip(registry, results):
         if isinstance(result, Exception):
-            error_msg = f"{collector_names[idx]}: {type(result).__name__} - {result!s}"
-            collection_errors.append(error_msg)
-            utils.verbose_log(f"Collector failed: {error_msg}")
-            # Replace exception with type-appropriate default
-            results[idx] = default_values[idx]  # type: ignore[assignment]
+            error_message = f"{type(result).__name__}: {result!s}"
+            collection_errors.append(f"{spec.name}: {error_message}")
+            collection_status[spec.name] = {
+                "status": "error",
+                "error": error_message,
+            }
+            utils.verbose_log(f"Collector failed: {spec.name}: {error_message}")
+            collected[spec.name] = spec.default
+        else:
+            collection_status[spec.name] = {
+                "status": "ok",
+                "error": None,
+            }
+            collected[spec.name] = result
 
-    # Unpack results - all Exception instances have been replaced with defaults
-    # Note: mypy cannot infer correct types from asyncio.gather(return_exceptions=True)
-    # At this point we assume each collector returns the expected shape for SystemReport
-    (
-        system_info,
-        hardware_info,
-        disk_info,
-        top_processes,
-        startup,
-        login_items,
-        package_managers,
-        developer_tools,
-        kext_info,
-        applications,
-        environment,
-        network,
-        battery,
-        cron,
-        diagnostics,
-        security,
-        cloud,
-        nvram,
-        storage_analysis,
-        fonts,
-        shell_customization,
-        system_preferences,
-        kernel_params,
-        system_logs,
-        ioregistry,
-    ) = results
+    # The registry above guarantees these keys exist; casts document each report field.
+    system_info = cast(SystemInfo, collected["system_info"])
+    hardware_info = cast(HardwareInfo, collected["hardware_info"])
+    disk_info = cast(DiskInfo, collected["disk_info"])
+    top_processes = cast(list[ProcessInfo], collected["top_processes"])
+    startup = cast(LaunchItems, collected["startup"])
+    login_items = cast(list[str], collected["login_items"])
+    package_managers = cast(PackageManagers, collected["package_managers"])
+    developer_tools = cast(DeveloperToolsInfo, collected["developer_tools"])
+    kext_info = cast(KernelExtensionsInfo, collected["kext_info"])
+    applications = cast(ApplicationsInfo, collected["applications"])
+    environment = cast(EnvironmentInfo, collected["environment"])
+    network = cast(NetworkInfo, collected["network"])
+    battery = cast(BatteryInfo, collected["battery"])
+    cron = cast(CronInfo, collected["cron"])
+    diagnostics = cast(DiagnosticsInfo, collected["diagnostics"])
+    security = cast(SecurityInfo, collected["security"])
+    cloud = cast(CloudInfo, collected["cloud"])
+    nvram = cast(NVRAMInfo, collected["nvram"])
+    storage_analysis = cast(StorageAnalysis, collected["storage_analysis"])
+    fonts = cast(FontInfo, collected["fonts"])
+    shell_customization = cast(ShellCustomization, collected["shell_customization"])
+    system_preferences = cast(SystemPreferences, collected["system_preferences"])
+    kernel_params = cast(KernelParameters, collected["kernel_params"])
+    system_logs = cast(SystemLogs, collected["system_logs"])
+    ioregistry = cast(IORegistryInfo, collected["ioregistry"])
 
     # Collect opencore_patcher with dependency on kext_info
     # This must run after kexts are collected
     # kext_info is guaranteed to be a dict (KernelExtensionsInfo) after exception handling
     try:
-        kext_info_typed = cast(KernelExtensionsInfo, kext_info)
-        third_party_kexts = kext_info_typed.get("third_party_kexts", [])
+        third_party_kexts = kext_info.get("third_party_kexts", [])
         opencore_patcher = await asyncio.to_thread(
             collect_opencore_patcher,
             third_party_kexts,
@@ -221,50 +209,83 @@ async def collect_all() -> SystemReport:
     except Exception as e:
         error_msg = f"opencore_patcher: {type(e).__name__} - {e!s}"
         collection_errors.append(error_msg)
+        collection_status["opencore_patcher"] = {
+            "status": "error",
+            "error": f"{type(e).__name__}: {e!s}",
+        }
         utils.verbose_log(f"Collector failed: {error_msg}")
         opencore_patcher = OpenCorePatcherInfo(
             detected=False,
+            detection_confidence="none",
+            detection_signals=[],
             version=None,
             nvram_version=None,
+            opencore_version=None,
             unsupported_os_detected=False,
+            root_patch_marker_detected=False,
             loaded_kexts=[],
             patched_frameworks=[],
             amfi_configuration=None,
             boot_args=None,
         )
+    else:
+        collection_status["opencore_patcher"] = {
+            "status": "ok",
+            "error": None,
+        }
+
+    system_identifier = str(system_info.get("model_identifier", ""))
+    smbios_data = SMBIOS_DATABASE.get(system_identifier)
+    raw_gpu_models = hardware_info.get("gpu", [])
+    gpu_models = (
+        [str(model) for model in raw_gpu_models] if isinstance(raw_gpu_models, list) else []
+    )
+    oclp_model_supported = bool(smbios_data) and system_info.get("architecture") == "x86_64"
+    oclp_compatibility = build_oclp_compatibility(
+        model_identifier=system_identifier,
+        architecture=str(system_info.get("architecture", "")),
+        current_macos_version=str(system_info.get("macos_version", "")),
+        gpu_models=gpu_models,
+        max_os_supported=smbios_data.get("max_os_supported") if smbios_data else None,
+        oclp_model_supported=oclp_model_supported,
+        root_patch_marker_detected=bool(opencore_patcher.get("root_patch_marker_detected", False)),
+        root_patch_evidence=bool(opencore_patcher.get("patched_frameworks", [])),
+    )
 
     # mypy cannot infer types from asyncio.gather with return_exceptions=True
     # All results are runtime-validated above and guaranteed to be correct types
     # The type:ignore comments document this limitation rather than hide bugs
     return {
         "timestamp": timestamp,
-        "system": system_info,  # type: ignore[typeddict-item]
-        "hardware": hardware_info,  # type: ignore[typeddict-item]
-        "disk": disk_info,  # type: ignore[typeddict-item]
-        "top_processes": top_processes,  # type: ignore[typeddict-item]
-        "startup": startup,  # type: ignore[typeddict-item]
-        "login_items": login_items,  # type: ignore[typeddict-item]
-        "package_managers": package_managers,  # type: ignore[typeddict-item]
-        "developer_tools": developer_tools,  # type: ignore[typeddict-item]
-        "kexts": kext_info,  # type: ignore[typeddict-item]
-        "applications": applications,  # type: ignore[typeddict-item]
-        "environment": environment,  # type: ignore[typeddict-item]
-        "network": network,  # type: ignore[typeddict-item]
-        "battery": battery,  # type: ignore[typeddict-item]
-        "cron": cron,  # type: ignore[typeddict-item]
-        "diagnostics": diagnostics,  # type: ignore[typeddict-item]
-        "security": security,  # type: ignore[typeddict-item]
-        "cloud": cloud,  # type: ignore[typeddict-item]
-        "nvram": nvram,  # type: ignore[typeddict-item]
-        "storage_analysis": storage_analysis,  # type: ignore[typeddict-item]
-        "fonts": fonts,  # type: ignore[typeddict-item]
-        "shell_customization": shell_customization,  # type: ignore[typeddict-item]
+        "system": system_info,
+        "hardware": hardware_info,
+        "disk": disk_info,
+        "top_processes": top_processes,
+        "startup": startup,
+        "login_items": login_items,
+        "package_managers": package_managers,
+        "developer_tools": developer_tools,
+        "kexts": kext_info,
+        "applications": applications,
+        "environment": environment,
+        "network": network,
+        "battery": battery,
+        "cron": cron,
+        "diagnostics": diagnostics,
+        "security": security,
+        "cloud": cloud,
+        "nvram": nvram,
+        "storage_analysis": storage_analysis,
+        "fonts": fonts,
+        "shell_customization": shell_customization,
         "opencore_patcher": opencore_patcher,
-        "system_preferences": system_preferences,  # type: ignore[typeddict-item]
-        "kernel_params": kernel_params,  # type: ignore[typeddict-item]
-        "system_logs": system_logs,  # type: ignore[typeddict-item]
-        "ioregistry": ioregistry,  # type: ignore[typeddict-item]
+        "oclp_compatibility": oclp_compatibility,
+        "system_preferences": system_preferences,
+        "kernel_params": kernel_params,
+        "system_logs": system_logs,
+        "ioregistry": ioregistry,
         "collection_errors": collection_errors,
+        "collection_status": collection_status,
     }
 
 
@@ -285,29 +306,49 @@ def generate_ai_prompt(data: SystemReport) -> str:
     is_oclp_user = oclp["detected"]
 
     # OpenCore context
+    compatibility = data["oclp_compatibility"]
     oclp_context = ""
     if is_oclp_user:
-        kexts_str = ", ".join(oclp["loaded_kexts"][:3]) if oclp["loaded_kexts"] else "None"
+        kexts_str = (
+            ", ".join(str(kext) for kext in oclp["loaded_kexts"][:3])
+            if oclp["loaded_kexts"]
+            else "None"
+        )
         amfi_str = (
             oclp["amfi_configuration"]["amfi_value"] if oclp["amfi_configuration"] else "Unknown"
         )
         oclp_context = f"""
 ## OpenCore Legacy Patcher Detected
 
-This system is running **OpenCore Legacy Patcher v{oclp["version"]}**,
-which enables newer macOS versions on unsupported hardware.
+This system shows **OpenCore Legacy Patcher signals**.
+
+Detected OCLP version: **{oclp["version"] or "Unknown"}**.
+Use documented compatibility data; OCLP does not imply support for every newer macOS version.
 
 **OCLP Configuration:**
-- NVRAM Version: {oclp["nvram_version"] or "Unknown"}
+- OCLP NVRAM Version: {oclp["nvram_version"] or "Unknown"}
+- OpenCore Version: {oclp["opencore_version"] or "Unknown"}
+- Detection confidence: {oclp["detection_confidence"]}
+- Detection signals: {", ".join(oclp["detection_signals"]) or "None"}
+- Root-patch marker observed: {"Yes" if oclp["root_patch_marker_detected"] else "No"}
 - Unsupported OS: {"✓ Yes" if oclp["unsupported_os_detected"] else "✗ No"}
 - AMFI Config: {amfi_str}
 - Boot Args: {oclp["boot_args"] or "None"}
 - Loaded Kexts: {len(oclp["loaded_kexts"])} installed ({kexts_str})
 - Patched Frameworks: {len(oclp["patched_frameworks"])} detected
+- Apple-native compatibility: {compatibility.get("apple_native_supported", "Unknown")}
+- OCLP documented OS compatibility: {compatibility.get("oclp_os_supported", "Unknown")}
+- Root patch required: {compatibility.get("root_patch_required", "Unknown")}
+- Root patch observed: {compatibility.get("root_patch_state", "Unknown")}
+- Root patch domains: {", ".join(compatibility.get("root_patch_domains", [])) or "None"}
+- Required support packages: {", ".join(compatibility.get("required_packages", [])) or "None"}
 
 **IMPORTANT - OCLP-Specific Recommendations:**
-- DO NOT recommend disabling SIP (required for OCLP root patches)
-- DO NOT recommend removing "unsigned" kexts (OCLP patches are intentional)
+- Do not assume SIP must be fully disabled; OCLP SIP requirements depend on the \
+macOS version, model, and whether root patches are required.
+- Do not recommend removing OCLP-managed kexts or patches merely because they are third-party.
+- Distinguish OpenCore bootloader detection from OCLP root-patch state before \
+making remediation advice.
 - Consider hardware limitations of unsupported Mac models
 - Wi-Fi/Bluetooth patches may be present and necessary
 - Graphics acceleration patches are critical for performance
@@ -425,6 +466,11 @@ async def async_main() -> int:
         help="Suppress all console output",
     )
     parser.add_argument(
+        "--include-sensitive-network",
+        action="store_true",
+        help="Opt in to collecting network identity data and public IP (default: redacted)",
+    )
+    parser.add_argument(
         "--no-prompt",
         action="store_true",
         help="Skip generating AI-optimized text prompt",
@@ -493,7 +539,7 @@ async def async_main() -> int:
             return 1
 
     utils.log(" Starting macOS System Prose Report Collection...", "header")
-    report = await collect_all()
+    report = await collect_all(include_sensitive_network=args.include_sensitive_network)
 
     try:
         with open(args.output, "w", encoding="utf-8") as f:

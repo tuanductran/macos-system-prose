@@ -13,7 +13,12 @@ from pathlib import Path
 from prose import utils
 from prose.constants import Timeouts
 from prose.datasets.smbios import is_legacy_mac
-from prose.iokit import get_boot_args, get_oclp_nvram_version, parse_amfi_boot_arg
+from prose.iokit import (
+    get_boot_args,
+    get_oclp_nvram_version,
+    get_opencore_nvram_version,
+    parse_amfi_boot_arg,
+)
 from prose.schema import (
     FontInfo,
     KernelParameters,
@@ -137,55 +142,45 @@ def collect_shell_customization() -> ShellCustomization:
 
 
 def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCorePatcherInfo:
-    """Detect OpenCore Patcher installation and configuration.
+    """Inspect OpenCore/OCLP signals without conflating them with root-patch state.
 
-    Enhanced detection with NVRAM, root patches, and AMFI configuration.
-
-    Args:
-        loaded_kexts: Optional list of currently loaded kexts from kextstat.
-                      If None, will be collected internally.
+    OCLP-Version and the OpenCore version in OCLP's NVRAM namespace are strong
+    signals. The presence of individual kexts or modified framework paths is
+    only evidence that should be reported, not proof that OCLP is installed.
     """
-    detected = False
-    version = None
-    nvram_version = None
-    patched_kexts: list[str] = []
-    patched_frameworks: list[str] = []
-    amfi_config = None
-    boot_args = None
-
-    # Get current macOS version and model
-    current_os = utils.run(
-        ["bash", "-c", "sw_vers -productVersion"],
-        log_errors=False,
-    ).strip()
+    current_os = utils.run(["sw_vers", "-productVersion"], log_errors=False).strip()
 
     model_info = utils.run(
-        ["bash", "-c", "system_profiler SPHardwareDataType | grep 'Model Identifier'"],
+        ["system_profiler", "SPHardwareDataType"],
         log_errors=False,
     )
     current_model = ""
-    if model_info:
-        current_model = model_info.split(":")[-1].strip()
+    for line in model_info.splitlines():
+        if "Model Identifier" in line and ":" in line:
+            current_model = line.split(":", 1)[1].strip()
+            break
 
-    # Method 1: Check NVRAM for OCLP-Version (most reliable)
+    detection_signals: list[str] = []
+    detected = False
+    version: str | None = None
     nvram_version = get_oclp_nvram_version()
+    opencore_version = get_opencore_nvram_version()
+
     if nvram_version:
         detected = True
-        # Clean null bytes (\x00 and %00)
+        detection_signals.append("oclp_nvram_version")
         version = nvram_version.replace("\x00", "").replace("%00", "")
-        utils.verbose_log(f"OCLP detected via NVRAM: {version}")
 
-    # Method 2: Check if OpenCore-Patcher.app exists
     oclp_app = Path("/Applications/OpenCore-Patcher.app")
     if oclp_app.exists():
         detected = True
+        detection_signals.append("oclp_application")
         if not version:
-            # Try to get version from app bundle
             version_output = utils.run(
                 [
-                    "bash",
-                    "-c",
-                    "defaults read /Applications/OpenCore-Patcher.app/Contents/Info.plist "
+                    "defaults",
+                    "read",
+                    "/Applications/OpenCore-Patcher.app/Contents/Info.plist",
                     "CFBundleShortVersionString",
                 ],
                 log_errors=False,
@@ -193,13 +188,15 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
             if version_output:
                 version = version_output.strip()
 
-    # Method 3: Check for root patches (OCLP indicator)
     root_patch_marker = Path("/System/Library/CoreServices/OpenCore-Legacy-Patcher.plist")
-    if root_patch_marker.exists():
+    root_patch_marker_detected = root_patch_marker.exists()
+    if root_patch_marker_detected:
         detected = True
-        utils.verbose_log("OCLP root patch marker found")
+        detection_signals.append("root_patch_marker")
 
-    # Get loaded kexts (either passed or collect them)
+    if opencore_version:
+        detection_signals.append("opencore_nvram_version")
+
     if loaded_kexts is None:
         kextstat_output = utils.run(["kextstat", "-l"], log_errors=False)
         loaded_kexts = []
@@ -209,7 +206,6 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
                 if match:
                     loaded_kexts.append(f"{match.group(1)} ({match.group(2)})")
 
-    # Check for OCLP signature kexts in loaded kexts
     oclp_kext_patterns = [
         "AMFIPass",
         "RestrictEvents",
@@ -222,58 +218,56 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
         "DebugEnhancer",
         "CryptexFixup",
     ]
-
-    for kext_info in loaded_kexts:
-        for pattern in oclp_kext_patterns:
-            if pattern in kext_info:
-                patched_kexts.append(kext_info)
-                break
-
-    # Method 4: Detect patched frameworks
-    patched_framework_paths = [
-        "/System/Library/Extensions/AppleIntelHDGraphics.kext",  # Gen6 GPU
-        "/System/Library/Extensions/AppleIntelHD3000Graphics.kext",  # Gen7 GPU
-        "/System/Library/Extensions/AppleIntelSNBGraphicsFB.kext",  # Sandy Bridge
-        "/System/Library/Extensions/IOBluetoothFamily.kext",  # Bluetooth patches
+    observed_kexts = [
+        kext_info
+        for kext_info in loaded_kexts
+        if any(pattern in kext_info for pattern in oclp_kext_patterns)
     ]
 
-    for fw_path in patched_framework_paths:
-        if Path(fw_path).exists():
-            patched_frameworks.append(fw_path)
-            utils.verbose_log(f"Patched framework found: {fw_path}")
+    observed_frameworks: list[str] = []
+    framework_paths = [
+        "/System/Library/Extensions/AppleIntelHDGraphics.kext",
+        "/System/Library/Extensions/AppleIntelHD3000Graphics.kext",
+        "/System/Library/Extensions/AppleIntelSNBGraphicsFB.kext",
+        "/System/Library/Extensions/IOBluetoothFamily.kext",
+    ]
+    for path in framework_paths:
+        if Path(path).exists():
+            observed_frameworks.append(path)
 
-    # Method 5: Check for unsupported OS (SMBIOS-based)
-    unsupported_os_detected = False
-    if current_os and current_model:
-        unsupported_os_detected = is_legacy_mac(current_model, current_os)
-        if unsupported_os_detected:
-            utils.verbose_log(
-                f"{current_model} running {current_os} (unsupported) - likely OCLP patched"
-            )
+    unsupported_os_detected = bool(
+        current_os and current_model and is_legacy_mac(current_model, current_os)
+    )
 
-    # Method 6: Get boot-args and parse AMFI configuration
+    if unsupported_os_detected and observed_kexts:
+        detection_signals.append("unsupported_os_plus_oclp_like_kexts")
+
     boot_args = get_boot_args()
-    if boot_args:
-        amfi_config = parse_amfi_boot_arg(boot_args)
-        if amfi_config["amfi_value"]:
-            utils.verbose_log(f"AMFI configuration: {amfi_config['amfi_value']}")
+    amfi_config = parse_amfi_boot_arg(boot_args) if boot_args else None
 
-    # If unsupported OS + OCLP kexts present, highly likely OCLP is in use
-    if unsupported_os_detected and patched_kexts and not detected:
-        detected = True
-        version = version or "Detected (version unknown)"
+    if detected or root_patch_marker_detected:
+        confidence = "high"
+    elif unsupported_os_detected and observed_kexts:
+        confidence = "low"
+        detection_signals.append("inferred_from_hardware_and_kexts")
+    else:
+        confidence = "none"
 
-    clean_nvram_version = None
-    if nvram_version:
-        clean_nvram_version = nvram_version.replace("\x00", "").replace("%00", "")
+    clean_nvram_version = (
+        nvram_version.replace("\x00", "").replace("%00", "") if nvram_version else None
+    )
 
     return {
         "detected": detected,
+        "detection_confidence": confidence,
+        "detection_signals": detection_signals,
         "version": version,
         "nvram_version": clean_nvram_version,
+        "opencore_version": opencore_version,
         "unsupported_os_detected": unsupported_os_detected,
-        "loaded_kexts": patched_kexts[:10],  # Limit to first 10 for brevity
-        "patched_frameworks": patched_frameworks,
+        "root_patch_marker_detected": root_patch_marker_detected,
+        "loaded_kexts": observed_kexts[:10],
+        "patched_frameworks": observed_frameworks,
         "amfi_configuration": amfi_config if amfi_config and amfi_config["amfi_value"] else None,
         "boot_args": boot_args,
     }
@@ -388,8 +382,10 @@ def collect_system_logs() -> SystemLogs:
         [
             "bash",
             "-c",
-            'log show --predicate \'messageType == "Error" OR messageType == "Fault"\' '
-            "--style syslog --last 1h 2>/dev/null | tail -20",  # Reduced from 24h to 1h, 50 to 20
+            (
+                'log show --predicate \'messageType == "Error" OR messageType == "Fault"\' '
+                "--style syslog --last 1h 2>/dev/null | tail -20"
+            ),  # Reduced from 24h to 1h, 50 to 20
         ],
         timeout=Timeouts.STANDARD,  # Reduced from 30s to 15s
         log_errors=False,
@@ -409,8 +405,10 @@ def collect_system_logs() -> SystemLogs:
         [
             "bash",
             "-c",
-            "log show --predicate 'messageType == \"Default\"' "
-            "--style syslog --last 1h 2>/dev/null | grep -i warning | tail -10",
+            (
+                "log show --predicate 'messageType == \"Default\"' "
+                "--style syslog --last 1h 2>/dev/null | grep -i warning | tail -10"
+            ),
         ],
         timeout=Timeouts.STANDARD,  # Reduced from 30s to 15s
         log_errors=False,

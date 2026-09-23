@@ -157,6 +157,7 @@ def _base_network(*, vpn: bool = False) -> dict[str, Any]:
         "vpn_status": vpn,
         "vpn_connections": [],
         "vpn_apps": [],
+        "privacy_mode": "redacted",
     }
 
 
@@ -276,9 +277,13 @@ def _base_opencore_patcher(*, detected: bool = False, **kwargs: Any) -> dict[str
     """OpenCorePatcherInfo TypedDict."""
     return {
         "detected": detected,
+        "detection_confidence": kwargs.get("detection_confidence", "none"),
+        "detection_signals": kwargs.get("detection_signals", []),
         "version": kwargs.get("version"),
         "nvram_version": kwargs.get("nvram_version"),
+        "opencore_version": kwargs.get("opencore_version"),
         "unsupported_os_detected": kwargs.get("unsupported_os_detected", False),
+        "root_patch_marker_detected": kwargs.get("root_patch_marker_detected", False),
         "loaded_kexts": kwargs.get("loaded_kexts", []),
         "patched_frameworks": kwargs.get("patched_frameworks", []),
         "amfi_configuration": kwargs.get("amfi_configuration"),
@@ -421,6 +426,23 @@ def _make_fixture(fixture_name: str, overrides: dict[str, Any] | None = None) ->
             },
         ),
         "opencore_patcher": o.get("opencore_patcher", _base_opencore_patcher()),
+        "oclp_compatibility": o.get(
+            "oclp_compatibility",
+            {
+                "apple_native_supported": True,
+                "oclp_model_supported": False,
+                "oclp_os_supported": False,
+                "oclp_target_os_min": 11,
+                "oclp_target_os_max": 15,
+                "root_patch_required": False,
+                "root_patch_state": "not_detected",
+                "root_patch_domains": [],
+                "required_packages": [],
+                "knowledge_schema_version": 1,
+                "knowledge_checked_at": "2026-09-22",
+                "knowledge_sources": [],
+            },
+        ),
         "system_preferences": o.get(
             "system_preferences",
             {
@@ -447,6 +469,8 @@ def _make_fixture(fixture_name: str, overrides: dict[str, Any] | None = None) ->
             },
         ),
         "ioregistry": o.get("ioregistry", _base_ioregistry()),
+        "collection_errors": o.get("collection_errors", []),
+        "collection_status": o.get("collection_status", {}),
         "_fixture_name": fixture_name,
     }
     return data

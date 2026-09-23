@@ -139,8 +139,10 @@ def get_version_name_from_system() -> str:
     # Method 3: Search in Setup Assistant license files
     try:
         license_paths = [
-            "/System/Library/CoreServices/Setup Assistant.app"
-            "/Contents/Resources/en.lproj/OSXSoftwareLicense.rtf",
+            (
+                "/System/Library/CoreServices/Setup Assistant.app"
+                "/Contents/Resources/en.lproj/OSXSoftwareLicense.rtf"
+            ),
             "/System/Library/CoreServices/Setup Assistant.app/Contents/Resources/License.rtf",
         ]
 

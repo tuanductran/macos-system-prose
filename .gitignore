@@ -1,9 +1,6 @@
 # ============================================================================
 # PROJECT-SPECIFIC FILES (WORK IN PROGRESS)
 # ============================================================================
-# Roadmap is work-in-progress, don't push changes
-ROADMAP.md
-
 # ============================================================================
 # PYTHON BYTECODE & COMPILED FILES
 # ============================================================================
@@ -134,7 +131,6 @@ Thumbs.db
 # Default report names
 macos_system_report.json
 macos_system_report.txt
-macos_system_report.html
 macos_system_report.md
 macos_system_report.pdf
 

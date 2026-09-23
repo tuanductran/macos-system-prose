@@ -48,10 +48,13 @@ class TestFixtureSchema:
             "fonts",
             "shell_customization",
             "opencore_patcher",
+            "oclp_compatibility",
             "system_preferences",
             "kernel_params",
             "system_logs",
             "ioregistry",
+            "collection_errors",
+            "collection_status",
         }
 
         for fixture in fixtures_data:
@@ -96,9 +99,13 @@ class TestFixtureSchema:
         """Validate OpenCore Patcher info structure."""
         required_fields = {
             "detected",
+            "detection_confidence",
+            "detection_signals",
             "version",
             "nvram_version",
+            "opencore_version",
             "unsupported_os_detected",
+            "root_patch_marker_detected",
             "loaded_kexts",
             "patched_frameworks",
             "amfi_configuration",
@@ -112,8 +119,39 @@ class TestFixtureSchema:
             assert not missing, f"Fixture {name} OCLP info missing: {missing}"
 
             assert isinstance(oclp["detected"], bool)
+            assert oclp["detection_confidence"] in {"none", "low", "high"}
+            assert isinstance(oclp["detection_signals"], list)
             assert isinstance(oclp["loaded_kexts"], list)
             assert isinstance(oclp["patched_frameworks"], list)
+
+    def test_oclp_compatibility_structure(self, fixtures_data):
+        """Validate the separate Apple/OCLP compatibility model."""
+        required_fields = {
+            "apple_native_supported",
+            "oclp_model_supported",
+            "oclp_os_supported",
+            "oclp_target_os_min",
+            "oclp_target_os_max",
+            "root_patch_required",
+            "root_patch_state",
+            "root_patch_domains",
+            "required_packages",
+            "knowledge_schema_version",
+            "knowledge_checked_at",
+            "knowledge_sources",
+        }
+        for fixture in fixtures_data:
+            name = fixture["_fixture_name"]
+            compatibility = fixture["oclp_compatibility"]
+            missing = required_fields - set(compatibility.keys())
+            assert not missing, f"Fixture {name} compatibility missing: {missing}"
+            assert compatibility["root_patch_state"] in {"not_detected", "detected", "unknown"}
+
+    def test_network_privacy_structure(self, fixtures_data):
+        """Network fixtures must declare their privacy mode explicitly."""
+        for fixture in fixtures_data:
+            network = fixture["network"]
+            assert network["privacy_mode"] in {"redacted", "full"}
 
     def test_developer_tools_structure(self, fixtures_data):
         """Validate developer tools structure."""

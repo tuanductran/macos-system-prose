@@ -10,37 +10,43 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   autofix:
     name: Auto-fix Code Quality Issues
     runs-on: macos-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
-      
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          python-version: "3.9.x"  # Use minimum supported version
+          persist-credentials: false
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@bfe8cc55a7890e3d6672eda6460ef37bfcc70755 # v6
+        with:
+          python-version: "3.9.x"
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-      
+
       - name: Auto-fix with Ruff (lint)
         run: |
           ruff check . --fix
         continue-on-error: true
-      
+
       - name: Auto-fix with Ruff (format)
         run: |
           ruff format .
         continue-on-error: true
-      
+
       - name: Commit and push fixes
-        uses: autofix-ci/action@v1.3.3
+        uses: autofix-ci/action@7a166d7532b277f34e16238930461bf77f9d7ed8 # v1.3.3

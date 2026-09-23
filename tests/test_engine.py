@@ -32,7 +32,22 @@ async def async_test_collect_all_structure():
         "collect_storage_analysis": MagicMock(return_value={}),
         "collect_fonts": MagicMock(return_value={}),
         "collect_shell_customization": MagicMock(return_value={}),
-        "collect_opencore_patcher": MagicMock(return_value={"detected": False}),
+        "collect_opencore_patcher": MagicMock(
+            return_value={
+                "detected": False,
+                "detection_confidence": "none",
+                "detection_signals": [],
+                "version": None,
+                "nvram_version": None,
+                "opencore_version": None,
+                "unsupported_os_detected": False,
+                "root_patch_marker_detected": False,
+                "loaded_kexts": [],
+                "patched_frameworks": [],
+                "amfi_configuration": None,
+                "boot_args": None,
+            }
+        ),
         "collect_system_preferences": MagicMock(return_value={}),
         "collect_kernel_parameters": MagicMock(return_value={}),
         "collect_system_logs": MagicMock(return_value={}),
@@ -49,6 +64,8 @@ async def async_test_collect_all_structure():
         assert "top_processes" in report
         assert "package_managers" in report
         assert "opencore_patcher" in report
+        assert "collection_status" in report
+        assert report["collection_status"]["system_info"]["status"] == "ok"
 
 
 def test_collect_all_structure():
@@ -114,6 +131,20 @@ def test_generate_ai_prompt_without_oclp():
             "timestamp": 1738908295.123,
             "system": {"sip_enabled": True},
             "opencore_patcher": {"detected": False},
+            "oclp_compatibility": {
+                "apple_native_supported": True,
+                "oclp_model_supported": False,
+                "oclp_os_supported": False,
+                "oclp_target_os_min": 11,
+                "oclp_target_os_max": 15,
+                "root_patch_required": None,
+                "root_patch_state": "unknown",
+                "root_patch_domains": [],
+                "required_packages": [],
+                "knowledge_schema_version": 1,
+                "knowledge_checked_at": "2026-09-22",
+                "knowledge_sources": [],
+            },
         },
     )
 
@@ -137,13 +168,31 @@ def test_generate_ai_prompt_with_oclp():
             "system": {"sip_enabled": False},
             "opencore_patcher": {
                 "detected": True,
+                "detection_confidence": "high",
+                "detection_signals": ["oclp_nvram_version"],
                 "version": "2.2.0",
                 "nvram_version": "2.2.0",
+                "opencore_version": "0.9.9",
                 "unsupported_os_detected": True,
+                "root_patch_marker_detected": True,
                 "loaded_kexts": ["Lilu", "WhateverGreen"],
                 "patched_frameworks": [],
                 "amfi_configuration": {"amfi_value": "0x80"},
                 "boot_args": "amfi=0x80",
+            },
+            "oclp_compatibility": {
+                "apple_native_supported": False,
+                "oclp_model_supported": True,
+                "oclp_os_supported": True,
+                "oclp_target_os_min": 11,
+                "oclp_target_os_max": 15,
+                "root_patch_required": True,
+                "root_patch_state": "detected",
+                "root_patch_domains": ["graphics"],
+                "required_packages": ["metallib_support_pkg"],
+                "knowledge_schema_version": 1,
+                "knowledge_checked_at": "2026-09-22",
+                "knowledge_sources": [],
             },
         },
     )
@@ -152,7 +201,9 @@ def test_generate_ai_prompt_with_oclp():
 
     assert "OpenCore Legacy Patcher Detected" in prompt
     assert "2.2.0" in prompt
-    assert "DO NOT recommend disabling SIP" in prompt
+    assert "Do not assume SIP must be fully disabled" in prompt
+    assert "Root patch required" in prompt
+    assert "Root patch domains" in prompt
 
 
 def test_collect_all_exception_handling():
@@ -223,5 +274,12 @@ def test_collect_all_exception_handling():
             assert report["kexts"]["third_party_kexts"] == []
             assert report["kexts"]["system_extensions"] == []
             assert not isinstance(report["kexts"], Exception)
+
+            status = report["collection_status"]
+            assert status["system_info"]["status"] == "error"
+            assert status["top_processes"]["status"] == "error"
+            assert status["login_items"]["status"] == "error"
+            assert status["kext_info"]["status"] == "error"
+            assert status["package_managers"]["status"] == "ok"
 
     asyncio.run(run_test())

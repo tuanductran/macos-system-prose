@@ -4,7 +4,7 @@
 
 ## Project Overview
 
-`macos-system-prose` is a **production-grade, read-only** macOS introspection tool that collects comprehensive system data through **105 specialized functions** across **7 collector modules** and generates optimized output formats for AI analysis, security auditing, and development environment optimization.
+`macos-system-prose` is a **read-only** macOS introspection tool that collects comprehensive system data through **specialized collector functions** across **7 collector modules** and generates optimized output formats for AI analysis, security auditing, and development environment optimization.
 
 ### Core Statistics
 
@@ -12,11 +12,11 @@
 - **2,412 lines** of test code (12 test modules)
 - **105 total functions** (62 collectors + 43 utilities)
 - **49 TypedDict schemas** in `schema.py` for strict type contracts
-- **93 comprehensive tests** (100% pass rate, 64% coverage)
+- **Tests/coverage**: CI is the source of truth; do not hard-code test counts or coverage claims here.
 - **Zero runtime dependencies** — pure Python 3.9+ stdlib
 - **Async-first architecture** — parallel collection via `asyncio.gather()`
 - **28 data sections** in SystemReport output
-- **🚫 NO `Any` TYPE** — TypeScript-level type safety (only 1 justified exception)
+- **Typed production code** — avoid `Any`; document narrowly scoped dynamic JSON cases.
 
 ### Key Capabilities
 
@@ -25,11 +25,11 @@
 | **System** | macOS version, SIP/FileVault/Gatekeeper, thermal, memory pressure, Time Machine, EDID display parsing |
 | **Developer** | 8 languages, 10 version managers, 3 SDKs, 5 cloud tools, 5 databases, 8 browsers, 8 terminal emulators, 7 shell frameworks |
 | **Packages** | Homebrew (formula + cask + services), MacPorts, npm, yarn, pnpm, bun, pipx |
-| **Network** | Public/local IP, DNS, Wi-Fi, VPN detection, firewall status, all interfaces |
+| **Network** | DNS, VPN, firewall and interface facts; identifying network values are redacted by default |
 | **Activity** | Processes, launch agents/daemons, launchd services, login items, open ports, cron jobs |
 | **Security** | TCC permissions, code signing, security tools, antivirus detection |
 | **Hardware** | IORegistry (PCIe, USB, audio codecs), NVRAM variables |
-| **OCLP** | 6 detection methods (NVRAM, AMFI, kexts, frameworks, unsupported OS) |
+| **OCLP** | Structured OpenCore/OCLP detection evidence, version signals and root-patch evidence |
 | **Advanced** | Storage analysis, fonts, shell customization, system preferences, kernel parameters, logs |
 | **TUI** | Interactive terminal monitor with htop-style dashboard (requires `textual`) |
 
@@ -105,7 +105,7 @@ macos-system-prose/
 ├── scripts/
 │   └── scrape_macos_versions.py  # Update data/macos_versions.json (22 versions)
 ├── data/                         # Runtime data (DO NOT EDIT MANUALLY)
-│   └── macos_versions.json       # 22 macOS versions (10.0–15.x)
+│   └── macos_versions.json       # 23 macOS versions (10.0–15.x plus macOS 26/27 metadata)
 ├── examples/                     # Example scripts and demos
 │   ├── README.md                 # Examples documentation
 │   └── tui_demo.py               # TUI demonstration with mock data
@@ -441,12 +441,21 @@ raise ValueError("Failed")
 - **Safe commands only**: Uses macOS built-ins (`system_profiler`, `scutil`, `ioreg`, `diskutil`).
 - **No shell injection**: All commands use list arguments (never `shell=True`).
 
-### PII Protection
+### Privacy Model
 
-- **Avoid usernames**: Use generic placeholders like "$USER" or omit entirely.
-- **Avoid home paths**: Use `~` expansion or relative paths, never full `/Users/name/`.
-- **Avoid credentials**: Never collect passwords, API keys, tokens, SSH keys.
-- **Avoid file contents**: Only collect metadata (sizes, counts, versions), not file contents.
+- **Network identity is redacted by default**: hostname, local IP, gateway, MAC address and SSID are not exported as identifying values.
+- **Public IP is opt-in**: the collector must not contact an external IP service unless `include_sensitive=True` / `--include-sensitive-network` is explicitly requested.
+- **Treat report output as potentially sensitive**: process names, application names, package versions, diagnostics and local configuration can identify software or usage patterns.
+- **Avoid credentials**: Never collect passwords, API keys, tokens, SSH private keys or other secret material.
+- **Avoid file contents**: collect metadata rather than user document contents.
+
+
+### OCLP Safety
+
+- Do not make blanket SIP recommendations. OCLP documents that SIP requirements vary by OS, model and whether root patching is required.
+- Do not treat Lilu, WhateverGreen, FeatureUnlock or other OCLP-like kexts as proof of OCLP by themselves.
+- Keep OpenCore bootloader detection, OCLP application detection and root-patch evidence separate.
+- Keep Apple-native compatibility separate from OCLP compatibility.
 
 ### Command Execution Safety
 
@@ -732,9 +741,9 @@ grep -r "from typing import.*Any" src/prose/ --include="*.py"
 ```python
 class SystemInfo(TypedDict):
     """System information from system_profiler."""
-    os: str                    # Operating system name (always "Darwin")
-    macos_version: str         # macOS version (e.g., "12.7.6")
-    model_identifier: str      # Mac model ID (e.g., "MacBookAir6,2")
+    os: str  # Operating system name (always "Darwin")
+    macos_version: str  # macOS version (e.g., "12.7.6")
+    model_identifier: str  # Mac model ID (e.g., "MacBookAir6,2")
 ```
 
 ### src/prose/engine.py

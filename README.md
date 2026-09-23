@@ -5,17 +5,17 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
-A **production-grade, read-only** macOS introspection tool that collects comprehensive system data through **105 specialized functions** across **7 collector modules** and generates optimized reports for AI analysis, security auditing, and development environment optimization.
+A **read-only** macOS introspection tool that collects system facts through specialized collectors and generates structured reports for AI analysis, security auditing, and development-environment inspection.
 
 Built with **zero runtime dependencies** using only Python 3.9+ standard library.
 
 ## Key Features
 
-- **🔒 100% Read-Only** - Never modifies system state, no root/sudo required
+- **🔒 Read-Only** - Never modifies system state; no root/sudo required
 - **📊 Comprehensive Data** - 28 data sections
 - **🎯 Type-Safe** - 49 TypedDict schemas, full MyPy compliance, PEP 561 compliant
 - **⚡ Async-First** - Parallel data collection via `asyncio.gather()`
-- **🔍 OCLP-Aware** - 5 detection methods for OpenCore Legacy Patcher
+- **🔍 OCLP-Aware** - Separates OpenCore/OCLP detection evidence from root-patch evidence
 - **🎨 Apple HIG TUI** - Professional terminal UI with Apple Human Interface Guidelines design
 - **🌐 Multi-Format** - JSON, TXT (AI-optimized), Interactive TUI
 
@@ -77,10 +77,12 @@ Built with **zero runtime dependencies** using only Python 3.9+ standard library
 - Bun globals
 - pipx packages
 
-### Security & Activity (6 sections)
+### Security & Activity
+
+> TCC collection currently reports database availability; it does not claim to enumerate effective per-app permissions.
 
 - **Processes**: Top 100 by CPU/Memory with command info
-- **TCC Permissions**: Full Disk Access, camera, microphone, accessibility
+- **TCC**: Database availability and collection status
 - **Code Signing**: Sample verification of system binaries
 - **Security Tools**: Antivirus, EDR, monitoring software detection
 - **Launch Items**: User/system agents, daemons, login items
@@ -88,13 +90,11 @@ Built with **zero runtime dependencies** using only Python 3.9+ standard library
 - **Open Ports**: Network listeners with process info
 - **Cron Jobs**: Scheduled tasks (user + system)
 
-### OCLP Detection (5 methods)
+### OpenCore / OCLP Detection
 
-- NVRAM variables (OCLP-Version, boot-args)
-- AMFI configuration (AppleMobileFileIntegrity bypass)
-- Loaded kexts (Lilu, WhateverGreen, FeatureUnlock, etc.)
-- Patched frameworks (CoreDisplay, IOSurface)
-- System integrity analysis
+The report keeps separate evidence for the OpenCore bootloader, OCLP application, and possible root-patch state. NVRAM OCLP/OpenCore versions and the OCLP application are stronger signals than the presence of individual kexts. Loaded kexts and observed framework paths are reported as evidence, not treated as proof of OCLP.
+
+The AI prompt also avoids blanket SIP advice: OCLP documentation states that SIP requirements vary by OS, model, and whether root patching is required.
 
 ### Advanced Analysis (5 sections)
 
@@ -128,7 +128,7 @@ pip install -e ".[dev,tui]"
 ### Basic Commands
 
 ```bash
-# Generate JSON + TXT reports
+# Generate JSON + TXT reports (network identity redacted by default)
 macos-prose
 
 # Launch interactive TUI (htop-style monitor)
@@ -142,6 +142,9 @@ macos-prose -o /path/to/report.json
 
 # Compare two reports
 macos-prose --diff previous_report.json
+
+# Include network identity and public IP (explicit opt-in)
+macos-prose --include-sensitive-network
 
 # Verbose mode (detailed logging)
 macos-prose --verbose
@@ -162,11 +165,14 @@ from prose.engine import collect_all
 
 # Collect system data
 report = asyncio.run(collect_all())
+# Opt in to network identity only when required:
+# report = asyncio.run(collect_all(include_sensitive_network=True))
 
 # Access data
 print(f"macOS: {report['system']['macos_version']}")
 print(f"Model: {report['system']['model_identifier']}")
 print(f"OCLP: {report['opencore_patcher']['detected']}")
+print(f"OCLP confidence: {report['opencore_patcher']['detection_confidence']}")
 ```
 
 ## Interactive TUI Features
@@ -209,10 +215,11 @@ Launch with `macos-prose --tui --live` for real-time monitoring:
 
 ### Privacy Protection
 
-- ✅ **No PII** - Avoids usernames, full paths, credentials
-- ✅ **Local Only** - All processing on your Mac, no network calls
-- ✅ **No Telemetry** - Zero analytics or data collection
-- ✅ **Metadata Only** - File sizes/counts, not contents
+- ✅ **Redacted network mode by default** - hostname, local IP, gateway, MAC address and SSID are not exported as identifying values
+- ✅ **No public-IP request by default** - the collector does not contact an external IP service unless explicitly requested
+- ✅ **No Telemetry** - zero analytics or data collection
+- ⚠️ **Local report data can still be sensitive** - process names, application names, package/tool versions and diagnostics may identify software installed on the Mac
+- 🔓 **Explicit opt-in for network identity** - use `--include-sensitive-network` only when those values are needed
 
 ### Command Execution Safety
 
@@ -380,13 +387,7 @@ Automated testing on every push via GitHub Actions:
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md) for detailed feature plans and development timeline.
-
-**Quick overview:**
-
-- ✅ **Completed**: JSON/TXT reports, Interactive TUI, Diff mode, Full type safety, 93 tests, Python 3.9-3.14
-- 🚧 **In Progress**: PyPI package publication
-- 📋 **Planned**: Homebrew formula, Plugin architecture, Historical tracking, PDF/Markdown export, HTML/Web dashboard output
+See [ROADMAP.md](ROADMAP.md) for the current feature plan. The roadmap intentionally separates implemented facts from future work; test counts and coverage are produced by CI rather than maintained as README claims.
 
 ## Contributing
 

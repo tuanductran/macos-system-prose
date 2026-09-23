@@ -213,6 +213,7 @@ class NetworkInfo(TypedDict):
     vpn_status: bool
     vpn_connections: list[str]
     vpn_apps: list[str]
+    privacy_mode: str
 
 
 class BatteryInfo(TypedDict):
@@ -380,11 +381,30 @@ class AMFIConfig(TypedDict):
     lv_enforce_third_party: bool
 
 
+class OCLPCompatibilityInfo(TypedDict):
+    apple_native_supported: bool | None
+    oclp_model_supported: bool
+    oclp_os_supported: bool
+    oclp_target_os_min: int
+    oclp_target_os_max: int
+    root_patch_required: bool | None
+    root_patch_state: str
+    root_patch_domains: list[str]
+    required_packages: list[str]
+    knowledge_schema_version: int
+    knowledge_checked_at: str
+    knowledge_sources: list[str]
+
+
 class OpenCorePatcherInfo(TypedDict):
     detected: bool
+    detection_confidence: str
+    detection_signals: list[str]
     version: str | None
     nvram_version: str | None  # From NVRAM OCLP-Version
+    opencore_version: str | None  # From OpenCore NVRAM
     unsupported_os_detected: bool
+    root_patch_marker_detected: bool
     loaded_kexts: list[str]
     patched_frameworks: list[str]
     amfi_configuration: AMFIConfig | None
@@ -434,8 +454,10 @@ class SystemReport(TypedDict):
     fonts: FontInfo
     shell_customization: ShellCustomization
     opencore_patcher: OpenCorePatcherInfo
+    oclp_compatibility: OCLPCompatibilityInfo
     system_preferences: SystemPreferences
     kernel_params: KernelParameters
     system_logs: SystemLogs
     ioregistry: IORegistryInfo  # Phase 3: IORegistry hardware detection
     collection_errors: list[str]  # Track any errors during data collection
+    collection_status: dict[str, dict[str, object]]  # Per-collector success/failure metadata
