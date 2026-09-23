@@ -174,8 +174,7 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
     # This must run after kexts are collected
     # kext_info is guaranteed to be a dict (KernelExtensionsInfo) after exception handling
     try:
-        kext_info_typed = cast(KernelExtensionsInfo, kext_info)
-        third_party_kexts = kext_info_typed.get("third_party_kexts", [])
+        third_party_kexts = kext_info.get("third_party_kexts", [])
         opencore_patcher = await asyncio.to_thread(
             collect_opencore_patcher,
             third_party_kexts,
@@ -231,33 +230,33 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
     # The type:ignore comments document this limitation rather than hide bugs
     return {
         "timestamp": timestamp,
-        "system": system_info,  # type: ignore[typeddict-item]
-        "hardware": hardware_info,  # type: ignore[typeddict-item]
-        "disk": disk_info,  # type: ignore[typeddict-item]
-        "top_processes": top_processes,  # type: ignore[typeddict-item]
-        "startup": startup,  # type: ignore[typeddict-item]
-        "login_items": login_items,  # type: ignore[typeddict-item]
-        "package_managers": package_managers,  # type: ignore[typeddict-item]
-        "developer_tools": developer_tools,  # type: ignore[typeddict-item]
-        "kexts": kext_info,  # type: ignore[typeddict-item]
-        "applications": applications,  # type: ignore[typeddict-item]
-        "environment": environment,  # type: ignore[typeddict-item]
-        "network": network,  # type: ignore[typeddict-item]
-        "battery": battery,  # type: ignore[typeddict-item]
-        "cron": cron,  # type: ignore[typeddict-item]
-        "diagnostics": diagnostics,  # type: ignore[typeddict-item]
-        "security": security,  # type: ignore[typeddict-item]
-        "cloud": cloud,  # type: ignore[typeddict-item]
-        "nvram": nvram,  # type: ignore[typeddict-item]
-        "storage_analysis": storage_analysis,  # type: ignore[typeddict-item]
-        "fonts": fonts,  # type: ignore[typeddict-item]
-        "shell_customization": shell_customization,  # type: ignore[typeddict-item]
+        "system": system_info,
+        "hardware": hardware_info,
+        "disk": disk_info,
+        "top_processes": cast(list[object], top_processes),
+        "startup": cast(dict[str, object], startup),
+        "login_items": cast(list[object], login_items),
+        "package_managers": cast(dict[str, object], package_managers),
+        "developer_tools": cast(dict[str, object], developer_tools),
+        "kexts": kext_info,
+        "applications": cast(dict[str, object], applications),
+        "environment": cast(dict[str, object], environment),
+        "network": cast(dict[str, object], network),
+        "battery": cast(dict[str, object], battery),
+        "cron": cast(dict[str, object], cron),
+        "diagnostics": cast(dict[str, object], diagnostics),
+        "security": cast(dict[str, object], security),
+        "cloud": cast(dict[str, object], cloud),
+        "nvram": cast(dict[str, object], nvram),
+        "storage_analysis": cast(dict[str, object], storage_analysis),
+        "fonts": cast(dict[str, object], fonts),
+        "shell_customization": cast(dict[str, object], shell_customization),
         "opencore_patcher": opencore_patcher,
         "oclp_compatibility": oclp_compatibility,
-        "system_preferences": system_preferences,  # type: ignore[typeddict-item]
-        "kernel_params": kernel_params,  # type: ignore[typeddict-item]
-        "system_logs": system_logs,  # type: ignore[typeddict-item]
-        "ioregistry": ioregistry,  # type: ignore[typeddict-item]
+        "system_preferences": cast(dict[str, object], system_preferences),
+        "kernel_params": cast(dict[str, object], kernel_params),
+        "system_logs": cast(dict[str, object], system_logs),
+        "ioregistry": cast(dict[str, object], ioregistry),
         "collection_errors": collection_errors,
         "collection_status": collection_status,
     }
@@ -283,7 +282,7 @@ def generate_ai_prompt(data: SystemReport) -> str:
     compatibility = data.get("oclp_compatibility", {})
     oclp_context = ""
     if is_oclp_user:
-        kexts_str = ", ".join(oclp["loaded_kexts"][:3]) if oclp["loaded_kexts"] else "None"
+        kexts_str = ", ".join(str(kext) for kext in oclp["loaded_kexts"][:3]) if oclp["loaded_kexts"] else "None"
         amfi_str = (
             oclp["amfi_configuration"]["amfi_value"] if oclp["amfi_configuration"] else "Unknown"
         )
