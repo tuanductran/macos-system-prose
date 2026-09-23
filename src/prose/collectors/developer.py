@@ -481,7 +481,7 @@ def _is_sensitive_git_key(key: str, value: str = "") -> bool:
     lowered = key.lower()
     if any(part in lowered for part in _SENSITIVE_GIT_KEY_PARTS):
         return True
-    return bool(re.search(r"^[a-z][a-z0-9+.-]*://[^/\\s]+:[^/\\s]+@", value))
+    return bool(re.search(r"^[a-z][a-z0-9+.-]*://[^/\s]+:[^/\s]+@", value))
 
 
 def collect_git_config() -> GitConfig:
@@ -521,7 +521,7 @@ def collect_git_config() -> GitConfig:
                 config["aliases"][alias_name] = "[REDACTED]" if _is_sensitive_git_key(key, value) else value
             else:
                 config["other_settings"][key] = (
-                    "[REDACTED]" if _is_sensitive_git_key(key) else value
+                    "[REDACTED]" if _is_sensitive_git_key(key, value) else value
                 )
     except (OSError, ValueError) as e:
         verbose_log(f"Failed to collect git config: {e}")
