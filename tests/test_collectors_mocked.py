@@ -180,7 +180,7 @@ class TestGitConfigPrivacy:
         assert info["user_email"] == "test@example.com"
         assert info["credential_helper"] == "[CONFIGURED]"
         assert info["other_settings"]["http.https://example.com.extraheader"] == "[REDACTED]"
-        assert info["other_settings"]["remote.origin.url"] == "https://user:secret@example.com/repo.git"
+        assert info["other_settings"]["remote.origin.url"] == "[REDACTED]"
         assert info["aliases"]["safe"] == "log --oneline"
 
 
