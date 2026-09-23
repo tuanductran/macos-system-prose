@@ -40,7 +40,7 @@ jobs:
 
       - name: Check formatting
         run: |
-          ruff format --check .
+          ruff format --check . --exclude AGENTS.md
 
       - name: Type check with mypy
         run: |
