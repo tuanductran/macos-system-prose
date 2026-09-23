@@ -27,7 +27,7 @@
 
 - [x] Add failure-injection tests for all registered collectors.
 - [x] Add per-collector timeout and execution metadata.
-- [ ] Add fast/deep collection modes for expensive filesystem and log collectors.
+- [x] Add fast/deep collection modes for expensive filesystem and log collectors.
 - [ ] Replace recursive diff casts with a JSON-value type.
 - [ ] Add machine-readable report schema/version metadata.
 
