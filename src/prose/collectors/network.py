@@ -137,7 +137,10 @@ def collect_network_info(*, include_sensitive: bool = False) -> NetworkInfo:
 
     wifi_ssid = None
     if include_sensitive:
-        airport_path = "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
+        airport_framework = "/System/Library/PrivateFrameworks/Apple80211.framework"
+        airport_path = os.path.join(
+            airport_framework, "Versions/Current/Resources/airport"
+        )
         if os.path.exists(airport_path):
             airport_out = run([airport_path, "-I"])
             for line in airport_out.splitlines():
