@@ -87,6 +87,7 @@ class CollectorSpec:
     name: str
     run: Callable[[], Awaitable[object]]
     default: object
+    timeout_seconds: float
 
 
 def _async_collector(collector: Callable[[], object]) -> Callable[[], Awaitable[object]]:
@@ -101,40 +102,42 @@ def _async_collector(collector: Callable[[], object]) -> Callable[[], Awaitable[
 def _build_collector_registry(*, include_sensitive_network: bool) -> tuple[CollectorSpec, ...]:
     """Return the single source of truth for independent collectors."""
     return (
-        CollectorSpec("system_info", collect_system_info, {}),
-        CollectorSpec("hardware_info", collect_hardware_info, {}),
-        CollectorSpec("disk_info", _async_collector(collect_disk_info), {}),
-        CollectorSpec("top_processes", _async_collector(collect_processes), []),
-        CollectorSpec("startup", _async_collector(collect_launch_items), {}),
-        CollectorSpec("login_items", _async_collector(collect_login_items), []),
-        CollectorSpec("package_managers", _async_collector(collect_package_managers), {}),
-        CollectorSpec("developer_tools", collect_dev_tools, {}),
+        CollectorSpec("system_info", collect_system_info, {}, 30),
+        CollectorSpec("hardware_info", collect_hardware_info, {}, 30),
+        CollectorSpec("disk_info", _async_collector(collect_disk_info), {}, 60),
+        CollectorSpec("top_processes", _async_collector(collect_processes), [], 15),
+        CollectorSpec("startup", _async_collector(collect_launch_items), {}, 15),
+        CollectorSpec("login_items", _async_collector(collect_login_items), [], 15),
+        CollectorSpec("package_managers", _async_collector(collect_package_managers), {}, 60),
+        CollectorSpec("developer_tools", collect_dev_tools, {}, 60),
         CollectorSpec(
             "kext_info",
             _async_collector(collect_kexts),
             {"third_party_kexts": [], "system_extensions": []},
+            30,
         ),
-        CollectorSpec("applications", _async_collector(collect_electron_apps), {}),
-        CollectorSpec("environment", _async_collector(collect_environment_info), {}),
+        CollectorSpec("applications", _async_collector(collect_electron_apps), {}, 60),
+        CollectorSpec("environment", _async_collector(collect_environment_info), {}, 60),
         CollectorSpec(
             "network",
             lambda: asyncio.to_thread(
                 collect_network_info, include_sensitive=include_sensitive_network
             ),
             {},
+            30,
         ),
-        CollectorSpec("battery", _async_collector(collect_battery_info), {}),
-        CollectorSpec("cron", _async_collector(collect_cron_jobs), {}),
-        CollectorSpec("diagnostics", _async_collector(collect_diagnostics), {}),
-        CollectorSpec("security", _async_collector(collect_security_tools), {}),
-        CollectorSpec("cloud", _async_collector(collect_cloud_sync), {}),
-        CollectorSpec("nvram", _async_collector(collect_nvram_variables), {}),
-        CollectorSpec("storage_analysis", _async_collector(collect_storage_analysis), {}),
-        CollectorSpec("fonts", _async_collector(collect_fonts), {}),
-        CollectorSpec("shell_customization", _async_collector(collect_shell_customization), {}),
-        CollectorSpec("system_preferences", _async_collector(collect_system_preferences), {}),
-        CollectorSpec("kernel_params", _async_collector(collect_kernel_parameters), {}),
-        CollectorSpec("system_logs", _async_collector(collect_system_logs), {}),
+        CollectorSpec("battery", _async_collector(collect_battery_info), {}, 30),
+        CollectorSpec("cron", _async_collector(collect_cron_jobs), {}, 15),
+        CollectorSpec("diagnostics", _async_collector(collect_diagnostics), {}, 30),
+        CollectorSpec("security", _async_collector(collect_security_tools), {}, 30),
+        CollectorSpec("cloud", _async_collector(collect_cloud_sync), {}, 30),
+        CollectorSpec("nvram", _async_collector(collect_nvram_variables), {}, 30),
+        CollectorSpec("storage_analysis", _async_collector(collect_storage_analysis), {}, 120),
+        CollectorSpec("fonts", _async_collector(collect_fonts), {}, 30),
+        CollectorSpec("shell_customization", _async_collector(collect_shell_customization), {}, 15),
+        CollectorSpec("system_preferences", _async_collector(collect_system_preferences), {}, 30),
+        CollectorSpec("kernel_params", _async_collector(collect_kernel_parameters), {}, 30),
+        CollectorSpec("system_logs", _async_collector(collect_system_logs), {}, 60),
         CollectorSpec(
             "ioregistry",
             _async_collector(collect_ioregistry_info),
@@ -148,6 +151,7 @@ def _build_collector_registry(*, include_sensitive_network: bool) -> tuple[Colle
                 "usb_1_1": {"present": None, "controllers": []},
                 "camera": {"present": None, "components": []},
             },
+            60,
         ),
     )
 
@@ -157,8 +161,19 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
     timestamp = time.time()
     registry = _build_collector_registry(include_sensitive_network=include_sensitive_network)
 
+    async def run_collector(spec: CollectorSpec) -> tuple[object, float]:
+        started = time.perf_counter()
+        try:
+            result = await asyncio.wait_for(spec.run(), timeout=spec.timeout_seconds)
+        except asyncio.TimeoutError as exc:
+            duration_ms = (time.perf_counter() - started) * 1000
+            raise TimeoutError(
+                f"collector exceeded {spec.timeout_seconds:g}s timeout"
+            ) from exc
+        return result, (time.perf_counter() - started) * 1000
+
     results = await asyncio.gather(
-        *(spec.run() for spec in registry),
+        *(run_collector(spec) for spec in registry),
         return_exceptions=True,
     )
 
@@ -169,19 +184,25 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
     for spec, result in zip(registry, results):
         if isinstance(result, Exception):
             error_message = f"{type(result).__name__}: {result!s}"
+            status = "timeout" if isinstance(result, TimeoutError) else "error"
             collection_errors.append(f"{spec.name}: {error_message}")
             collection_status[spec.name] = {
-                "status": "error",
+                "status": status,
                 "error": error_message,
+                "duration_ms": None,
+                "timeout_seconds": spec.timeout_seconds,
             }
             utils.verbose_log(f"Collector failed: {spec.name}: {error_message}")
             collected[spec.name] = spec.default
         else:
+            value, duration_ms = result
             collection_status[spec.name] = {
                 "status": "ok",
                 "error": None,
+                "duration_ms": round(duration_ms, 3),
+                "timeout_seconds": spec.timeout_seconds,
             }
-            collected[spec.name] = result
+            collected[spec.name] = value
 
     # The registry above guarantees these keys exist; casts document each report field.
     system_info = cast(SystemInfo, collected["system_info"])
@@ -213,18 +234,51 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
     # Collect opencore_patcher with dependency on kext_info
     # This must run after kexts are collected
     # kext_info is guaranteed to be a dict (KernelExtensionsInfo) after exception handling
+    opencore_started = time.perf_counter()
+    opencore_timeout = 60.0
     try:
         third_party_kexts = kext_info.get("third_party_kexts", [])
-        opencore_patcher = await asyncio.to_thread(
-            collect_opencore_patcher,
-            third_party_kexts,
+        opencore_patcher = await asyncio.wait_for(
+            asyncio.to_thread(
+                collect_opencore_patcher,
+                third_party_kexts,
+            ),
+            timeout=opencore_timeout,
+        )
+    except asyncio.TimeoutError as e:
+        duration_ms = (time.perf_counter() - opencore_started) * 1000
+        error_message = f"TimeoutError: collector exceeded {opencore_timeout:g}s timeout"
+        collection_errors.append(f"opencore_patcher: {error_message}")
+        collection_status["opencore_patcher"] = {
+            "status": "timeout",
+            "error": error_message,
+            "duration_ms": round(duration_ms, 3),
+            "timeout_seconds": opencore_timeout,
+        }
+        utils.verbose_log(f"Collector failed: opencore_patcher: {error_message}")
+        opencore_patcher = OpenCorePatcherInfo(
+            detected=False,
+            detection_confidence="none",
+            detection_signals=[],
+            version=None,
+            nvram_version=None,
+            opencore_version=None,
+            unsupported_os_detected=False,
+            root_patch_marker_detected=False,
+            loaded_kexts=[],
+            patched_frameworks=[],
+            amfi_configuration=None,
+            boot_args=None,
         )
     except Exception as e:
+        duration_ms = (time.perf_counter() - opencore_started) * 1000
         error_msg = f"opencore_patcher: {type(e).__name__} - {e!s}"
         collection_errors.append(error_msg)
         collection_status["opencore_patcher"] = {
             "status": "error",
             "error": f"{type(e).__name__}: {e!s}",
+            "duration_ms": round(duration_ms, 3),
+            "timeout_seconds": opencore_timeout,
         }
         utils.verbose_log(f"Collector failed: {error_msg}")
         opencore_patcher = OpenCorePatcherInfo(
@@ -242,9 +296,12 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
             boot_args=None,
         )
     else:
+        duration_ms = (time.perf_counter() - opencore_started) * 1000
         collection_status["opencore_patcher"] = {
             "status": "ok",
             "error": None,
+            "duration_ms": round(duration_ms, 3),
+            "timeout_seconds": opencore_timeout,
         }
 
     system_identifier = str(system_info.get("model_identifier", ""))
