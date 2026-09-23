@@ -115,13 +115,21 @@ The AI prompt also avoids blanket SIP advice: OCLP documentation states that SIP
 
 ### Quick Start
 
+This project uses **uv** for Python environment and dependency management. uv manages the project virtual environment and can install the required Python version automatically. The repository pins Python 3.14 as the local default while CI explicitly tests Python 3.9 through 3.14.
+
 ```bash
 git clone https://github.com/tuanductran/macos-system-prose.git
 cd macos-system-prose
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev,tui]"
+uv sync --all-extras
 ```
+
+If uv is not installed, use the official installer:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+The project requires uv 0.12.x. The `.python-version` file provides the local default Python version; CI overrides it for each supported Python version. uv's project workflow uses `.venv` and `uv run` so commands execute inside the managed environment.
 
 ## Usage
 
@@ -153,8 +161,11 @@ macos-prose --verbose
 ### Development Mode
 
 ```bash
-# Use run.py without installing
-python3 run.py --help
+# Run without manually activating .venv
+uv run python run.py --help
+
+# Run the CLI
+uv run macos-prose --help
 ```
 
 ### Python API
@@ -283,16 +294,16 @@ pip install -e ".[dev,tui]"
 
 ```bash
 # Run all tests
-pytest
+uv run pytest
 
 # With coverage
-pytest --cov=src/prose --cov-report=term-missing
+uv run pytest --cov=src/prose --cov-report=term-missing
 
 # Specific test file
-pytest tests/test_smbios.py -v
+uv run pytest tests/test_smbios.py -v
 
 # With verbose output
-pytest -vv
+uv run pytest -vv
 ```
 
 ### Code Quality
@@ -311,7 +322,7 @@ ruff format .
 mypy src/prose --check-untyped-defs
 
 # Full CI simulation
-ruff check . && ruff format --check . && mypy src/prose --check-untyped-defs && pytest
+uv run ruff check . && uv run ruff format --check . && uv run mypy src/prose --check-untyped-defs && uv run pytest
 ```
 
 ### Project Structure
