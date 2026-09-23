@@ -135,6 +135,7 @@ def test_collect_all_structure_old():
 
     asyncio.run(run_test())
 
+
 def test_generate_ai_prompt_without_oclp():
     """Test AI prompt generation for standard macOS."""
     from typing import cast
@@ -470,6 +471,7 @@ def test_collector_timeout_and_execution_metadata():
         assert ok_status["error"] is None
 
     asyncio.run(run_test())
+
 
 def test_fast_mode_skips_expensive_collectors():
     """Fast mode must skip filesystem/log collectors while deep mode keeps them."""
