@@ -90,6 +90,14 @@ class CollectorSpec:
     timeout_seconds: float
 
 
+class CollectorTimeoutError(TimeoutError):
+    """Raised when a collector exceeds its configured execution timeout."""
+
+    def __init__(self, message: str, duration_ms: float) -> None:
+        super().__init__(message)
+        self.duration_ms = duration_ms
+
+
 def _async_collector(collector: Callable[[], object]) -> Callable[[], Awaitable[object]]:
     """Adapt a synchronous collector to the async collector registry."""
 
@@ -167,8 +175,9 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
             result = await asyncio.wait_for(spec.run(), timeout=spec.timeout_seconds)
         except asyncio.TimeoutError as exc:
             duration_ms = (time.perf_counter() - started) * 1000
-            raise TimeoutError(
-                f"collector exceeded {spec.timeout_seconds:g}s timeout"
+            raise CollectorTimeoutError(
+                f"collector exceeded {spec.timeout_seconds:g}s timeout",
+                duration_ms,
             ) from exc
         return result, (time.perf_counter() - started) * 1000
 
@@ -189,7 +198,9 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
             collection_status[spec.name] = {
                 "status": status,
                 "error": error_message,
-                "duration_ms": None,
+                "duration_ms": round(result.duration_ms, 3)
+                if isinstance(result, CollectorTimeoutError)
+                else None,
                 "timeout_seconds": spec.timeout_seconds,
             }
             utils.verbose_log(f"Collector failed: {spec.name}: {error_message}")
