@@ -323,7 +323,7 @@ def generate_ai_prompt(data: SystemReport) -> str:
 This system shows **OpenCore Legacy Patcher signals**.
 
 Detected OCLP version: **{oclp["version"] or "Unknown"}**.
-Use the documented compatibility data below; OCLP does not imply support for every newer macOS version.
+Use documented compatibility data; OCLP does not imply support for every newer macOS version.
 
 **OCLP Configuration:**
 - OCLP NVRAM Version: {oclp["nvram_version"] or "Unknown"}
