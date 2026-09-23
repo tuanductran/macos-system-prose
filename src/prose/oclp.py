@@ -25,6 +25,7 @@ class OCLPCompatibilityInfo(TypedDict):
     hardware_evidence: dict[str, bool | None]
     knowledge_schema_version: int
     knowledge_checked_at: str
+    hardware_evidence: dict[str, bool | None]
     knowledge_sources: list[str]
 
 
