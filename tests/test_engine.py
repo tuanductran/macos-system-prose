@@ -214,6 +214,13 @@ def test_generate_ai_prompt_with_oclp():
                     "usb": None,
                     "camera": None,
                 },
+                "hardware_patch_requirements": {
+                    "wifi": None,
+                    "bluetooth": None,
+                    "t1": None,
+                    "usb": True,
+                    "camera": None,
+                },
                 "knowledge_schema_version": 1,
                 "knowledge_checked_at": "2026-09-22",
                 "knowledge_sources": [],
@@ -228,6 +235,9 @@ def test_generate_ai_prompt_with_oclp():
     assert "Do not assume SIP must be fully disabled" in prompt
     assert "Root patch required" in prompt
     assert "Root patch domains" in prompt
+    assert "Hardware evidence" in prompt
+    assert '"usb": null' in prompt
+    assert "Hardware patch requirements" in prompt
 
 
 def test_collect_all_exception_handling():
