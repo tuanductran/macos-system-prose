@@ -51,7 +51,15 @@ async def async_test_collect_all_structure():
         "collect_system_preferences": MagicMock(return_value={}),
         "collect_kernel_parameters": MagicMock(return_value={}),
         "collect_system_logs": MagicMock(return_value={}),
-        "collect_ioregistry_info": MagicMock(return_value={}),
+        "collect_ioregistry_info": MagicMock(
+            return_value={
+                "wifi": {"present": None, "components": []},
+                "bluetooth": {"present": None, "controllers": []},
+                "t1": {"present": None, "components": []},
+                "usb_1_1": {"present": None, "controllers": []},
+                "camera": {"present": None, "components": []},
+            }
+        ),
     }
 
     with patch.multiple("prose.engine", **patches):
@@ -101,7 +109,15 @@ def test_collect_all_structure_old():
         "collect_system_preferences": MagicMock(return_value={}),
         "collect_kernel_parameters": MagicMock(return_value={}),
         "collect_system_logs": MagicMock(return_value={}),
-        "collect_ioregistry_info": MagicMock(return_value={}),
+        "collect_ioregistry_info": MagicMock(
+            return_value={
+                "wifi": {"present": None, "components": []},
+                "bluetooth": {"present": None, "controllers": []},
+                "t1": {"present": None, "components": []},
+                "usb_1_1": {"present": None, "controllers": []},
+                "camera": {"present": None, "components": []},
+            }
+        ),
     }
 
     async def run_test():
@@ -242,7 +258,15 @@ def test_collect_all_exception_handling():
         "collect_system_preferences": MagicMock(return_value={}),
         "collect_kernel_parameters": MagicMock(return_value={}),
         "collect_system_logs": MagicMock(return_value={}),
-        "collect_ioregistry_info": MagicMock(return_value={}),
+        "collect_ioregistry_info": MagicMock(
+            return_value={
+                "wifi": {"present": None, "components": []},
+                "bluetooth": {"present": None, "controllers": []},
+                "t1": {"present": None, "components": []},
+                "usb_1_1": {"present": None, "controllers": []},
+                "camera": {"present": None, "components": []},
+            }
+        ),
     }
 
     async def run_test():
