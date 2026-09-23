@@ -167,11 +167,14 @@ This project follows TypeScript-level type safety. The `Any` type is **prohibite
 # ❌ NEVER USE - Banned in this codebase
 from typing import Any
 
+
 def process(data: dict[str, Any]) -> Any:
     return data
 
+
 # ✅ ALWAYS USE - Specific types
 from prose.schema import SystemReport
+
 
 def process(data: SystemReport) -> SystemInfo | None:
     return data.get("system")
@@ -229,8 +232,11 @@ from __future__ import annotations
 def process(data: str | None) -> list[str] | None:
     pass
 
+
 # ❌ Old-style syntax (DO NOT USE)
 from typing import Union, Optional, List
+
+
 def process(data: Optional[str]) -> Union[List[str], None]:
     pass
 ```
@@ -245,18 +251,23 @@ def process(data: Optional[str]) -> Union[List[str], None]:
 # ❌ BANNED - Don't use Any
 from typing import Any
 
+
 def parse_data(data: dict[str, Any]) -> Any:
     pass
+
 
 # ✅ CORRECT - Use specific types
 from prose.schema import SystemReport, SystemInfo
 
+
 def parse_data(data: SystemReport) -> SystemInfo | None:
     return data.get("system")
+
 
 # ✅ CORRECT - Use Union types for flexibility
 def parse_value(value: str | int | float | bool | None) -> str:
     return str(value)
+
 
 # ✅ CORRECT - Use cast() when unavoidable
 from typing import cast
@@ -275,18 +286,10 @@ result = cast("dict[str, list[str]]", some_dynamic_data)
 from prose.schema import SystemInfo
 
 # ✅ Correct - use TypedDict constructor
-info: SystemInfo = SystemInfo(
-    os="Darwin",
-    macos_version="12.7.6",
-    model_identifier="MacBookAir6,2"
-)
+info: SystemInfo = SystemInfo(os="Darwin", macos_version="12.7.6", model_identifier="MacBookAir6,2")
 
 # ❌ Incorrect - plain dict (type unsafe, DO NOT USE)
-info: SystemInfo = {
-    "os": "Darwin",
-    "macos_version": "12.7.6",
-    "model_identifier": "MacBookAir6,2"
-}
+info: SystemInfo = {"os": "Darwin", "macos_version": "12.7.6", "model_identifier": "MacBookAir6,2"}
 ```
 
 #### Optional Field Access
@@ -314,9 +317,11 @@ if "git" in data["homebrew"]["formula"]:  # Type error if None
 def get_info() -> SystemInfo | None:
     return SystemInfo(...) if condition else None
 
+
 # ✅ Correct - NotInstalled sentinel type
 def check_tool() -> ToolInfo | NotInstalled:
     return NotInstalled() if not_found else ToolInfo(...)
+
 
 # ❌ Incorrect - missing return type
 def get_info():
@@ -346,32 +351,28 @@ from prose.utils import run_command
 
 logger = logging.getLogger(__name__)
 
+
 async def collect_new_data() -> NewDataInfo | None:
     """Collect new data from the system.
-    
+
     Returns:
         NewDataInfo with collected data, or None if collection fails.
     """
     try:
         # Run command with timeout
-        result = await run_command(
-            ["system_profiler", "SPNewDataType", "-json"],
-            timeout=30.0
-        )
+        result = await run_command(["system_profiler", "SPNewDataType", "-json"], timeout=30.0)
         if not result:
             logger.warning("Failed to collect new data")
             return None
-            
+
         # Parse output
         data = parse_result(result)
-        
+
         # Return TypedDict
         return NewDataInfo(
-            key1=data.get("key1", "Unknown"),
-            key2=data.get("key2", 0),
-            key3=data.get("key3", [])
+            key1=data.get("key1", "Unknown"), key2=data.get("key2", 0), key3=data.get("key3", [])
         )
-        
+
     except OSError as e:
         logger.error(f"Command failed: {e}")
         return None
@@ -513,9 +514,11 @@ test_smbios.py
 test_utils.py
 test_display.py
 
+
 # Test functions: test_<function>_<scenario>
 def test_get_smbios_data_valid_model():
     pass
+
 
 def test_parse_edid_manufacturer_id_invalid():
     pass
@@ -534,15 +537,16 @@ def test_parse_edid_manufacturer_id_invalid():
 import pytest
 from unittest.mock import AsyncMock, patch
 
+
 @pytest.mark.asyncio
 async def test_collect_system_info_success():
     mock_output = '{"SPSoftwareDataType": [{"os_version": "12.7.6"}]}'
-    
+
     with patch("prose.collectors.system.run_command", new_callable=AsyncMock) as mock_run:
         mock_run.return_value = mock_output
-        
+
         result = await collect_system_info()
-        
+
         assert result is not None
         assert result["macos_version"] == "12.7.6"
         mock_run.assert_called_once()
@@ -553,6 +557,7 @@ async def test_collect_system_info_success():
 ```python
 from prose.schema import SystemInfo
 
+
 def test_system_info_schema_valid():
     """Test SystemInfo schema with all required fields."""
     info = SystemInfo(
@@ -561,9 +566,9 @@ def test_system_info_schema_valid():
         macos_name="macOS Monterey",
         model_identifier="MacBookAir6,2",
         marketing_name="MacBook Air (13-inch, Mid 2013)",
-        sip_enabled=False
+        sip_enabled=False,
     )
-    
+
     # TypedDict validation happens at type-check time
     assert info["os"] == "Darwin"
     assert info["macos_version"] == "12.7.6"
@@ -625,7 +630,7 @@ This project follows **TypeScript-level type safety**. Coming from a TypeScript 
 # ❌ Weak typing - hides bugs
 def generate_report(data: dict[str, Any]) -> Any:
     system = data.get("system", {})  # What's in here?
-    return process_data(system)       # No type safety
+    return process_data(system)  # No type safety
 ```
 
 **After (TypedDict everywhere):**
@@ -634,9 +639,10 @@ def generate_report(data: dict[str, Any]) -> Any:
 # ✅ Strong typing - catches bugs early
 from prose.schema import SystemReport, SystemInfo
 
+
 def generate_report(data: SystemReport) -> SystemInfo | None:
-    system = data.get("system")       # IDE knows exact structure
-    return system                      # Type-checked return
+    system = data.get("system")  # IDE knows exact structure
+    return system  # Type-checked return
 ```
 
 ### Benefits of No-Any Policy
@@ -741,6 +747,7 @@ grep -r "from typing import.*Any" src/prose/ --include="*.py"
 ```python
 class SystemInfo(TypedDict):
     """System information from system_profiler."""
+
     os: str  # Operating system name (always "Darwin")
     macos_version: str  # macOS version (e.g., "12.7.6")
     model_identifier: str  # Mac model ID (e.g., "MacBookAir6,2")
@@ -779,9 +786,11 @@ class SystemInfo(TypedDict):
 # ✅ Acceptable in diff.py only
 from typing import Any
 
+
 def diff_reports(old: SystemReport, new: SystemReport) -> dict[str, Any]:
     """Dynamic diff structure - Any is justified here."""
     pass
+
 
 # ❌ Not acceptable in any other file
 from typing import Any  # Don't import this anywhere else!
@@ -915,11 +924,13 @@ Before releasing a new version:
 ```python
 # ✅ Correct
 from prose.tui import run_tui_sync
+
 run_tui_sync(report_data)
 
 # ❌ Incorrect
 import asyncio
 from prose.tui.app_enhanced import EnhancedSystemApp
+
 asyncio.run(EnhancedSystemApp(report_data).run())
 ```
 
