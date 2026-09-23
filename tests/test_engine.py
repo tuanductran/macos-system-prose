@@ -141,6 +141,7 @@ def test_generate_ai_prompt_without_oclp():
                 "root_patch_state": "unknown",
                 "root_patch_domains": [],
                 "required_packages": [],
+                "hardware_evidence": {},
                 "knowledge_schema_version": 1,
                 "knowledge_checked_at": "2026-09-22",
                 "knowledge_sources": [],
