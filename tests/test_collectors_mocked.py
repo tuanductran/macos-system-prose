@@ -204,8 +204,20 @@ class TestIORegistryHardwareEvidence:
 
     @patch("prose.collectors.ioregistry.run")
     def test_evidence_domains(self, mock_run):
-        pcie = '<?xml version="1.0"?><plist version="1.0"><array><dict><key>IOName</key><string>AirPort BCM94360</string><key>vendor-id</key><data>IAc=</data><key>device-id</key><data>AAE=</data></dict><dict><key>IOName</key><string>USB OHCI Controller</string><key>vendor-id</key><data>AAAAAA==</data><key>device-id</key><data>AAE=</data></dict></array></plist>'
-        usb = '<?xml version="1.0"?><plist version="1.0"><array><dict><key>USB Product Name</key><string>Bluetooth USB Host Controller</string><key>idVendor</key><integer>1452</integer><key>idProduct</key><integer>1</integer></dict><dict><key>USB Product Name</key><string>FaceTime Camera</string><key>idVendor</key><integer>1452</integer><key>idProduct</key><integer>2</integer></dict></array></plist>'
+        pcie = """<?xml version="1.0"?>
+<plist version="1.0"><array>
+<dict><key>IOName</key><string>AirPort BCM94360</string>
+<key>vendor-id</key><data>IAc=</data><key>device-id</key><data>AAE=</data></dict>
+<dict><key>IOName</key><string>USB OHCI Controller</string>
+<key>vendor-id</key><data>AAAAAA==</data><key>device-id</key><data>AAE=</data></dict>
+</array></plist>"""
+        usb = """<?xml version="1.0"?>
+<plist version="1.0"><array>
+<dict><key>USB Product Name</key><string>Bluetooth USB Host Controller</string>
+<key>idVendor</key><integer>1452</integer><key>idProduct</key><integer>1</integer></dict>
+<dict><key>USB Product Name</key><string>FaceTime Camera</string>
+<key>idVendor</key><integer>1452</integer><key>idProduct</key><integer>2</integer></dict>
+</array></plist>"""
         def side_effect(cmd, **kwargs):
             if "-c" in cmd and "IOPCIDevice" in cmd:
                 return pcie
