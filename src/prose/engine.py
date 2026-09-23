@@ -320,7 +320,7 @@ def generate_ai_prompt(data: SystemReport) -> str:
         oclp_context = f"""
 ## OpenCore Legacy Patcher Detected
 
-This system is running **OpenCore Legacy Patcher v{oclp["version"]}**,
+This system shows **OpenCore Legacy Patcher signals**.\n\nDetected OCLP version: **{oclp["version"] or "Unknown"}**,
 which enables newer macOS versions on unsupported hardware.
 
 **OCLP Configuration:**
