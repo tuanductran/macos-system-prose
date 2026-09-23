@@ -24,6 +24,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 from pathlib import Path
 from typing import cast
 
@@ -475,10 +476,12 @@ _SENSITIVE_GIT_KEY_PARTS = (
 )
 
 
-def _is_sensitive_git_key(key: str) -> bool:
-    """Identify Git config keys whose values may contain credentials or secrets."""
+def _is_sensitive_git_key(key: str, value: str = "") -> bool:
+    """Identify Git config entries whose values may contain credentials or secrets."""
     lowered = key.lower()
-    return any(part in lowered for part in _SENSITIVE_GIT_KEY_PARTS)
+    if any(part in lowered for part in _SENSITIVE_GIT_KEY_PARTS):
+        return True
+    return bool(re.search(r"^[a-z][a-z0-9+.-]*://[^/\\s]+:[^/\\s]+@", value))
 
 
 def collect_git_config() -> GitConfig:
@@ -515,7 +518,7 @@ def collect_git_config() -> GitConfig:
                 config["credential_helper"] = "[CONFIGURED]"
             elif key.startswith("alias."):
                 alias_name = key.replace("alias.", "")
-                config["aliases"][alias_name] = "[REDACTED]" if _is_sensitive_git_key(key) else value
+                config["aliases"][alias_name] = "[REDACTED]" if _is_sensitive_git_key(key, value) else value
             else:
                 config["other_settings"][key] = (
                     "[REDACTED]" if _is_sensitive_git_key(key) else value
