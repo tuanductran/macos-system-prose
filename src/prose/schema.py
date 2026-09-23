@@ -389,6 +389,8 @@ class OCLPCompatibilityInfo(TypedDict):
     oclp_target_os_max: int
     root_patch_required: bool | None
     root_patch_state: str
+    root_patch_domains: list[str]
+    required_packages: list[str]
     knowledge_schema_version: int
     knowledge_checked_at: str
     knowledge_sources: list[str]
