@@ -338,6 +338,7 @@ def test_failure_injection_covers_every_registered_collector():
     async def run_case(spec: CollectorSpec) -> None:
         with patch("prose.engine._build_collector_registry", return_value=(spec,)):
             report = await collect_all()
+        assert report[spec.name] == spec.default
         assert report["collection_status"][spec.name]["status"] == "error"
         assert report["collection_status"][spec.name]["error"] == (
             "RuntimeError: injected collector failure"
