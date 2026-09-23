@@ -335,7 +335,8 @@ def test_failure_injection_covers_every_registered_collector():
     from prose.engine import CollectorSpec, _build_collector_registry
 
     async def run_case(spec: CollectorSpec) -> None:
-        with patch("prose.engine._build_collector_registry", return_value=(spec,)):
+        failing_spec = CollectorSpec(spec.name, _failing_collector, spec.default)
+        with patch("prose.engine._build_collector_registry", return_value=(failing_spec,)):
             report = await collect_all()
         assert report[spec.name] == spec.default
         assert report["collection_status"][spec.name]["status"] == "error"
