@@ -53,8 +53,8 @@ from prose.oclp import build_oclp_compatibility
 from prose.schema import (
     ApplicationsInfo,
     BatteryInfo,
-    CollectionStatus,
     CloudInfo,
+    CollectionStatus,
     CronInfo,
     DeveloperToolsInfo,
     DiagnosticsInfo,
