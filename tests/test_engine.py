@@ -335,9 +335,25 @@ def test_failure_injection_covers_every_registered_collector():
     """Every registry entry must degrade to its default and expose failure metadata."""
     from prose.engine import CollectorSpec, _build_collector_registry
 
+    def _default_collector_factory(default: object) -> Callable[[], Awaitable[object]]:
+        async def run_default() -> object:
+            return default
+
+        return run_default
+
     async def run_case(spec: CollectorSpec) -> None:
-        failing_spec = CollectorSpec(spec.name, _failing_collector, spec.default)
-        with patch("prose.engine._build_collector_registry", return_value=(failing_spec,)):
+        async def _default_collector(default: object) -> object:
+            return default
+
+        registry = tuple(
+            CollectorSpec(
+                candidate.name,
+                _failing_collector if candidate.name == spec.name else _default_collector_factory(candidate.default),
+                candidate.default,
+            )
+            for candidate in _build_collector_registry(include_sensitive_network=False)
+        )
+        with patch("prose.engine._build_collector_registry", return_value=registry):
             report = await collect_all()
         assert report[spec.name] == spec.default
         assert report["collection_status"][spec.name]["status"] == "error"
