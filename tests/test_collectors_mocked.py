@@ -164,14 +164,7 @@ class TestGitConfigPrivacy:
     @patch("prose.collectors.developer.run")
     @patch("prose.collectors.developer.which", return_value="/usr/bin/git")
     def test_git_config_redacts_credential_material(self, mock_which, mock_run):
-        mock_run.return_value = (
-            "user.name=Test User\\n"
-            "user.email=test@example.com\\n"
-            "credential.helper=store\\n"
-            "http.https://example.com.extraheader=Authorization: Bearer secret-token\\n"
-            "remote.origin.url=https://user:secret@example.com/repo.git\\n"
-            "alias.safe=log --oneline\\n"
-        )
+        mock_run.return_value = (\n            "user.name=Test User\n"\n            "user.email=test@example.com\n"\n            "credential.helper=store\n"\n            "http.https://example.com.extraheader=Authorization: Bearer secret-token\n"\n            "remote.origin.url=https://user:secret@example.com/repo.git\n"\n            "alias.safe=log --oneline\n"\n        )
 
         from prose.collectors.developer import collect_git_config
 
