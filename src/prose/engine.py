@@ -50,7 +50,34 @@ from prose.collectors.system import collect_disk_info, collect_hardware_info, co
 from prose.datasets.smbios import SMBIOS_DATABASE
 from prose.diff import diff_reports, format_diff
 from prose.oclp import build_oclp_compatibility
-from prose.schema import KernelExtensionsInfo, OpenCorePatcherInfo, SystemReport
+from prose.schema import (
+    ApplicationsInfo,
+    BatteryInfo,
+    CloudInfo,
+    CronInfo,
+    DeveloperToolsInfo,
+    DiagnosticsInfo,
+    DiskInfo,
+    EnvironmentInfo,
+    FontInfo,
+    HardwareInfo,
+    IORegistryInfo,
+    KernelExtensionsInfo,
+    KernelParameters,
+    LaunchItems,
+    NetworkInfo,
+    NVRAMInfo,
+    OpenCorePatcherInfo,
+    PackageManagers,
+    ProcessInfo,
+    SecurityInfo,
+    ShellCustomization,
+    StorageAnalysis,
+    SystemInfo,
+    SystemLogs,
+    SystemPreferences,
+    SystemReport,
+)
 
 
 @dataclass(frozen=True)
@@ -144,31 +171,31 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
             collected[spec.name] = result
 
     # The registry above guarantees these keys exist; casts document each report field.
-    system_info = cast("dict[str, object]", collected["system_info"])
-    hardware_info = cast("dict[str, object]", collected["hardware_info"])
-    disk_info = cast("dict[str, object]", collected["disk_info"])
-    top_processes = collected["top_processes"]
-    startup = collected["startup"]
-    login_items = collected["login_items"]
-    package_managers = collected["package_managers"]
-    developer_tools = collected["developer_tools"]
+    system_info = cast(SystemInfo, collected["system_info"])
+    hardware_info = cast(HardwareInfo, collected["hardware_info"])
+    disk_info = cast(DiskInfo, collected["disk_info"])
+    top_processes = cast(list[ProcessInfo], collected["top_processes"])
+    startup = cast(LaunchItems, collected["startup"])
+    login_items = cast(list[str], collected["login_items"])
+    package_managers = cast(PackageManagers, collected["package_managers"])
+    developer_tools = cast(DeveloperToolsInfo, collected["developer_tools"])
     kext_info = cast(KernelExtensionsInfo, collected["kext_info"])
-    applications = collected["applications"]
-    environment = collected["environment"]
-    network = collected["network"]
-    battery = collected["battery"]
-    cron = collected["cron"]
-    diagnostics = collected["diagnostics"]
-    security = collected["security"]
-    cloud = collected["cloud"]
-    nvram = collected["nvram"]
-    storage_analysis = collected["storage_analysis"]
-    fonts = collected["fonts"]
-    shell_customization = collected["shell_customization"]
-    system_preferences = collected["system_preferences"]
-    kernel_params = collected["kernel_params"]
-    system_logs = collected["system_logs"]
-    ioregistry = collected["ioregistry"]
+    applications = cast(ApplicationsInfo, collected["applications"])
+    environment = cast(EnvironmentInfo, collected["environment"])
+    network = cast(NetworkInfo, collected["network"])
+    battery = cast(BatteryInfo, collected["battery"])
+    cron = cast(CronInfo, collected["cron"])
+    diagnostics = cast(DiagnosticsInfo, collected["diagnostics"])
+    security = cast(SecurityInfo, collected["security"])
+    cloud = cast(CloudInfo, collected["cloud"])
+    nvram = cast(NVRAMInfo, collected["nvram"])
+    storage_analysis = cast(StorageAnalysis, collected["storage_analysis"])
+    fonts = cast(FontInfo, collected["fonts"])
+    shell_customization = cast(ShellCustomization, collected["shell_customization"])
+    system_preferences = cast(SystemPreferences, collected["system_preferences"])
+    kernel_params = cast(KernelParameters, collected["kernel_params"])
+    system_logs = cast(SystemLogs, collected["system_logs"])
+    ioregistry = cast(IORegistryInfo, collected["ioregistry"])
 
     # Collect opencore_patcher with dependency on kext_info
     # This must run after kexts are collected
@@ -233,30 +260,30 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
         "system": system_info,
         "hardware": hardware_info,
         "disk": disk_info,
-        "top_processes": cast(list[object], top_processes),
-        "startup": cast(dict[str, object], startup),
-        "login_items": cast(list[object], login_items),
-        "package_managers": cast(dict[str, object], package_managers),
-        "developer_tools": cast(dict[str, object], developer_tools),
+        "top_processes": top_processes,
+        "startup": startup,
+        "login_items": login_items,
+        "package_managers": package_managers,
+        "developer_tools": developer_tools,
         "kexts": kext_info,
-        "applications": cast(dict[str, object], applications),
-        "environment": cast(dict[str, object], environment),
-        "network": cast(dict[str, object], network),
-        "battery": cast(dict[str, object], battery),
-        "cron": cast(dict[str, object], cron),
-        "diagnostics": cast(dict[str, object], diagnostics),
-        "security": cast(dict[str, object], security),
-        "cloud": cast(dict[str, object], cloud),
-        "nvram": cast(dict[str, object], nvram),
-        "storage_analysis": cast(dict[str, object], storage_analysis),
-        "fonts": cast(dict[str, object], fonts),
-        "shell_customization": cast(dict[str, object], shell_customization),
+        "applications": applications,
+        "environment": environment,
+        "network": network,
+        "battery": battery,
+        "cron": cron,
+        "diagnostics": diagnostics,
+        "security": security,
+        "cloud": cloud,
+        "nvram": nvram,
+        "storage_analysis": storage_analysis,
+        "fonts": fonts,
+        "shell_customization": shell_customization,
         "opencore_patcher": opencore_patcher,
         "oclp_compatibility": oclp_compatibility,
-        "system_preferences": cast(dict[str, object], system_preferences),
-        "kernel_params": cast(dict[str, object], kernel_params),
-        "system_logs": cast(dict[str, object], system_logs),
-        "ioregistry": cast(dict[str, object], ioregistry),
+        "system_preferences": system_preferences,
+        "kernel_params": kernel_params,
+        "system_logs": system_logs,
+        "ioregistry": ioregistry,
         "collection_errors": collection_errors,
         "collection_status": collection_status,
     }
@@ -279,7 +306,7 @@ def generate_ai_prompt(data: SystemReport) -> str:
     is_oclp_user = oclp["detected"]
 
     # OpenCore context
-    compatibility = data.get("oclp_compatibility", {})
+    compatibility = data["oclp_compatibility"]
     oclp_context = ""
     if is_oclp_user:
         kexts_str = (
