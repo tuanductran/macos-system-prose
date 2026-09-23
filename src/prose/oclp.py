@@ -151,7 +151,8 @@ def build_oclp_compatibility(
         "root_patch_domains": root_patch_domains,
         "required_packages": required_packages,
         "hardware_evidence": {
-            key: value for key, value in hardware_facts.items()
+            key: value
+            for key, value in hardware_facts.items()
             if key in {"wifi", "bluetooth", "t1", "usb", "camera"}
         },
         "knowledge_schema_version": schema_version,
