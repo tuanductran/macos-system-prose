@@ -339,17 +339,6 @@ def test_failure_injection_covers_every_registered_collector():
     def _valid_result(spec: CollectorSpec) -> object:
         if spec.name == "kext_info":
             return {"third_party_kexts": [], "system_extensions": []}
-        if spec.name == "ioregistry":
-            return {
-                "pcie_devices": [],
-                "usb_devices": [],
-                "audio_codecs": [],
-                "wifi": {"present": None, "components": []},
-                "bluetooth": {"present": None, "controllers": []},
-                "t1": {"present": None, "components": []},
-                "usb_1_1": {"present": None, "controllers": []},
-                "camera": {"present": None, "components": []},
-            }
         return spec.default
 
     def _default_collector_factory(default: object) -> Callable[[], Awaitable[object]]:
