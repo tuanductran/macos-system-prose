@@ -160,6 +160,30 @@ class TestDeveloperCollectorMocked:
         assert "docker" in info
 
 
+class TestGitConfigPrivacy:
+    @patch("prose.collectors.developer.run")
+    @patch("prose.collectors.developer.which", return_value="/usr/bin/git")
+    def test_git_config_redacts_credential_material(self, mock_which, mock_run):
+        mock_run.return_value = (
+            "user.name=Test User\n"
+            "user.email=test@example.com\n"
+            "credential.helper=store\n"
+            "http.https://example.com.extraheader=Authorization: Bearer secret-token\n"
+            "remote.origin.url=https://user:secret@example.com/repo.git\n"
+            "alias.safe=log --oneline\n"
+        )
+
+        from prose.collectors.developer import collect_git_config
+
+        info = collect_git_config()
+        assert info["user_name"] == "Test User"
+        assert info["user_email"] == "test@example.com"
+        assert info["credential_helper"] == "[CONFIGURED]"
+        assert info["other_settings"]["http.https://example.com.extraheader"] == "[REDACTED]"
+        assert info["other_settings"]["remote.origin.url"] == "[REDACTED]"
+        assert info["aliases"]["safe"] == "log --oneline"
+
+
 class TestEnvironmentCollectorMocked:
     @patch("prose.collectors.environment.run")
     @patch("prose.collectors.environment.collect_launchd_services")

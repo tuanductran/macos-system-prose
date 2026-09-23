@@ -24,6 +24,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 from pathlib import Path
 from typing import cast
 
@@ -468,8 +469,23 @@ def collect_editors() -> list[str]:
     return sorted(set(editors))
 
 
+_SENSITIVE_GIT_KEY_PARTS = (
+    "credential",
+    "extraheader",
+    "proxy",
+)
+
+
+def _is_sensitive_git_key(key: str, value: str = "") -> bool:
+    """Identify Git config entries whose values may contain credentials or secrets."""
+    lowered = key.lower()
+    if any(part in lowered for part in _SENSITIVE_GIT_KEY_PARTS):
+        return True
+    return bool(re.search(r"^[a-z][a-z0-9+.-]*://[^/\s]+:[^/\s]+@", value))
+
+
 def collect_git_config() -> GitConfig:
-    """Collect Git global configuration."""
+    """Collect Git global configuration without exporting credential material."""
     verbose_log("Collecting Git configuration...")
 
     config: GitConfig = {
@@ -499,12 +515,16 @@ def collect_git_config() -> GitConfig:
             elif key == "core.editor":
                 config["core_editor"] = value
             elif key == "credential.helper":
-                config["credential_helper"] = value
+                config["credential_helper"] = "[CONFIGURED]"
             elif key.startswith("alias."):
                 alias_name = key.replace("alias.", "")
-                config["aliases"][alias_name] = value
+                config["aliases"][alias_name] = (
+                    "[REDACTED]" if _is_sensitive_git_key(key, value) else value
+                )
             else:
-                config["other_settings"][key] = value
+                config["other_settings"][key] = (
+                    "[REDACTED]" if _is_sensitive_git_key(key, value) else value
+                )
     except (OSError, ValueError) as e:
         verbose_log(f"Failed to collect git config: {e}")
 

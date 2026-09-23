@@ -8,9 +8,11 @@
 - [x] Add macOS 27 metadata.
 - [x] Add collector status/error metadata so missing data is distinguishable from collector failure.
 - [x] Replace parallel collector/default arrays with a typed collector registry.
-- [ ] Add privacy/redaction contract tests for every sensitive collector.
+- [x] Add privacy/redaction contract tests for sensitive collectors and redact credential-bearing Git configuration.
 
 ## v1.2 — OCLP-aware knowledge model
+
+- [x] Add dated Apple OSS references for Darwin/XNU, launchd, system commands and IOKit terminology.
 
 - [x] Separate Apple-native compatibility from OCLP compatibility.
 - [x] Track OpenCore bootloader version independently from OCLP version.
@@ -34,4 +36,4 @@
 - [x] Pin all third-party GitHub Actions to immutable commit SHAs.
 - [x] Minimize workflow write permissions.
 - [x] Add a security policy and reproducible CI audit checklist.
-- [ ] Keep Apple and OCLP knowledge explicitly dated and source-attributed.
+- [x] Keep Apple and OCLP knowledge explicitly dated and source-attributed.
