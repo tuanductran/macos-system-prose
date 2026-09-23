@@ -333,23 +333,21 @@ async def _failing_collector() -> object:
 
 def test_failure_injection_covers_every_registered_collector():
     """Every registry entry must degrade to its default and expose failure metadata."""
-    from prose.engine import CollectorSpec
+    from prose.engine import CollectorSpec, _build_collector_registry
 
-    async def run_case(name: str, default: object) -> None:
-        spec = CollectorSpec(name=name, run=_failing_collector, default=default)
+    async def run_case(spec: CollectorSpec) -> None:
         with patch("prose.engine._build_collector_registry", return_value=(spec,)):
             report = await collect_all()
-        assert report["collection_status"][name]["status"] == "error"
-        assert report["collection_status"][name]["error"] == (
+        assert report["collection_status"][spec.name]["status"] == "error"
+        assert report["collection_status"][spec.name]["error"] == (
             "RuntimeError: injected collector failure"
         )
-        assert report["collection_errors"] == [f"{name}: RuntimeError: injected collector failure"]
+        assert report["collection_errors"] == [
+            f"{spec.name}: RuntimeError: injected collector failure"
+        ]
 
     async def run_all() -> None:
-        from prose.engine import _build_collector_registry
-
-        registry = _build_collector_registry(include_sensitive_network=False)
-        for spec in registry:
-            await run_case(spec.name, spec.default)
+        for spec in _build_collector_registry(include_sensitive_network=False):
+            await run_case(spec)
 
     asyncio.run(run_all())
