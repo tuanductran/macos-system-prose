@@ -135,7 +135,20 @@ def _build_collector_registry(*, include_sensitive_network: bool) -> tuple[Colle
         CollectorSpec("system_preferences", _async_collector(collect_system_preferences), {}),
         CollectorSpec("kernel_params", _async_collector(collect_kernel_parameters), {}),
         CollectorSpec("system_logs", _async_collector(collect_system_logs), {}),
-        CollectorSpec("ioregistry", _async_collector(collect_ioregistry_info), {}),
+        CollectorSpec(
+            "ioregistry",
+            _async_collector(collect_ioregistry_info),
+            {
+                "pcie_devices": [],
+                "usb_devices": [],
+                "audio_codecs": [],
+                "wifi": {"present": None, "components": []},
+                "bluetooth": {"present": None, "controllers": []},
+                "t1": {"present": None, "components": []},
+                "usb_1_1": {"present": None, "controllers": []},
+                "camera": {"present": None, "components": []},
+            },
+        ),
     )
 
 

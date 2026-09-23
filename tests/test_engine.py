@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from prose.engine import collect_all, generate_ai_prompt
@@ -325,3 +326,81 @@ def test_collect_all_exception_handling():
             assert status["package_managers"]["status"] == "ok"
 
     asyncio.run(run_test())
+
+
+async def _failing_collector() -> object:
+    raise RuntimeError("injected collector failure")
+
+
+def test_failure_injection_covers_every_registered_collector():
+    """Every registry entry must degrade to its default and expose failure metadata."""
+    from prose.engine import CollectorSpec, _build_collector_registry
+
+    def _valid_result(spec: CollectorSpec) -> object:
+        if spec.name == "kext_info":
+            return {"third_party_kexts": [], "system_extensions": []}
+        return spec.default
+
+    def _default_collector_factory(default: object) -> Callable[[], Awaitable[object]]:
+        async def run_default() -> object:
+            return default
+
+        return run_default
+
+    report_keys = {
+        "system_info": "system",
+        "hardware_info": "hardware",
+        "disk_info": "disk",
+        "kext_info": "kexts",
+    }
+
+    async def run_case(spec: CollectorSpec) -> None:
+        registry = tuple(
+            CollectorSpec(
+                candidate.name,
+                _failing_collector
+                if candidate.name == spec.name
+                else _default_collector_factory(_valid_result(candidate)),
+                candidate.default,
+            )
+            for candidate in _build_collector_registry(include_sensitive_network=False)
+        )
+        deterministic_opencore = {
+            "detected": False,
+            "detection_confidence": "none",
+            "detection_signals": [],
+            "version": None,
+            "nvram_version": None,
+            "opencore_version": None,
+            "unsupported_os_detected": False,
+            "root_patch_marker_detected": False,
+            "loaded_kexts": [],
+            "patched_frameworks": [],
+            "amfi_configuration": None,
+            "boot_args": None,
+        }
+        with (
+            patch(
+                "prose.engine._build_collector_registry",
+                return_value=registry,
+            ),
+            patch(
+                "prose.engine.collect_opencore_patcher",
+                return_value=deterministic_opencore,
+            ),
+        ):
+            report = await collect_all()
+        assert report[report_keys.get(spec.name, spec.name)] == spec.default
+        assert report["collection_status"][spec.name]["status"] == "error"
+        assert report["collection_status"][spec.name]["error"] == (
+            "RuntimeError: injected collector failure"
+        )
+        assert report["collection_errors"] == [
+            f"{spec.name}: RuntimeError: injected collector failure"
+        ]
+
+    async def run_all() -> None:
+        for spec in _build_collector_registry(include_sensitive_network=False):
+            await run_case(spec)
+
+    asyncio.run(run_all())
