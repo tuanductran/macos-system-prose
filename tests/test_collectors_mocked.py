@@ -99,8 +99,13 @@ class TestNetworkCollectorMocked:
         assert info["privacy_mode"] == "redacted"
         assert info["hostname"] == "[REDACTED]"
         assert info["public_ip"] == "Not collected"
+        assert info["primary_interface"] == "[REDACTED]"
         assert info["mac_address"] == "[REDACTED]"
+        assert info["dns_servers"] == []
+        assert info["vpn_connections"] == []
+        assert info["vpn_apps"] == []
         assert info["wifi_ssid"] is None
+        assert all(item["ipv4"] == "[REDACTED]" for item in info["local_interfaces"])
 
 
 class TestPackagesCollectorMocked:
