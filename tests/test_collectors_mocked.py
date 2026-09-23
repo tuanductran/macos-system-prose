@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from prose.collectors.advanced import collect_opencore_patcher
 from prose.collectors.developer import collect_dev_tools
 from prose.collectors.environment import collect_environment_info
+from prose.collectors.ioregistry import collect_ioregistry_info
 from prose.collectors.network import (
     _hex_mask_to_dotted,
     _parse_firewall_status,
@@ -188,3 +189,47 @@ class TestAdvancedCollectorMocked:
             assert info["version"] == "2.2.0"
             assert info["detection_confidence"] == "high"
             assert "oclp_nvram_version" in info["detection_signals"]
+
+
+class TestIORegistryHardwareEvidence:
+    @patch("prose.collectors.ioregistry.run")
+    def test_no_evidence_is_unknown_not_absent(self, mock_run):
+        mock_run.return_value = ""
+        info = collect_ioregistry_info()
+        assert info["wifi"]["present"] is None
+        assert info["bluetooth"]["present"] is None
+        assert info["t1"]["present"] is None
+        assert info["usb_1_1"]["present"] is None
+        assert info["camera"]["present"] is None
+
+    @patch("prose.collectors.ioregistry.run")
+    def test_evidence_domains(self, mock_run):
+        pcie = """<?xml version="1.0"?>
+<plist version="1.0"><array>
+<dict><key>IOName</key><string>AirPort BCM94360</string>
+<key>vendor-id</key><data>IAc=</data><key>device-id</key><data>AAE=</data></dict>
+<dict><key>IOName</key><string>USB OHCI Controller</string>
+<key>vendor-id</key><data>AAAAAA==</data><key>device-id</key><data>AAE=</data></dict>
+</array></plist>"""
+        usb = """<?xml version="1.0"?>
+<plist version="1.0"><array>
+<dict><key>USB Product Name</key><string>Bluetooth USB Host Controller</string>
+<key>idVendor</key><integer>1452</integer><key>idProduct</key><integer>1</integer></dict>
+<dict><key>USB Product Name</key><string>FaceTime Camera</string>
+<key>idVendor</key><integer>1452</integer><key>idProduct</key><integer>2</integer></dict>
+</array></plist>"""
+
+        def side_effect(cmd, **kwargs):
+            if "-c" in cmd and "IOPCIDevice" in cmd:
+                return pcie
+            if "IOUSBHostDevice" in cmd:
+                return usb
+            return ""
+
+        mock_run.side_effect = side_effect
+
+        info = collect_ioregistry_info()
+        assert info["wifi"]["present"] is True
+        assert info["bluetooth"]["present"] is True
+        assert info["usb_1_1"]["present"] is True
+        assert info["camera"]["present"] is True

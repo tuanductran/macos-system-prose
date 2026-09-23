@@ -51,7 +51,15 @@ async def async_test_collect_all_structure():
         "collect_system_preferences": MagicMock(return_value={}),
         "collect_kernel_parameters": MagicMock(return_value={}),
         "collect_system_logs": MagicMock(return_value={}),
-        "collect_ioregistry_info": MagicMock(return_value={}),
+        "collect_ioregistry_info": MagicMock(
+            return_value={
+                "wifi": {"present": None, "components": []},
+                "bluetooth": {"present": None, "controllers": []},
+                "t1": {"present": None, "components": []},
+                "usb_1_1": {"present": None, "controllers": []},
+                "camera": {"present": None, "components": []},
+            }
+        ),
     }
 
     with patch.multiple("prose.engine", **patches):
@@ -101,7 +109,15 @@ def test_collect_all_structure_old():
         "collect_system_preferences": MagicMock(return_value={}),
         "collect_kernel_parameters": MagicMock(return_value={}),
         "collect_system_logs": MagicMock(return_value={}),
-        "collect_ioregistry_info": MagicMock(return_value={}),
+        "collect_ioregistry_info": MagicMock(
+            return_value={
+                "wifi": {"present": None, "components": []},
+                "bluetooth": {"present": None, "controllers": []},
+                "t1": {"present": None, "components": []},
+                "usb_1_1": {"present": None, "controllers": []},
+                "camera": {"present": None, "components": []},
+            }
+        ),
     }
 
     async def run_test():
@@ -141,6 +157,7 @@ def test_generate_ai_prompt_without_oclp():
                 "root_patch_state": "unknown",
                 "root_patch_domains": [],
                 "required_packages": [],
+                "hardware_evidence": {},
                 "knowledge_schema_version": 1,
                 "knowledge_checked_at": "2026-09-22",
                 "knowledge_sources": [],
@@ -190,6 +207,13 @@ def test_generate_ai_prompt_with_oclp():
                 "root_patch_state": "detected",
                 "root_patch_domains": ["graphics"],
                 "required_packages": ["metallib_support_pkg"],
+                "hardware_evidence": {
+                    "wifi": None,
+                    "bluetooth": None,
+                    "t1": None,
+                    "usb": None,
+                    "camera": None,
+                },
                 "knowledge_schema_version": 1,
                 "knowledge_checked_at": "2026-09-22",
                 "knowledge_sources": [],
@@ -234,7 +258,15 @@ def test_collect_all_exception_handling():
         "collect_system_preferences": MagicMock(return_value={}),
         "collect_kernel_parameters": MagicMock(return_value={}),
         "collect_system_logs": MagicMock(return_value={}),
-        "collect_ioregistry_info": MagicMock(return_value={}),
+        "collect_ioregistry_info": MagicMock(
+            return_value={
+                "wifi": {"present": None, "components": []},
+                "bluetooth": {"present": None, "controllers": []},
+                "t1": {"present": None, "components": []},
+                "usb_1_1": {"present": None, "controllers": []},
+                "camera": {"present": None, "components": []},
+            }
+        ),
     }
 
     async def run_test():

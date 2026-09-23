@@ -250,6 +250,13 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
         oclp_model_supported=oclp_model_supported,
         root_patch_marker_detected=bool(opencore_patcher.get("root_patch_marker_detected", False)),
         root_patch_evidence=bool(opencore_patcher.get("patched_frameworks", [])),
+        hardware_evidence={
+            "wifi": ioregistry["wifi"]["present"],
+            "bluetooth": ioregistry["bluetooth"]["present"],
+            "t1": ioregistry["t1"]["present"],
+            "usb": ioregistry["usb_1_1"]["present"],
+            "camera": ioregistry["camera"]["present"],
+        },
     )
 
     # mypy cannot infer types from asyncio.gather with return_exceptions=True

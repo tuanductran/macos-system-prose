@@ -22,6 +22,7 @@ class OCLPCompatibilityInfo(TypedDict):
     root_patch_state: str
     root_patch_domains: list[str]
     required_packages: list[str]
+    hardware_evidence: dict[str, bool | None]
     knowledge_schema_version: int
     knowledge_checked_at: str
     knowledge_sources: list[str]
@@ -65,6 +66,7 @@ def build_oclp_compatibility(
     oclp_model_supported: bool,
     root_patch_marker_detected: bool,
     root_patch_evidence: bool,
+    hardware_evidence: dict[str, bool | None] | None = None,
 ) -> OCLPCompatibilityInfo:
     """Build compatibility facts without conflating requirements and observed state."""
     del model_identifier, architecture
@@ -126,7 +128,10 @@ def build_oclp_compatibility(
             )
         ):
             required_packages.append(package)
-    root_patch_required: bool | None = bool(root_patch_domains) if oclp_os_supported else None
+    hardware_facts = hardware_evidence or {}
+    # Hardware evidence is reported separately. It must not be promoted to a
+    # root-patch requirement without a source-backed OS/model rule.
+    root_patch_required = bool(root_patch_domains) if oclp_os_supported else None
 
     source_map = cast(dict[str, object], _SOURCES) if isinstance(_SOURCES, dict) else {}
     source_values = [value for value in source_map.values() if isinstance(value, str)]
@@ -145,6 +150,11 @@ def build_oclp_compatibility(
         "root_patch_state": root_patch_state,
         "root_patch_domains": root_patch_domains,
         "required_packages": required_packages,
+        "hardware_evidence": {
+            key: value
+            for key, value in hardware_facts.items()
+            if key in {"wifi", "bluetooth", "t1", "usb", "camera"}
+        },
         "knowledge_schema_version": schema_version,
         "knowledge_checked_at": str(checked_at),
         "knowledge_sources": source_values,

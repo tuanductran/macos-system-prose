@@ -15,7 +15,8 @@
 - [x] Separate Apple-native compatibility from OCLP compatibility.
 - [x] Track OpenCore bootloader version independently from OCLP version.
 - [x] Model root-patch requirements and observed patch state separately.
-- [ ] Add hardware-specific GPU, Wi-Fi, Bluetooth, T1 and USB compatibility facts.
+- [x] Add hardware-specific GPU, Wi-Fi, Bluetooth, T1, camera and USB evidence fields.
+- [x] Keep hardware compatibility evidence typed and separate from collector compatibility rules.
 - [x] Add versioned OCLP knowledge fixtures sourced from official Dortania documentation.
 
 ## v1.3 — Diagnostics quality

@@ -360,6 +360,11 @@ def _base_ioregistry() -> dict[str, Any]:
         "pcie_devices": [],
         "usb_devices": [],
         "audio_codecs": [],
+        "wifi": {"present": None, "components": []},
+        "bluetooth": {"present": None, "controllers": []},
+        "t1": {"present": None, "components": []},
+        "usb_1_1": {"present": None, "controllers": []},
+        "camera": {"present": None, "components": []},
     }
 
 
