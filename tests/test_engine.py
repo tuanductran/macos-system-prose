@@ -471,3 +471,71 @@ def test_collector_timeout_and_execution_metadata():
         assert ok_status["error"] is None
 
     asyncio.run(run_test())
+
+def test_fast_mode_skips_expensive_collectors():
+    """Fast mode must skip filesystem/log collectors while deep mode keeps them."""
+    from prose.engine import _build_collector_registry
+
+    fast = _build_collector_registry(include_sensitive_network=False, mode="fast")
+    deep = _build_collector_registry(include_sensitive_network=False, mode="deep")
+
+    fast_names = {spec.name for spec in fast}
+    deep_names = {spec.name for spec in deep}
+
+    assert {"storage_analysis", "fonts", "system_logs"} <= deep_names
+    assert {"storage_analysis", "fonts", "system_logs"}.isdisjoint(fast_names)
+    assert fast_names < deep_names
+
+
+def test_fast_mode_reports_skipped_collectors():
+    """Fast mode must retain typed defaults and explicit skipped metadata."""
+    from prose.engine import CollectorSpec, _build_collector_registry
+
+    deep = _build_collector_registry(include_sensitive_network=False, mode="deep")
+    active = tuple(
+        CollectorSpec(
+            spec.name,
+            (lambda default=spec.default: _default_collector_factory(default))(),
+            spec.default,
+            spec.timeout_seconds,
+        )
+        for spec in deep
+        if spec.name not in {"storage_analysis", "fonts", "system_logs"}
+    )
+
+    deterministic_opencore = {
+        "detected": False,
+        "detection_confidence": "none",
+        "detection_signals": [],
+        "version": None,
+        "nvram_version": None,
+        "opencore_version": None,
+        "unsupported_os_detected": False,
+        "root_patch_marker_detected": False,
+        "loaded_kexts": [],
+        "patched_frameworks": [],
+        "amfi_configuration": None,
+        "boot_args": None,
+    }
+
+    async def run_test() -> None:
+        with (
+            patch(
+                "prose.engine._build_collector_registry",
+                side_effect=[active, deep],
+            ),
+            patch(
+                "prose.engine.collect_opencore_patcher",
+                return_value=deterministic_opencore,
+            ),
+        ):
+            report = await collect_all(mode="fast")
+
+        for name in ("storage_analysis", "fonts", "system_logs"):
+            status = report["collection_status"][name]
+            assert status["status"] == "skipped"
+            assert status["error"] is None
+            assert status["duration_ms"] is None
+            assert isinstance(status["timeout_seconds"], float)
+
+    asyncio.run(run_test())
