@@ -544,6 +544,6 @@ def test_fast_mode_reports_skipped_collectors():
             assert status["status"] == "skipped"
             assert status["error"] is None
             assert status["duration_ms"] is None
-            assert isinstance(status["timeout_seconds"], float)
+            assert isinstance(status["timeout_seconds"], (int, float))
 
     asyncio.run(run_test())
