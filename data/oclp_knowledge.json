@@ -91,5 +91,55 @@
         "gcn"
       ]
     }
+  },
+  "hardware_compatibility": {
+    "wifi": {
+      "source": "patch_explain",
+      "documented_chipsets": [
+        "BCM943224",
+        "BCM94331",
+        "BCM94360",
+        "BCM943602",
+        "BCM94328",
+        "BCM94322",
+        "Atheros"
+      ],
+      "note": "OCLP documents legacy and compatibility Wi-Fi handling for these chipset families."
+    },
+    "bluetooth": {
+      "source": "patch_explain",
+      "documented_chipsets": [
+        "BCM94360",
+        "BCM2070",
+        "BCM2046"
+      ],
+      "note": "OCLP documents Bluetooth fixes/spoofing for these chipset families and pre-BCM94360 wireless cards."
+    },
+    "t1": {
+      "source": "post_install",
+      "documented_evidence_terms": [
+        "T1",
+        "Apple Security"
+      ],
+      "note": "T1 support is a documented root-patch domain; hardware presence must come from system evidence."
+    },
+    "usb_1_1": {
+      "source": "post_install",
+      "documented_controller_terms": [
+        "OHCI",
+        "UHCI",
+        "USB 1.1"
+      ],
+      "note": "OCLP documents USB 1.1 root patches for affected legacy systems."
+    },
+    "camera": {
+      "source": "post_install",
+      "documented_evidence_terms": [
+        "iSight",
+        "FaceTime Camera",
+        "AppleCamera"
+      ],
+      "note": "OCLP documents built-in camera root patches; absence of IORegistry evidence is unknown."
+    }
   }
 }
