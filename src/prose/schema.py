@@ -101,10 +101,49 @@ class AudioCodec(TypedDict):
     vendor: str | None
 
 
+class HardwareComponentEvidence(TypedDict):
+    name: str
+    vendor_id: str | None
+    device_id: str | None
+    product_id: str | None
+    class_name: str | None
+    source: str
+
+
+class WiFiEvidence(TypedDict):
+    present: bool | None
+    components: list[HardwareComponentEvidence]
+
+
+class BluetoothEvidence(TypedDict):
+    present: bool | None
+    controllers: list[HardwareComponentEvidence]
+
+
+class T1Evidence(TypedDict):
+    present: bool | None
+    components: list[HardwareComponentEvidence]
+
+
+class USB11Evidence(TypedDict):
+    present: bool | None
+    controllers: list[HardwareComponentEvidence]
+
+
+class CameraEvidence(TypedDict):
+    present: bool | None
+    components: list[HardwareComponentEvidence]
+
+
 class IORegistryInfo(TypedDict):
     pcie_devices: list[PCIeDevice]
     usb_devices: list[USBDevice]
     audio_codecs: list[AudioCodec]
+    wifi: WiFiEvidence
+    bluetooth: BluetoothEvidence
+    t1: T1Evidence
+    usb_1_1: USB11Evidence
+    camera: CameraEvidence
 
 
 class APFSVolume(TypedDict):
