@@ -354,7 +354,10 @@ def _build_hardware_evidence(
         token in _text(device)
         for token in ("bluetooth", "bcm207", "bcm204", "bluetoothhost")
     )]
-    t1 = [device for device in all_devices if "t1" in _text(device) or "apple security" in _text(device)]
+    t1 = [
+        device for device in all_devices
+        if "t1" in _text(device) or "apple security" in _text(device)
+    ]
     usb_11 = [
         device for device in pcie
         if any(token in _text(device) for token in ("ohci", "uhci", "usb 1.1"))
