@@ -282,8 +282,7 @@ def generate_ai_prompt(data: SystemReport) -> str:
     compatibility = data.get("oclp_compatibility", {})
     oclp_context = ""
     if is_oclp_user:
-        kexts_str = (\n            ", ".join(str(kext) for kext in oclp["loaded_kexts"][:3])\n            if oclp["loaded_kexts"]\n            else "None"\n        )
-        amfi_str = (
+        kexts_str = (\n            ", ".join(str(kext) for kext in oclp["loaded_kexts"][:3])\n            if oclp["loaded_kexts"]\n            else "None"\n        )\n        amfi_str = (
             oclp["amfi_configuration"]["amfi_value"] if oclp["amfi_configuration"] else "Unknown"
         )
         oclp_context = f"""
