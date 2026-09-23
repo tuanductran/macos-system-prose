@@ -325,4 +325,3 @@ def test_collect_all_exception_handling():
             assert status["package_managers"]["status"] == "ok"
 
     asyncio.run(run_test())
-
