@@ -225,6 +225,7 @@ class TestIORegistryHardwareEvidence:
                 return usb
             return ""
         mock_run.side_effect = side_effect
+
         info = collect_ioregistry_info()
         assert info["wifi"]["present"] is True
         assert info["bluetooth"]["present"] is True
