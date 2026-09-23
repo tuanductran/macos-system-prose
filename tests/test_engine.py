@@ -346,7 +346,11 @@ def test_failure_injection_covers_every_registered_collector():
         registry = tuple(
             CollectorSpec(
                 candidate.name,
-                _failing_collector if candidate.name == spec.name else _default_collector_factory(candidate.default),
+                (
+                    _failing_collector
+                    if candidate.name == spec.name
+                    else _default_collector_factory(candidate.default)
+                ),
                 candidate.default,
             )
             for candidate in _build_collector_registry(include_sensitive_network=False)
