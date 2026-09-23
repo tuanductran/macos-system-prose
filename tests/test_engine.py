@@ -326,6 +326,7 @@ def test_collect_all_exception_handling():
 
     asyncio.run(run_test())
 
+
 async def _failing_collector() -> object:
     raise RuntimeError("injected collector failure")
 
