@@ -362,6 +362,7 @@ def test_failure_injection_covers_every_registered_collector():
                 if candidate.name == spec.name
                 else _default_collector_factory(_valid_result(candidate)),
                 candidate.default,
+                candidate.timeout_seconds,
             )
             for candidate in _build_collector_registry(include_sensitive_network=False)
         )
@@ -404,3 +405,69 @@ def test_failure_injection_covers_every_registered_collector():
             await run_case(spec)
 
     asyncio.run(run_all())
+
+
+async def _slow_collector() -> object:
+    await asyncio.sleep(0.05)
+    return {}
+
+
+def test_collector_timeout_and_execution_metadata():
+    """A timed-out collector must use its default and expose measured metadata."""
+    from prose.engine import CollectorSpec, _build_collector_registry
+
+    def _default_collector_factory(default: object):
+        async def run_default() -> object:
+            return default
+
+        return run_default
+
+    target_name = "system_logs"
+    registry = tuple(
+        CollectorSpec(
+            candidate.name,
+            _slow_collector
+            if candidate.name == target_name
+            else _default_collector_factory(candidate.default),
+            candidate.default,
+            0.01 if candidate.name == target_name else candidate.timeout_seconds,
+        )
+        for candidate in _build_collector_registry(include_sensitive_network=False)
+    )
+    deterministic_opencore = {
+        "detected": False,
+        "detection_confidence": "none",
+        "detection_signals": [],
+        "version": None,
+        "nvram_version": None,
+        "opencore_version": None,
+        "unsupported_os_detected": False,
+        "root_patch_marker_detected": False,
+        "loaded_kexts": [],
+        "patched_frameworks": [],
+        "amfi_configuration": None,
+        "boot_args": None,
+    }
+
+    async def run_test() -> None:
+        with (
+            patch("prose.engine._build_collector_registry", return_value=registry),
+            patch("prose.engine.collect_opencore_patcher", return_value=deterministic_opencore),
+        ):
+            report = await collect_all()
+
+        status = report["collection_status"][target_name]
+        assert status["status"] == "timeout"
+        assert status["error"] == "CollectorTimeoutError: collector exceeded 0.01s timeout"
+        assert status["timeout_seconds"] == 0.01
+        assert isinstance(status["duration_ms"], float)
+        assert status["duration_ms"] >= 0
+        assert report["system_logs"] == {}
+
+        ok_status = report["collection_status"]["system_info"]
+        assert ok_status["status"] == "ok"
+        assert isinstance(ok_status["duration_ms"], float)
+        assert ok_status["duration_ms"] >= 0
+        assert ok_status["error"] is None
+
+    asyncio.run(run_test())

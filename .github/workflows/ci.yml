@@ -16,7 +16,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ["3.9.x", "3.10.x", "3.11.x", "3.12.x", "3.13.x", "3.14.x"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - name: Checkout code
@@ -24,31 +24,30 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@bfe8cc55a7890e3d6672eda6460ef37bfcc70755 # v6
+      - name: Install uv and set up Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
+          version: "0.12.17"
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+        run: uv sync --all-extras
 
       - name: Lint with ruff
         run: |
-          ruff check .
+          uv run ruff check .
 
       - name: Check formatting
         run: |
-          ruff format --check . --exclude AGENTS.md
+          uv run ruff format --check . --exclude AGENTS.md
 
       - name: Type check with mypy
         run: |
-          mypy --config-file pyproject.toml src/prose --check-untyped-defs
+          uv run mypy --config-file pyproject.toml src/prose --check-untyped-defs
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=src/prose --cov-report=xml --cov-report=term-missing
+          uv run pytest --cov=src/prose --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5.5.5
@@ -68,24 +67,23 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Python
-        uses: actions/setup-python@bfe8cc55a7890e3d6672eda6460ef37bfcc70755 # v6
+      - name: Install uv and set up Python
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
-          python-version: "3.14.x"
+          version: "0.12.17"
+          python-version: "3.14"
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
+        run: uv sync
 
       - name: Run full system report
         run: |
-          python run.py --verbose
+          uv run python run.py --verbose
 
       - name: Verify JSON output
         run: |
           test -f macos_system_report.json
-          python -c "import json; json.load(open('macos_system_report.json'))"
+          uv run python -c "import json; json.load(open('macos_system_report.json'))"
 
       - name: Verify AI prompt output
         run: |
