@@ -430,6 +430,8 @@ class OCLPCompatibilityInfo(TypedDict):
     root_patch_state: str
     root_patch_domains: list[str]
     required_packages: list[str]
+    hardware_evidence: dict[str, bool | None]
+    hardware_patch_requirements: dict[str, bool | None]
     knowledge_schema_version: int
     knowledge_checked_at: str
     knowledge_sources: list[str]

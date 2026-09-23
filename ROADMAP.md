@@ -18,6 +18,7 @@
 - [x] Add hardware-specific GPU, Wi-Fi, Bluetooth, T1, camera and USB evidence fields.
 - [x] Keep hardware compatibility evidence typed and separate from collector compatibility rules.
 - [x] Add versioned OCLP knowledge fixtures sourced from official Dortania documentation.
+- [x] Normalize hardware evidence into source-backed root-patch requirements without promoting unknown evidence.
 
 ## v1.3 — Diagnostics quality
 
