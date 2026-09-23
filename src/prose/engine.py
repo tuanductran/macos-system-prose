@@ -16,7 +16,7 @@ from collections.abc import Awaitable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, cast
+from typing import Callable, Literal, cast
 
 from prose import utils
 from prose.collectors.advanced import (
@@ -81,6 +81,9 @@ from prose.schema import (
 )
 
 
+CollectionMode = Literal["fast", "deep"]
+
+
 @dataclass(frozen=True)
 class CollectorSpec:
     """Typed registration for one independent report collector."""
@@ -108,9 +111,11 @@ def _async_collector(collector: Callable[[], object]) -> Callable[[], Awaitable[
     return run_collector
 
 
-def _build_collector_registry(*, include_sensitive_network: bool) -> tuple[CollectorSpec, ...]:
+def _build_collector_registry(
+    *, include_sensitive_network: bool, mode: CollectionMode = "deep"
+) -> tuple[CollectorSpec, ...]:
     """Return the single source of truth for independent collectors."""
-    return (
+    registry = (
         CollectorSpec("system_info", collect_system_info, {}, 30),
         CollectorSpec("hardware_info", collect_hardware_info, {}, 30),
         CollectorSpec("disk_info", _async_collector(collect_disk_info), {}, 60),
@@ -163,12 +168,20 @@ def _build_collector_registry(*, include_sensitive_network: bool) -> tuple[Colle
             60,
         ),
     )
+    if mode == "deep":
+        return registry
+    expensive = {"storage_analysis", "fonts", "system_logs"}
+    return tuple(spec for spec in registry if spec.name not in expensive)
 
 
-async def collect_all(*, include_sensitive_network: bool = False) -> SystemReport:
+async def collect_all(
+    *, include_sensitive_network: bool = False, mode: CollectionMode = "deep"
+) -> SystemReport:
     """Execute all independent collectors and compile a complete system report."""
     timestamp = time.time()
-    registry = _build_collector_registry(include_sensitive_network=include_sensitive_network)
+    registry = _build_collector_registry(
+        include_sensitive_network=include_sensitive_network, mode=mode
+    )
 
     async def run_collector(spec: CollectorSpec) -> tuple[object, float]:
         started = time.perf_counter()
@@ -190,6 +203,21 @@ async def collect_all(*, include_sensitive_network: bool = False) -> SystemRepor
     collection_errors: list[str] = []
     collection_status: dict[str, CollectionStatus] = {}
     collected: dict[str, object] = {}
+
+    if mode == "fast":
+        deep_registry = _build_collector_registry(
+            include_sensitive_network=include_sensitive_network, mode="deep"
+        )
+        active_names = {spec.name for spec in registry}
+        for spec in deep_registry:
+            if spec.name not in active_names:
+                collection_status[spec.name] = {
+                    "status": "skipped",
+                    "error": None,
+                    "duration_ms": None,
+                    "timeout_seconds": spec.timeout_seconds,
+                }
+                collected[spec.name] = spec.default
 
     for spec, result in zip(registry, results):
         if isinstance(result, BaseException):
@@ -566,6 +594,15 @@ async def async_main() -> int:
         help="Opt in to collecting network identity data and public IP (default: redacted)",
     )
     parser.add_argument(
+        "--mode",
+        choices=("fast", "deep"),
+        default="deep",
+        help=(
+            "Collection depth: fast skips expensive filesystem/log collectors; "
+            "deep collects all sections"
+        ),
+    )
+    parser.add_argument(
         "--no-prompt",
         action="store_true",
         help="Skip generating AI-optimized text prompt",
@@ -634,7 +671,9 @@ async def async_main() -> int:
             return 1
 
     utils.log(" Starting macOS System Prose Report Collection...", "header")
-    report = await collect_all(include_sensitive_network=args.include_sensitive_network)
+    report = await collect_all(
+        include_sensitive_network=args.include_sensitive_network, mode=args.mode
+    )
 
     try:
         with open(args.output, "w", encoding="utf-8") as f:
