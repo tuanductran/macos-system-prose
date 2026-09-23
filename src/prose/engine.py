@@ -349,6 +349,8 @@ Use documented compatibility data; OCLP does not imply support for every newer m
 - Root patch observed: {compatibility.get("root_patch_state", "Unknown")}
 - Root patch domains: {", ".join(compatibility.get("root_patch_domains", [])) or "None"}
 - Required support packages: {", ".join(compatibility.get("required_packages", [])) or "None"}
+- Hardware evidence: {json.dumps(compatibility.get("hardware_evidence", {}), sort_keys=True)}
+- Hardware patch requirements: {json.dumps(compatibility.get("hardware_patch_requirements", {}), sort_keys=True)}
 
 **IMPORTANT - OCLP-Specific Recommendations:**
 - Do not assume SIP must be fully disabled; OCLP SIP requirements depend on the \
