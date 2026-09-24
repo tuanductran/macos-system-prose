@@ -27,15 +27,15 @@ Technical documentation for the `macos-system-prose` project.
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| **Test Collection** | 126 tests (current CI run) | ℹ️ |
+| **Test Collection** | 130 tests (latest validated CI run) | ℹ️ |
 | **Ruff / MyPy** | Enforced by CI | ℹ️ |
 | **Architecture CI** | Apple silicon + explicit Intel smoke test | ℹ️ |
-| **Project Phase** | v1.4 platform compatibility hardening | 🚧 |
+| **Project Phase** | v1.4 platform compatibility hardening | ✅ |
 
 ---
 
 **Last Updated:** 2026-09-24  
-**Status:** Active reference documentation; validation status is reported by CI
+**Status:** Reference documentation; v1.4 hardening is complete and validation status is reported by CI
 
 
 ## Reference freshness
