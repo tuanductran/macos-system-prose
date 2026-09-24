@@ -56,7 +56,7 @@ def collect_storage_analysis() -> StorageAnalysis:
                 except (ValueError, IndexError):
                     return 0.0
             return 0.0
-        except (OSError, TimeoutError) as e:
+        except (OSError, TimeoutError):
             verbose_log("Failed to get directory size for user data path")
             return 0.0
 
@@ -130,7 +130,7 @@ def collect_shell_customization() -> ShellCustomization:
             )
             # Get size
             rc_size_kb = rc_file.stat().st_size / 1024
-        except (OSError, ValueError) as e:
+        except (OSError, ValueError):
             verbose_log("Failed to analyze shell customization")
 
     return {
