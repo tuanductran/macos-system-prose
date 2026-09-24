@@ -51,6 +51,8 @@ from prose.datasets.smbios import SMBIOS_DATABASE
 from prose.diff import diff_reports, format_diff
 from prose.oclp import build_oclp_compatibility
 from prose.schema import (
+    REPORT_SCHEMA,
+    REPORT_SCHEMA_VERSION,
     ApplicationsInfo,
     BatteryInfo,
     CloudInfo,
@@ -78,8 +80,6 @@ from prose.schema import (
     SystemLogs,
     SystemPreferences,
     SystemReport,
-    REPORT_SCHEMA,
-    REPORT_SCHEMA_VERSION,
 )
 
 
