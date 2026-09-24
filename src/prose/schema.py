@@ -9,6 +9,12 @@ from __future__ import annotations
 from typing import Literal, TypedDict
 
 
+JSONValue = None | bool | int | float | str | list["JSONValue"] | dict[str, "JSONValue"]
+
+REPORT_SCHEMA = "macos-system-prose/system-report"
+REPORT_SCHEMA_VERSION = 1
+
+
 class NotInstalled(TypedDict):
     installed: Literal[False]
 
@@ -481,6 +487,8 @@ class CollectionStatus(TypedDict):
 
 
 class SystemReport(TypedDict):
+    report_schema: str
+    report_schema_version: int
     timestamp: float
     system: SystemInfo
     hardware: HardwareInfo
