@@ -258,7 +258,9 @@ class TestPlatformSecurityParsing:
         mock_run.return_value = "System Integrity Protection status: disabled."
         assert asyncio.run(_check_sip_enabled()) is False
 
-        mock_run.return_value = "System Integrity Protection status: unknown (Custom Configuration)."
+        mock_run.return_value = (
+            "System Integrity Protection status: unknown (Custom Configuration)."
+        )
         assert asyncio.run(_check_sip_enabled()) is None
 
 
