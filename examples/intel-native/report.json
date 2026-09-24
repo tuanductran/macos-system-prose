@@ -1,94 +1,131 @@
 {
-  "timestamp": 0,
+  "profile_schema": "macos-system-prose.example.machine.v1",
+  "machine_class": "intel-native",
   "system": {
     "model": "MacBookPro16,1",
-    "model_identifier": "MacBookPro16,1",
-    "macos_version": "macOS Sequoia 15.7",
     "architecture": "x86_64",
-    "board_id": "example-redacted",
-    "sip_enabled": true,
-    "filevault_enabled": true,
-    "gatekeeper_status": "Enabled"
+    "macos_version": "macOS Sequoia 15.7",
+    "hostname": "example.invalid",
+    "identifier": "example-redacted"
   },
-  "hardware": {
-    "cpu": "MacBookPro16,1",
-    "cpu_cores": 8,
-    "memory_gb": 16,
-    "gpu": [
-      "MacBookPro16,1"
-    ],
-    "thermal_pressure": [],
-    "displays": [],
-    "memory_pressure": {
-      "level": "normal",
-      "swap_used": "0 MB"
-    }
+  "open_core_legacy_patcher": {
+    "installed": false,
+    "version": null,
+    "root_patching": "not applicable",
+    "evidence": []
   },
   "developer_tools": {
-    "clouds": {
-      "docker": "Docker version 28.0.0"
-    },
     "languages": {
       "python3": "Python 3.13.7",
       "node": "v24.8.0",
-      "bun": "1.2.23",
-      "pnpm": "10.17.1"
+      "go": "go1.25.1",
+      "rust": "rustc 1.90.0",
+      "swift": "Apple Swift version 6.2"
     },
     "sdks": {
       "xcode": "Xcode 26.0",
-      "xcode_select": "/Applications/Xcode.app/Contents/Developer"
+      "xcode_select": "/Applications/Xcode.app/Contents/Developer",
+      "macos_sdk": "MacOSX26.0.sdk"
     },
-    "git_config": {
-      "user.name": "Example User",
-      "user.email": "example@example.invalid"
+    "cloud_devops": {
+      "docker": "Docker version 28.4.0",
+      "aws": "aws-cli/2.31.0"
+    },
+    "databases": {
+      "sqlite": "3.50.4"
+    },
+    "version_managers": {
+      "mise": "2026.9.0",
+      "nvm": "0.40.3"
+    },
+    "infra": {
+      "terraform": "1.13.2"
+    },
+    "editors": [
+      "Zed"
+    ],
+    "terminal_emulators": [
+      "Terminal"
+    ],
+    "shell_frameworks": {
+      "Oh My Zsh": "installed"
     }
   },
   "package_managers": {
     "homebrew": {
       "installed": true,
+      "version": "4.6.12",
+      "bin_path": "/usr/local/bin/brew",
+      "globals": null,
       "prefix": "/usr/local",
-      "installed_formulae": [
-        {
-          "name": "git",
-          "version": "2.51.0"
-        },
-        {
-          "name": "python",
-          "version": "3.13.7"
-        },
-        {
-          "name": "node",
-          "version": "24.8.0"
-        },
-        {
-          "name": "bun",
-          "version": "1.2.23"
-        },
-        {
-          "name": "pnpm",
-          "version": "10.17.1"
-        }
+      "formula": [
+        "git",
+        "python",
+        "node",
+        "bun",
+        "pnpm"
       ],
-      "installed_casks": [
-        {
-          "name": "xcode",
-          "version": "26.0"
-        }
-      ]
+      "casks": [
+        "xcode"
+      ],
+      "active_ports": null,
+      "packages": null
     },
-    "npm_global": {
+    "npm": {
       "installed": true,
+      "version": "11.6.0",
+      "bin_path": "/usr/local/bin/npm",
+      "globals": null,
+      "prefix": null,
+      "formula": null,
+      "casks": null,
+      "active_ports": null,
       "packages": [
-        {
-          "name": "npm",
-          "version": "11.6.0"
-        }
+        "typescript@latest"
       ]
     },
-    "yarn_global": {
-      "installed": false,
-      "packages": []
+    "pnpm": {
+      "installed": true,
+      "version": "10.17.1",
+      "bin_path": "/usr/local/bin/pnpm",
+      "globals": null,
+      "prefix": null,
+      "formula": null,
+      "casks": null,
+      "active_ports": null,
+      "packages": null
+    },
+    "bun": {
+      "installed": true,
+      "version": "1.2.23",
+      "bin_path": "/usr/local/bin/bun",
+      "globals": null,
+      "prefix": null,
+      "formula": null,
+      "casks": null,
+      "active_ports": null,
+      "packages": null
+    },
+    "yarn": {
+      "installed": true,
+      "version": "1.22.22",
+      "bin_path": "/usr/local/bin/yarn",
+      "globals": null,
+      "prefix": null,
+      "formula": null,
+      "casks": null,
+      "active_ports": null,
+      "packages": null
+    },
+    "macports": {
+      "installed": false
+    },
+    "pipx": {
+      "installed": false
     }
   },
-  "oclp": "not-installed"
+  "notes": [
+    "Synthetic example data only.",
+    "Versions are illustrative and are not a compatibility guarantee."
+  ]
 }
