@@ -131,7 +131,7 @@ def collect_shell_customization() -> ShellCustomization:
             # Get size
             rc_size_kb = rc_file.stat().st_size / 1024
         except (OSError, ValueError) as e:
-                verbose_log("Failed to analyze shell customization")
+            verbose_log("Failed to analyze shell customization")
 
     return {
         "aliases_count": aliases_count,
