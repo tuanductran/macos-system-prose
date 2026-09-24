@@ -41,7 +41,7 @@ def read_nvram(variable: str, uuid: str | None = None) -> str | None:
             parts = output.split("\t", 1)
             if len(parts) == 2:
                 value = parts[1].strip()
-                verbose_log(f"NVRAM {var_name} = {value}")
+                verbose_log(f"NVRAM variable read: {variable}")
                 return value
 
         # Alternative format: "variable_name value" (no tab)
