@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from pathlib import Path
 
 from prose.constants import Timeouts
@@ -151,8 +152,8 @@ def collect_environment_info() -> EnvironmentInfo:
 
     return {
         "shell": os.environ.get("SHELL"),
-        "python_executable": "/usr/bin/python3",  # System Python, not venv
-        "python_version": run(["/usr/bin/python3", "--version"]),
+        "python_executable": sys.executable,
+        "python_version": run([sys.executable, "--version"]),
         "path_entries": path_entries,
         "path_duplicates": list(set(duplicates)),
         "listening_ports": sorted(ports),
