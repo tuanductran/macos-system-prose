@@ -624,7 +624,7 @@ if data["formula"] is not None:
 
 This project follows **TypeScript-level type safety**. Coming from a TypeScript background, you know that `any` is considered a code smell. We apply the same philosophy to Python.
 
-**Before (6 files using Any):**
+**Before (dynamic typing):**
 
 ```python
 # ❌ Weak typing - hides bugs
@@ -657,41 +657,23 @@ def generate_report(data: SystemReport) -> SystemInfo | None:
 
 **File**: `src/prose/diff.py`
 
-**Why JSONValue is used:**
+The diff engine accepts generic string-keyed mappings and returns values constrained by
+the shared `JSONValue` recursive type. Runtime validation rejects unsupported values
+instead of weakening the contract with `Any`. Nested report dictionaries are passed
+back into the same function without recursive casts.
 
 ```python
-def diff_reports(old: Mapping[str, object], new: Mapping[str, object]) -> dict[str, JSONValue]:
-    """Compare two reports and return ARBITRARY nested differences.
-    
-    The diff result structure is dynamic and unknown at compile time:
-    - Could be {"status": "changed", "old_value": X, "new_value": Y}
-    - Could be nested dicts with recursive changes
-    - Could be list diffs with {"added": [...], "removed": [...]}
-    
-    The recursive output is represented with the shared JSONValue type instead of Any, while input mappings are accepted generically.
-    """
-```
+from collections.abc import Mapping
 
-**Alternatives considered:**
+from prose.schema import JSONValue
 
-```python
-# Option 1: Recursive TypeAlias (MyPy can't validate properly)
-DiffValue = Union[
-    str, int, float, bool, None,
-    list['DiffValue'],
-    dict[str, 'DiffValue']
-]
-# Result: MyPy errors, no practical benefit
 
-# Option 2: Use object (equivalent to Any, less honest)
-def diff_reports(...) -> dict[str, object]:
+def diff_reports(
+    old: Mapping[str, object],
+    new: Mapping[str, object],
+) -> dict[str, JSONValue]:
+    """Compare JSON-compatible report mappings without recursive casts."""
     pass
-# Result: Same issues, but hiding the truth
-
-# Option 3: Keep Any with documentation ✅
-def diff_reports(...) -> dict[str, Any]:
-    pass
-# Result: Honest about dynamic structure, clearly documented why
 ```
 
 ### Enforcing No-Any in Your Changes
@@ -699,7 +681,6 @@ def diff_reports(...) -> dict[str, Any]:
 **Pre-commit checks:**
 
 ```bash
-# Check for Any usage (should only find diff.py)
 grep -r "from typing import.*Any" src/prose/ --include="*.py"
 
 # Expected output: no production source files
@@ -707,19 +688,19 @@ grep -r "from typing import.*Any" src/prose/ --include="*.py"
 
 **Code review checklist:**
 
-- [ ] No `Any` imports in new files
+- [ ] No `Any` imports in production source
 - [ ] All function parameters have specific types
-- [ ] All return types use Union, not Any
-- [ ] Use `cast()` with specific types, not `cast(Any, ...)`
-- [ ] TypedDict used instead of `dict[str, Any]`
+- [ ] All return types use explicit JSON/domain types
+- [ ] Use `cast()` only where a concrete boundary requires it
+- [ ] TypedDict used for structured report contracts
+- [ ] Recursive JSON data uses `JSONValue`
 
 **If you think you need `Any`:**
 
-1. **Stop and reconsider** - 99% of the time you don't
-2. **Check schema.py** - TypedDict probably exists
-3. **Use Union types** - `str | int | None` instead of `Any`
-4. **Use cast()** - `cast("SpecificType", value)` with documentation
-5. **Document why** - If truly unavoidable, explain in comments
+1. Stop and reconsider whether an existing schema or `JSONValue` contract is sufficient.
+2. Use explicit unions or TypedDicts for known data shapes.
+3. Use a narrowly typed boundary conversion for untrusted/dynamic input.
+4. Document the runtime invariant when static typing cannot express it.
 
 ### Comparison with TypeScript
 
@@ -854,7 +835,7 @@ Before releasing a new version:
 
 - ✅ **Zero Issues**: All lint/type/test checks passing
 - ✅ **93/93 Tests Passing**: 64% coverage, 100% pass rate
-- ✅ **Type Safety**: NO `Any` type (except diff.py)
+- ✅ **Type Safety**: No `Any` type in production code
 - ✅ **Zero Dependencies**: Pure Python 3.9+ stdlib
 - ✅ **CI/CD**: 6 Python versions (3.9-3.14) on macOS
 - ✅ **Security**: Trivy scan clean, read-only operation
