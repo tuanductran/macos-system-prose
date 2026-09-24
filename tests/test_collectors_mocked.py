@@ -293,7 +293,10 @@ class TestAdvancedCollectorPrivacy:
         home = Path("/Users/private-user")
         mock_home.return_value = home
 
-        with patch.object(Path, "exists", return_value=False):
+        with (
+            patch.dict("prose.collectors.advanced.os.environ", {"SHELL": "/bin/zsh"}, clear=False),
+            patch.object(Path, "exists", return_value=False),
+        ):
             info = collect_shell_customization()
 
         assert info["rc_file"] == "~/.zshrc"

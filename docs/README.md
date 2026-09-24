@@ -11,6 +11,7 @@ Technical documentation for the `macos-system-prose` project.
 | **[apple-oss-analysis.md](./apple-oss-analysis.md)** | 13 KB | Apple OSS analysis |
 | **[xnu-quick-reference.md](./xnu-quick-reference.md)** | Reference | XNU kernel reference |
 | **[oclp-reference.md](./oclp-reference.md)** | Reference | OpenCore Legacy Patcher compatibility and evidence reference |
+| **[platform-compatibility.md](./platform-compatibility.md)** | Reference | Intel/Apple-silicon CI contract and known limitations |
 
 ---
 
@@ -26,17 +27,15 @@ Technical documentation for the `macos-system-prose` project.
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| **Grade** | A+ (Production Perfect) | ✅ |
-| **Issues Fixed** | 13/13 (100%) | ✅ |
-| **Tests Passing** | 113/113 (100%) | ✅ |
-| **Ruff Violations** | 0 | ✅ |
-| **MyPy Errors** | 0 | ✅ |
-| **Production Ready** | YES | ✅ |
+| **Test Collection** | 126 tests (current CI run) | ℹ️ |
+| **Ruff / MyPy** | Enforced by CI | ℹ️ |
+| **Architecture CI** | Apple silicon + explicit Intel smoke test | ℹ️ |
+| **Project Phase** | v1.4 platform compatibility hardening | 🚧 |
 
 ---
 
 **Last Updated:** 2026-09-24  
-**Status:** Active reference documentation for the current v1.x codebase
+**Status:** Active reference documentation; validation status is reported by CI
 
 
 ## Reference freshness
