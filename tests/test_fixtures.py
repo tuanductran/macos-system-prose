@@ -213,8 +213,6 @@ class TestFixtureSchema:
             assert fixture["system"]["architecture"] in {"x86_64", "arm64"}
 
 
-
-
 class TestFixtureValues:
     """Test that fixture values are reasonable and valid."""
 
