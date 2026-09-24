@@ -267,6 +267,7 @@ async def collect_system_info() -> SystemInfo:
 
     # Parse hardware data
     model_name, model_id = "Unknown Mac", "Unknown"
+    chip_type: str | None = None
     if hw_data and isinstance(hw_data, dict) and "SPHardwareDataType" in hw_data:
         sp_hard = hw_data["SPHardwareDataType"]
         if isinstance(sp_hard, list) and len(sp_hard) > 0:
@@ -274,6 +275,9 @@ async def collect_system_info() -> SystemInfo:
             if isinstance(info, dict):
                 model_name = str(info.get("machine_name", "Mac"))
                 model_id = str(info.get("machine_model", "Unknown"))
+                raw_chip = info.get("chip_type")
+                if raw_chip:
+                    chip_type = str(raw_chip)
 
     if system_marketing_name:
         verbose_log(f"Model: {system_marketing_name} (source: system, Board: {system_board_id})")
@@ -294,6 +298,7 @@ async def collect_system_info() -> SystemInfo:
         board_id=system_board_id,
         kernel=kernel,
         architecture=architecture,
+        chip=chip_type,
         uptime=_parse_uptime(uptime_raw.split("load")[0]),
         uptime_seconds=uptime_seconds,
         boot_time=_parse_boot_time(boot_time_raw),
