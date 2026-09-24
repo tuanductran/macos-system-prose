@@ -20,7 +20,6 @@ from prose.schema import (
     SystemLogs,
     SystemPreferences,
 )
-from prose.utils import verbose_log
 
 
 
@@ -50,7 +49,7 @@ def collect_storage_analysis() -> StorageAnalysis:
                     return 0.0
             return 0.0
         except (OSError, TimeoutError):
-            verbose_log("Failed to get directory size for user data path")
+            utils.verbose_log("Failed to get directory size for user data path")
             return 0.0
 
     documents = get_dir_size_gb(home / "Documents", timeout=Timeouts.SLOW)
@@ -124,7 +123,7 @@ def collect_shell_customization() -> ShellCustomization:
             # Get size
             rc_size_kb = rc_file.stat().st_size / 1024
         except (OSError, ValueError):
-            verbose_log("Failed to analyze shell customization")
+            utils.verbose_log("Failed to analyze shell customization")
 
     return {
         "aliases_count": aliases_count,
