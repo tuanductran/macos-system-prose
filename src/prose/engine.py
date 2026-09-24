@@ -22,7 +22,6 @@ from prose import utils
 from prose.collectors.advanced import (
     collect_fonts,
     collect_kernel_parameters,
-    collect_opencore_patcher,
     collect_shell_customization,
     collect_storage_analysis,
     collect_system_logs,
@@ -45,6 +44,7 @@ from prose.collectors.environment import (
 )
 from prose.collectors.ioregistry import collect_ioregistry_info  # Phase 3
 from prose.collectors.network import collect_network_info
+from prose.collectors.oclp import collect_opencore_patcher
 from prose.collectors.packages import collect_package_managers
 from prose.collectors.system import collect_disk_info, collect_hardware_info, collect_system_info
 from prose.datasets.smbios import SMBIOS_DATABASE
