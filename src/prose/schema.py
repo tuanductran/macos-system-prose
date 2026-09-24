@@ -480,7 +480,7 @@ class SystemLogs(TypedDict):
 class CollectionStatus(TypedDict):
     """Execution metadata for one collector invocation."""
 
-    status: str
+    status: Literal["ok", "error", "timeout", "skipped"]
     error: str | None
     duration_ms: float | None
     timeout_seconds: float
