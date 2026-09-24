@@ -19,6 +19,7 @@ from prose.collectors import (
     environment,
     ioregistry,
     network,
+    oclp,
     packages,
     system,
 )
@@ -30,6 +31,7 @@ __all__ = [
     "environment",
     "ioregistry",
     "network",
+    "oclp",
     "packages",
     "system",
 ]
