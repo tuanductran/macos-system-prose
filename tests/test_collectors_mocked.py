@@ -184,6 +184,19 @@ class TestGitConfigPrivacy:
         assert info["aliases"]["safe"] == "log --oneline"
 
 
+class TestAppleSiliconHardwareParsing:
+    def test_extract_chip_type_from_system_profiler(self):
+        from prose.collectors.system import _extract_chip_type
+
+        assert _extract_chip_type(
+            {"SPHardwareDataType": [{"chip_type": "Apple M4 Pro"}]}
+        ) == "Apple M4 Pro"
+        assert _extract_chip_type(
+            {"SPHardwareDataType": [{"cpu_type": "Intel Core i7"}]}
+        ) is None
+        assert _extract_chip_type({}) is None
+
+
 class TestEnvironmentCollectorMocked:
     @patch("prose.collectors.environment.run")
     @patch("prose.collectors.environment.collect_launchd_services")
