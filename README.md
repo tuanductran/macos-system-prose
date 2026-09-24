@@ -29,7 +29,7 @@ Built with **zero runtime dependencies** using only Python 3.9+ standard library
 | **Test Suite** | CI source of truth | Tests and coverage are reported by GitHub Actions |
 | **Functions** | 105 total | 62 collectors + 43 utilities |
 | **TypedDict Schemas** | 49 | Strict type contracts |
-| **Test Coverage** | 93 tests | 100% pass rate, 64% coverage |
+| **Test Results** | CI source of truth | Pass count and coverage are reported by GitHub Actions |
 | **Data Sections** | 28 | SystemReport output |
 | **Dependencies** | 0 runtime | Pure Python stdlib |
 
