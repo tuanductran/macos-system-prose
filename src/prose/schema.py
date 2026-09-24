@@ -36,6 +36,7 @@ class SystemInfo(TypedDict):
     board_id: str | None  # SMBIOS: "Mac-7DF21CB3ED6977E5"
     kernel: str
     architecture: str
+    chip: str | None  # Apple silicon chip type; None on Intel Macs
     uptime: str
     uptime_seconds: int
     boot_time: str
