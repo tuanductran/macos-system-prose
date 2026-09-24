@@ -40,6 +40,7 @@ def _base_system(
         "max_os_supported": max_os_supported,
         "kernel": "23.2.0",
         "architecture": architecture,
+        "chip": "Apple M3 Pro" if architecture == "arm64" else None,
         "uptime": "5 days, 3:24",
         "uptime_seconds": 442440,
         "boot_time": "{ sec = 1735689600, usec = 0 }",
