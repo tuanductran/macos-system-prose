@@ -121,6 +121,22 @@ class TestUtilityFunctions:
         result = utils.run(["echo", "test"])
         assert result == "test"
 
+    def test_run_preserves_argument_boundaries(self):
+        """Command arguments must be passed as separate argv entries."""
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+            mock_run.return_value.stdout = "ok"
+            mock_run.return_value.stderr = ""
+
+            result = utils.run(["printf", "%s", "value; touch /tmp/should-not-run"])
+
+        assert result == "ok"
+        args, kwargs = mock_run.call_args
+        assert args[0] == ["printf", "%s", "value; touch /tmp/should-not-run"]
+        assert kwargs["capture_output"] is True
+        assert kwargs["text"] is True
+        assert kwargs.get("shell", False) is False
+
     def test_run_command_timeout(self):
         """Test run() with command timeout."""
         result = utils.run(["sleep", "10"], timeout=1)

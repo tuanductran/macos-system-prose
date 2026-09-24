@@ -194,6 +194,23 @@ class TestFixtureSchema:
                 missing = required_fields - set(app.keys())
                 assert not missing, f"Fixture {name} code signing missing: {missing}"
 
+    def test_intel_and_apple_silicon_report_schema_is_stable(self, fixtures_data):
+        """Intel and Apple-silicon profiles share the same report schema."""
+        intel = [f for f in fixtures_data if f["system"]["architecture"] == "x86_64"]
+        arm64 = [f for f in fixtures_data if f["system"]["architecture"] == "arm64"]
+
+        assert intel
+        assert arm64
+
+        intel_keys = set(intel[0].keys())
+        arm64_keys = set(arm64[0].keys())
+        assert intel_keys == arm64_keys
+
+        for fixture in intel + arm64:
+            assert fixture["report_schema"] == "macos-system-prose/system-report"
+            assert fixture["report_schema_version"] == 1
+            assert fixture["system"]["architecture"] in {"x86_64", "arm64"}
+
 
 class TestFixtureValues:
     """Test that fixture values are reasonable and valid."""

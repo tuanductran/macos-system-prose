@@ -16,6 +16,7 @@
 - Intel is covered by a separate Python 3.14 compatibility smoke test to avoid duplicating the full Python matrix.
 - Apple-silicon-specific CPU/chip parsing uses `SPHardwareDataType` `chip_type`; Intel parsing retains the CPU label path.
 - Missing architecture-specific signals must remain unknown rather than being interpreted as evidence that a feature is absent.
+- Security-state commands (`csrutil`, `spctl`, and `fdesetup`) preserve unavailable or unrecognized output as `null`/unknown rather than coercing it to `false`.
 
 ## OCLP compatibility is a separate contract
 
@@ -25,7 +26,7 @@ Current upstream OCLP documentation targets macOS Big Sur 11.x through Sequoia 1
 
 ## Known limitations
 
-- The current CI contract does not execute the full Python-version matrix on Intel.
+- The current CI contract does not execute the full Python-version matrix on Intel; Intel receives a dedicated Python 3.14 smoke test.
 - Some collectors depend on permissions or macOS services and may legitimately return unknown/empty values.
-- Platform-sensitive command output can change across macOS releases; parsing fixtures and command fallbacks should be extended in subsequent v1.4 hardening work.
+- Platform-sensitive command output can change across macOS releases; deterministic fixtures cover the current Intel/Apple-silicon parsing contract, while unavailable security signals remain explicitly unknown.
 - Root-patch state is evidence-driven and is not inferred solely from OCLP non-detection.

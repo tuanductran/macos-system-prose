@@ -40,10 +40,10 @@
 
 ## v1.4 — Platform compatibility and execution hardening
 
-- [ ] Define an explicit Intel vs Apple-silicon compatibility contract for every platform-sensitive collector.
-- [ ] Add deterministic Intel and Apple-silicon fixtures for system/hardware parsing and schema validation.
-- [ ] Audit platform-sensitive commands and fallbacks so missing architecture-specific signals remain unknown instead of inferred.
-- [ ] Extend command-execution safety tests to cover stderr, argument boundaries, timeouts, and platform-specific fallbacks.
-- [ ] Verify report-schema stability across Intel and Apple-silicon fixture profiles.
+- [x] Define an explicit Intel vs Apple-silicon compatibility contract for every platform-sensitive collector.
+- [x] Add deterministic Intel and Apple-silicon fixtures for system/hardware parsing and schema validation.
+- [x] Audit platform-sensitive commands and fallbacks so missing architecture-specific signals remain unknown instead of inferred.
+- [x] Extend command-execution safety tests to cover stderr, argument boundaries, timeouts, and platform-specific fallbacks.
+- [x] Verify report-schema stability across Intel and Apple-silicon fixture profiles.
 - [x] Add CI coverage for both architectures without duplicating the full Python-version matrix unnecessarily.
 - [x] Document supported macOS/Python/architecture combinations and known collector limitations.
