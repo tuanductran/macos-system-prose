@@ -485,7 +485,8 @@ making remediation advice.
         oclp_context = """
 ## Standard macOS Configuration
 
-This system does not show the collected OpenCore Legacy Patcher signals.\nDo not infer SIP, code-signing, root-patch, or other security state from OCLP non-detection; use the collected security and system fields as the evidence source.
+This system does not show the collected OpenCore Legacy Patcher signals.
+Do not infer SIP, code-signing, root-patch, or other security state from OCLP non-detection; use the collected security and system fields as the evidence source.
 """
 
     # Generate prompt
