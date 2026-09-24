@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from prose.collectors.advanced import collect_opencore_patcher
+from prose.collectors.oclp import collect_opencore_patcher
 from prose.collectors.developer import collect_dev_tools
 from prose.collectors.environment import collect_environment_info
 from prose.collectors.ioregistry import collect_ioregistry_info
