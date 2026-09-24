@@ -286,6 +286,7 @@ class TestNVRAMCollectorPrivacy:
 
 
 class TestAdvancedCollectorPrivacy:
+    @patch.dict("os.environ", {"SHELL": "/bin/zsh"})
     @patch("prose.collectors.advanced.Path.home")
     def test_shell_customization_redacts_user_home(self, mock_home):
         from prose.collectors.advanced import collect_shell_customization
