@@ -10,7 +10,7 @@ import os
 import re
 from pathlib import Path
 
-from prose import utils
+import prose.utils as utils
 from prose.constants import Timeouts
 from prose.schema import (
     FontInfo,
