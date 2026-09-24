@@ -41,9 +41,9 @@ class SystemInfo(TypedDict):
     uptime_seconds: int
     boot_time: str
     load_average: str
-    sip_enabled: bool
-    gatekeeper_enabled: bool
-    filevault_enabled: bool
+    sip_enabled: bool | None
+    gatekeeper_enabled: bool | None
+    filevault_enabled: bool | None
     time_machine: TimeMachineInfo
 
 
