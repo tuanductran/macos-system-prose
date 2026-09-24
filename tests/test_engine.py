@@ -172,7 +172,9 @@ def test_generate_ai_prompt_without_oclp():
 
     assert "macOS System Analysis Assistant" in prompt
     assert "Standard macOS Configuration" in prompt
-    assert "OCLP" not in prompt or "without OpenCore" in prompt
+    assert "Do not infer SIP, code-signing, root-patch, or other security state" in prompt
+    assert "SIP enabled" not in prompt
+    assert "signed kexts only" not in prompt
 
 
 def test_generate_ai_prompt_with_oclp():
