@@ -16,7 +16,7 @@
 - **Zero runtime dependencies** — pure Python 3.9+ stdlib
 - **Async-first architecture** — parallel collection via `asyncio.gather()`
 - **28 data sections** in SystemReport output
-- **Typed production code** — avoid `Any`; document narrowly scoped dynamic JSON cases.
+- **Typed production code** — avoid `Any`; JSON-compatible recursive values use the shared `JSONValue` type.
 
 ### Key Capabilities
 
@@ -149,7 +149,7 @@ python3 run.py --help
 
 - **Python Version**: 3.9+ (use `from __future__ import annotations` in all modules)
 - **Type Safety**: EVERY function MUST have type hints. Use TypedDict from `schema.py`.
-- **NO `Any` TYPE**: This project strictly avoids `Any` type (like TypeScript best practices)
+- **NO `Any` TYPE**: This project strictly avoids `Any` in production code (like TypeScript best practices)
 - **Linting**: Ruff (select = ["E", "F", "I", "N", "W", "B", "UP", "A", "C4", "ISC", "RUF"]).
 - **Type Checking**: Mypy with `--check-untyped-defs`.
 - **Testing**: pytest with coverage targeting `src/prose`.
@@ -653,14 +653,14 @@ def generate_report(data: SystemReport) -> SystemInfo | None:
 4. **Self-Documentation**: Function signatures explain data flow
 5. **MyPy Validation**: Static analysis catches issues
 
-### The ONE Exception: diff.py
+### Recursive JSON values in diff.py
 
 **File**: `src/prose/diff.py`
 
-**Why Any is used:**
+**Why JSONValue is used:**
 
 ```python
-def diff_reports(old: SystemReport, new: SystemReport) -> dict[str, Any]:
+def diff_reports(old: Mapping[str, object], new: Mapping[str, object]) -> dict[str, JSONValue]:
     """Compare two reports and return ARBITRARY nested differences.
     
     The diff result structure is dynamic and unknown at compile time:
@@ -668,8 +668,7 @@ def diff_reports(old: SystemReport, new: SystemReport) -> dict[str, Any]:
     - Could be nested dicts with recursive changes
     - Could be list diffs with {"added": [...], "removed": [...]}
     
-    This is the ONLY place in production code where Any is acceptable
-    because the output structure is inherently dynamic.
+    The recursive output is represented with the shared JSONValue type instead of Any, while input mappings are accepted generically.
     """
 ```
 
@@ -703,7 +702,7 @@ def diff_reports(...) -> dict[str, Any]:
 # Check for Any usage (should only find diff.py)
 grep -r "from typing import.*Any" src/prose/ --include="*.py"
 
-# Expected output: src/prose/diff.py only
+# Expected output: no production source files
 ```
 
 **Code review checklist:**
@@ -777,23 +776,18 @@ class SystemInfo(TypedDict):
 ### src/prose/diff.py
 
 - **Purpose**: Compare two SystemReport snapshots and identify differences
-- **Rule**: This is the ONLY file allowed to use `Any` type
-- **Why**: Recursive dict comparison produces dynamic, unpredictable output structure
-- **Documentation**: File header clearly explains why `Any` is necessary
-- **Alternative**: Complex recursive TypeAlias causes more MyPy errors than it solves
+- **Rule**: Use the shared `JSONValue` type for recursive JSON-compatible values
+- **Rule**: Do not introduce `Any` for diff inputs or outputs
+- **Why**: The recursive report structure is dynamic at runtime but still constrained to JSON values
 
 ```python
-# ✅ Acceptable in diff.py only
-from typing import Any
+from prose.schema import JSONValue
+from collections.abc import Mapping
 
 
-def diff_reports(old: SystemReport, new: SystemReport) -> dict[str, Any]:
-    """Dynamic diff structure - Any is justified here."""
+def diff_reports(old: Mapping[str, object], new: Mapping[str, object]) -> dict[str, JSONValue]:
+    """Compare JSON-compatible report mappings without recursive casts."""
     pass
-
-
-# ❌ Not acceptable in any other file
-from typing import Any  # Don't import this anywhere else!
 ```
 
 ### tests/conftest.py
@@ -1011,6 +1005,6 @@ This is an **independent open source project**, NOT affiliated with, endorsed by
 
 ---
 
-**Last Updated**: 2026-02-09  
+**Last Updated**: 2026-09-24  
 **Document Version**: 2.4 (Refactor SMBIOS and HTML reporting)
 **Project Status**: Production Ready ✅ | Grade: A+
