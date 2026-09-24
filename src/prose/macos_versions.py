@@ -209,6 +209,7 @@ def get_macos_version_info() -> MacOSVersion:
         "marketing_name": marketing_name,
     }
 
+
 __all__ = [
     "VERSION_NAMES",
     "MacOSVersion",
