@@ -10,6 +10,7 @@ import os
 import re
 from pathlib import Path
 
+from prose import utils
 from prose.constants import Timeouts
 from prose.schema import (
     FontInfo,
@@ -20,7 +21,6 @@ from prose.schema import (
     SystemPreferences,
 )
 from prose.utils import verbose_log
-from prose import utils
 
 
 
