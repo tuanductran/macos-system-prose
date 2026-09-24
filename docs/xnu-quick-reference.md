@@ -162,17 +162,15 @@ SYSCTL_QUAD(_hw, HW_MEMSIZE, memsize, CTLFLAG_RD, &max_mem, "");
 
 ## Action Items for macos-system-prose
 
-### Phase 1: Study (Current)
-- [ ] Clone XNU repository locally
-- [ ] Read bsd/sys/sysctl.h for all sysctl definitions
-- [ ] Read iokit/IOKit/IOKitKeys.h for IOKit properties
-- [ ] Document findings in code comments
+### Phase 1: Study (reference review)
+- [x] Identify XNU as a reference source; do not link against the kernel.
+- [x] Keep command-line collectors as the runtime boundary.
+- [ ] Revalidate individual parser assumptions when a collector changes.
 
-### Phase 2: Validate (Next)
-- [ ] Compare our sysctl parsing with kernel definitions
-- [ ] Verify IOKit property names we use are official
-- [ ] Check data types match kernel expectations
-- [ ] Add type safety based on kernel types
+### Phase 2: Validate (targeted)
+- [ ] Compare changed sysctl parsing with the current XNU headers/source.
+- [ ] Verify changed IOKit property names against upstream definitions.
+- [ ] Check data types and units before changing report schemas.
 
 ### Phase 3: Enhance (Future)
 - [ ] Add missing sysctl variables we discover
@@ -226,5 +224,5 @@ grep -ri "system integrity" .
 
 ---
 
-**Last Updated**: 2026-02-08  
+**Last reviewed**: 2026-09-24  
 **Status**: Active reference for development
