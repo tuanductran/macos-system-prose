@@ -292,7 +292,7 @@ def collect_system_preferences() -> SystemPreferences:
 
     # Trackpad tracking speed
     trackpad_output = utils.run(
-        ["bash", "-c", "defaults read -g com.apple.trackpad.scaling 2>/dev/null"],
+        ["defaults", "read", "-g", "com.apple.trackpad.scaling"],
         log_errors=False,
     )
     if trackpad_output:
@@ -303,7 +303,7 @@ def collect_system_preferences() -> SystemPreferences:
 
     # Key repeat rate
     key_repeat_output = utils.run(
-        ["bash", "-c", "defaults read -g KeyRepeat 2>/dev/null"], log_errors=False
+        ["defaults", "read", "-g", "KeyRepeat"], log_errors=False
     )
     if key_repeat_output:
         try:
@@ -313,7 +313,7 @@ def collect_system_preferences() -> SystemPreferences:
 
     # Mouse speed
     mouse_output = utils.run(
-        ["bash", "-c", "defaults read -g com.apple.mouse.scaling 2>/dev/null"],
+        ["defaults", "read", "-g", "com.apple.mouse.scaling"],
         log_errors=False,
     )
     if mouse_output:
@@ -324,7 +324,7 @@ def collect_system_preferences() -> SystemPreferences:
 
     # Scroll direction
     scroll_output = utils.run(
-        ["bash", "-c", "defaults read -g com.apple.swipescrolldirection 2>/dev/null"],
+        ["defaults", "read", "-g", "com.apple.swipescrolldirection"],
         log_errors=False,
     )
     if scroll_output and "0" in scroll_output:
@@ -380,19 +380,21 @@ def collect_system_logs() -> SystemLogs:
     # Note: log show is VERY slow, so we use aggressive timeout and limit
     log_output = utils.run(
         [
-            "bash",
-            "-c",
-            (
-                'log show --predicate \'messageType == "Error" OR messageType == "Fault"\' '
-                "--style syslog --last 1h 2>/dev/null | tail -20"
-            ),  # Reduced from 24h to 1h, 50 to 20
+            "log",
+            "show",
+            "--predicate",
+            'messageType == "Error" OR messageType == "Fault"',
+            "--style",
+            "syslog",
+            "--last",
+            "1h",
         ],
-        timeout=Timeouts.STANDARD,  # Reduced from 30s to 15s
+        timeout=Timeouts.STANDARD,
         log_errors=False,
     )
 
     if log_output:
-        lines = log_output.strip().split("\n")
+        lines = log_output.strip().split("\n")[-20:]
         for line in lines:
             if "Error" in line or "Fault" in line:
                 # Extract meaningful part
@@ -403,20 +405,22 @@ def collect_system_logs() -> SystemLogs:
     # Get warnings (reduced scope for performance)
     warning_output = utils.run(
         [
-            "bash",
-            "-c",
-            (
-                "log show --predicate 'messageType == \"Default\"' "
-                "--style syslog --last 1h 2>/dev/null | grep -i warning | tail -10"
-            ),
+            "log",
+            "show",
+            "--predicate",
+            'messageType == "Default"',
+            "--style",
+            "syslog",
+            "--last",
+            "1h",
         ],
-        timeout=Timeouts.STANDARD,  # Reduced from 30s to 15s
+        timeout=Timeouts.STANDARD,
         log_errors=False,
     )
 
     if warning_output:
-        lines = warning_output.strip().split("\n")
-        for line in lines[:15]:  # Limit to 15 warnings
+        lines = [line for line in warning_output.strip().split("\n") if "warning" in line.lower()][-10:]
+        for line in lines:
             if len(line) > 100:
                 line = line[:97] + "..."
             warnings.append(line)
