@@ -11,6 +11,7 @@ Technical documentation for the `macos-system-prose` project.
 | **[apple-oss-analysis.md](./apple-oss-analysis.md)** | 13 KB | Apple OSS analysis |
 | **[xnu-quick-reference.md](./xnu-quick-reference.md)** | Reference | XNU kernel reference |
 | **[oclp-reference.md](./oclp-reference.md)** | Reference | OpenCore Legacy Patcher compatibility and evidence reference |
+| **[platform-compatibility.md](./platform-compatibility.md)** | Reference | Intel/Apple-silicon CI contract and known limitations |
 
 ---
 
