@@ -224,7 +224,9 @@ async def collect_all(
     for spec, result in zip(registry, results):
         if isinstance(result, BaseException):
             error_message = f"{type(result).__name__}: {result!s}"
-            status: Literal["ok", "error", "timeout", "skipped"] = (\n                "timeout" if isinstance(result, TimeoutError) else "error"\n            )
+            status: Literal["ok", "error", "timeout", "skipped"] = (
+                "timeout" if isinstance(result, TimeoutError) else "error"
+            )
             collection_errors.append(f"{spec.name}: {error_message}")
             collection_status[spec.name] = {
                 "status": status,
