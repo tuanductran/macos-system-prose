@@ -1,8 +1,7 @@
 """Terminal User Interface for macOS System Prose.
 
 This package provides interactive TUI components built with Textual:
-- app: Basic TUI implementation
-- app_enhanced: Advanced TUI with htop-style monitor and Apple HIG design
+- app: Interactive TUI implementation
 """
 
 from __future__ import annotations
