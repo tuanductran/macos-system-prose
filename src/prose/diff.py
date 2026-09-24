@@ -68,7 +68,11 @@ def diff_reports(
             removed = sorted(old_set - new_set)
 
             if added or removed:
-                changes[key] = {"status": "changed", "added": added, "removed": removed}
+                changes[key] = {
+                    "status": "changed",
+                    "added": _json_value(added),
+                    "removed": _json_value(removed),
+                }
         else:
             changes[key] = {
                 "status": "changed",
