@@ -184,6 +184,26 @@ class TestGitConfigPrivacy:
         assert info["aliases"]["safe"] == "log --oneline"
 
 
+class TestCommandExecutionSafety:
+    @patch("prose.collectors.advanced.utils.run", return_value="")
+    def test_preferences_use_direct_commands(self, mock_run):
+        from prose.collectors.advanced import collect_system_preferences
+
+        collect_system_preferences()
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        assert commands
+        assert all(command[0] != "bash" for command in commands)
+
+    @patch("prose.collectors.advanced.utils.run", return_value="")
+    def test_system_logs_use_direct_commands(self, mock_run):
+        from prose.collectors.advanced import collect_system_logs
+
+        collect_system_logs()
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        assert commands
+        assert all(command[0] != "bash" for command in commands)
+
+
 class TestAppleSiliconHardwareParsing:
     def test_extract_chip_type_from_system_profiler(self):
         from prose.collectors.system import _extract_chip_type
