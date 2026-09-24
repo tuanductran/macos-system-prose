@@ -372,6 +372,8 @@ def _make_fixture(fixture_name: str, overrides: dict[str, Any] | None = None) ->
     """Build a complete fixture matching SystemReport TypedDict."""
     o = overrides or {}
     data: dict[str, Any] = {
+        "report_schema": o.get("report_schema", "macos-system-prose/system-report"),
+        "report_schema_version": o.get("report_schema_version", 1),
         "timestamp": o.get("timestamp", time.time()),
         "system": o.get("system", _base_system()),
         "hardware": o.get("hardware", _base_hardware()),
