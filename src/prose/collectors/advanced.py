@@ -421,8 +421,7 @@ def collect_system_logs() -> SystemLogs:
     if warning_output:
         lines = [
             line
-            for line in warning_output.strip().split("
-")
+            for line in warning_output.strip().split("\n")
             if "warning" in line.lower()
         ][-10:]
         for line in lines:
