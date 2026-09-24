@@ -1,0 +1,133 @@
+{
+  "profile_schema": "macos-system-prose.example.machine.v1",
+  "machine_class": "apple-silicon",
+  "system": {
+    "model": "MacBookPro18,1",
+    "architecture": "arm64",
+    "macos_version": "macOS Tahoe 26.0",
+    "hostname": "example.invalid",
+    "identifier": "example-redacted"
+  },
+  "open_core_legacy_patcher": {
+    "installed": false,
+    "version": null,
+    "root_patching": "not applicable",
+    "evidence": [
+      "Apple Silicon native boot"
+    ]
+  },
+  "developer_tools": {
+    "languages": {
+      "python3": "Python 3.13.7",
+      "node": "v24.8.0",
+      "go": "go1.25.1",
+      "rust": "rustc 1.90.0",
+      "swift": "Apple Swift version 6.2"
+    },
+    "sdks": {
+      "xcode": "Xcode 26.0",
+      "xcode_select": "/Applications/Xcode.app/Contents/Developer",
+      "macos_sdk": "MacOSX26.0.sdk"
+    },
+    "cloud_devops": {
+      "docker": "Docker version 28.4.0",
+      "aws": "aws-cli/2.31.0"
+    },
+    "databases": {
+      "sqlite": "3.50.4"
+    },
+    "version_managers": {
+      "mise": "2026.9.0",
+      "nvm": "0.40.3"
+    },
+    "infra": {
+      "terraform": "1.13.2"
+    },
+    "editors": [
+      "Zed"
+    ],
+    "terminal_emulators": [
+      "Terminal"
+    ],
+    "shell_frameworks": {
+      "Oh My Zsh": "installed"
+    }
+  },
+  "package_managers": {
+    "homebrew": {
+      "installed": true,
+      "version": "4.6.12",
+      "bin_path": "/opt/homebrew/bin/brew",
+      "globals": null,
+      "prefix": "/opt/homebrew",
+      "formula": [
+        "git",
+        "python",
+        "node",
+        "bun",
+        "pnpm"
+      ],
+      "casks": [
+        "xcode"
+      ],
+      "active_ports": null,
+      "packages": null
+    },
+    "npm": {
+      "installed": true,
+      "version": "11.6.0",
+      "bin_path": "/opt/homebrew/bin/npm",
+      "globals": null,
+      "prefix": null,
+      "formula": null,
+      "casks": null,
+      "active_ports": null,
+      "packages": [
+        "typescript@latest"
+      ]
+    },
+    "pnpm": {
+      "installed": true,
+      "version": "10.17.1",
+      "bin_path": "/opt/homebrew/bin/pnpm",
+      "globals": null,
+      "prefix": null,
+      "formula": null,
+      "casks": null,
+      "active_ports": null,
+      "packages": null
+    },
+    "bun": {
+      "installed": true,
+      "version": "1.2.23",
+      "bin_path": "/opt/homebrew/bin/bun",
+      "globals": null,
+      "prefix": null,
+      "formula": null,
+      "casks": null,
+      "active_ports": null,
+      "packages": null
+    },
+    "yarn": {
+      "installed": true,
+      "version": "1.22.22",
+      "bin_path": "/opt/homebrew/bin/yarn",
+      "globals": null,
+      "prefix": null,
+      "formula": null,
+      "casks": null,
+      "active_ports": null,
+      "packages": null
+    },
+    "macports": {
+      "installed": false
+    },
+    "pipx": {
+      "installed": false
+    }
+  },
+  "notes": [
+    "Synthetic example data only.",
+    "Versions are illustrative and are not a compatibility guarantee."
+  ]
+}
