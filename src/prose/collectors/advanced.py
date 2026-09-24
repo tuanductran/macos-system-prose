@@ -57,7 +57,7 @@ def collect_storage_analysis() -> StorageAnalysis:
                     return 0.0
             return 0.0
         except (OSError, TimeoutError) as e:
-            verbose_log(f"Failed to get directory size for {path}: {e}")
+            verbose_log("Failed to get directory size for user data path")
             return 0.0
 
     documents = get_dir_size_gb(home / "Documents", timeout=Timeouts.SLOW)
@@ -131,12 +131,12 @@ def collect_shell_customization() -> ShellCustomization:
             # Get size
             rc_size_kb = rc_file.stat().st_size / 1024
         except (OSError, ValueError) as e:
-            verbose_log(f"Failed to analyze shell customization in {rc_file}: {e}")
+            verbose_log("Failed to analyze shell customization")
 
     return {
         "aliases_count": aliases_count,
         "functions_count": functions_count,
-        "rc_file": str(rc_file),
+        "rc_file": f"~/{rc_file.name}",
         "rc_size_kb": round(rc_size_kb, 2),
     }
 
