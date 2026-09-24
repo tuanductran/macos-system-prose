@@ -652,7 +652,7 @@ async def async_main() -> int:
     # TUI mode: launch interactive terminal interface
     if args.tui:
         try:
-            from prose.tui.app_enhanced import run_tui_enhanced
+            from prose.tui.app import run_tui_sync
         except ImportError:
             utils.log(
                 "TUI mode requires textual. Install with: pip install -e '.[tui]'",
@@ -669,9 +669,7 @@ async def async_main() -> int:
 
         try:
             # Use async version since we're already in an async context
-            await run_tui_enhanced(
-                report, live_mode=args.live, refresh_interval=args.refresh_interval
-            )
+            run_tui_sync(report)
             return 0
         except Exception as e:
             utils.log(f"TUI failed: {e}", "error")
