@@ -285,6 +285,21 @@ class TestNVRAMCollectorPrivacy:
         )
 
 
+class TestAdvancedCollectorPrivacy:
+    @patch("prose.collectors.advanced.Path.home")
+    def test_shell_customization_redacts_user_home(self, mock_home):
+        from prose.collectors.advanced import collect_shell_customization
+
+        home = Path("/Users/private-user")
+        mock_home.return_value = home
+
+        with patch.object(Path, "exists", return_value=False):
+            info = collect_shell_customization()
+
+        assert info["rc_file"] == "~/.zshrc"
+        assert "private-user" not in info["rc_file"]
+
+
 class TestAdvancedCollectorMocked:
     @patch("prose.collectors.advanced.utils.run")
     @patch("prose.collectors.advanced.get_oclp_nvram_version")
