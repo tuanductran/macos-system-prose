@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 from prose import utils
-from prose.collectors.oclp import collect_opencore_patcher
+from prose.collectors.oclp import collect_opencore_patcher  # noqa: F401
 from prose.constants import Timeouts
 from prose.schema import (
     FontInfo,
