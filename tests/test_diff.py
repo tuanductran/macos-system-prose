@@ -49,3 +49,42 @@ def test_format_diff():
     assert "  * key: val1 -> val2" in joined
     assert "  + 3" in joined
     assert "  - 1" in joined
+
+
+def test_diff_reports_supports_arbitrary_json_nesting_without_recursive_casts():
+    old = {
+        "system": {"security": {"sip_enabled": True}},
+        "values": [{"name": "old", "enabled": False}],
+    }
+    new = {
+        "system": {"security": {"sip_enabled": False}},
+        "values": [{"name": "new", "enabled": True}],
+    }
+
+    changes = diff_reports(old, new)
+
+    assert changes["system"]["security"]["sip_enabled"] == {
+        "status": "changed",
+        "old_value": True,
+        "new_value": False,
+    }
+    assert changes["values"] == {
+        "status": "changed",
+        "added": [str(new["values"][0])],
+        "removed": [str(old["values"][0])],
+    }
+
+
+def test_diff_reports_rejects_non_json_leaf_values():
+    class Unsupported:
+        pass
+
+    old = {"value": 1}
+    new = {"value": Unsupported()}
+
+    try:
+        diff_reports(old, new)
+    except TypeError as exc:
+        assert "Unsupported JSON value type" in str(exc)
+    else:
+        raise AssertionError("diff_reports accepted a non-JSON value")

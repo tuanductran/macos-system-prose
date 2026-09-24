@@ -254,6 +254,8 @@ Launch with `macos-prose --tui --live` for real-time monitoring:
 
 ```json
 {
+  "report_schema": "macos-system-prose/system-report",
+  "report_schema_version": 1,
   "timestamp": 1770540883.888627,
   "system": {
     "os": "Darwin",

@@ -51,6 +51,8 @@ from prose.datasets.smbios import SMBIOS_DATABASE
 from prose.diff import diff_reports, format_diff
 from prose.oclp import build_oclp_compatibility
 from prose.schema import (
+    REPORT_SCHEMA,
+    REPORT_SCHEMA_VERSION,
     ApplicationsInfo,
     BatteryInfo,
     CloudInfo,
@@ -373,6 +375,8 @@ async def collect_all(
     # All results are runtime-validated above and guaranteed to be correct types
     # The type:ignore comments document this limitation rather than hide bugs
     return {
+        "report_schema": REPORT_SCHEMA,
+        "report_schema_version": REPORT_SCHEMA_VERSION,
         "timestamp": timestamp,
         "system": system_info,
         "hardware": hardware_info,

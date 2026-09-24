@@ -1,43 +1,40 @@
-"""Module for comparing two SystemReport objects.
+"""Module for comparing two JSON-compatible macOS system reports.
 
-Provides functionality to identify differences between two system snapshots,
-useful for tracking changes over time or across different systems.
+The diff operates on arbitrary nested JSON objects while keeping the recursive
+value domain explicit through the shared JSONValue type.
 """
 
 from __future__ import annotations
 
-from typing import Any, cast
+from collections.abc import Mapping
 
-# NOTE: Any is acceptable here for recursive dictionary comparison.
-# The diff function needs to handle arbitrary nested structures at runtime,
-# making static typing impractical. This is ONE OF ONLY TWO places in the
-# codebase where Any is used (the other is conftest.py for test fixtures).
-from prose.schema import SystemReport
+from prose.schema import JSONValue
+
+
+def _json_value(value: object) -> JSONValue:
+    """Validate and return a value as the project's JSON-compatible value type."""
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+    if isinstance(value, list):
+        return [_json_value(item) for item in value]
+    if isinstance(value, dict):
+        result: dict[str, JSONValue] = {}
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise TypeError(f"JSON object key must be str, got {type(key).__name__}")
+            result[key] = _json_value(item)
+        return result
+    raise TypeError(f"Unsupported JSON value type: {type(value).__name__}")
 
 
 def diff_reports(
-    old: SystemReport,
-    new: SystemReport,
+    old: Mapping[str, object],
+    new: Mapping[str, object],
     prefix: str = "",
-) -> dict[str, Any]:
-    """Recursively compare two dictionaries and return differences.
-
-    Args:
-        old: Old report to compare
-        new: New report to compare
-        prefix: Internal prefix for nested keys (default: "")
-
-    Returns:
-        Dictionary containing changes with status and values
-    """
-    changes: dict[str, Any] = {}
-
-    # Cast TypedDict to regular dict for dynamic key access
-    old_dict = cast(dict[str, Any], old)
-    new_dict = cast(dict[str, Any], new)
-
-    # All keys from both
-    all_keys = set(old_dict.keys()) | set(new_dict.keys())
+) -> dict[str, JSONValue]:
+    """Recursively compare two JSON-compatible mappings and return differences."""
+    changes: dict[str, JSONValue] = {}
+    all_keys = set(old) | set(new)
 
     for key in all_keys:
         if key == "timestamp":
@@ -45,41 +42,49 @@ def diff_reports(
 
         full_key = f"{prefix}.{key}" if prefix else key
 
-        if key not in old_dict:
-            changes[key] = {"status": "added", "new_value": new_dict[key]}
-        elif key not in new_dict:
-            changes[key] = {"status": "removed", "old_value": old_dict[key]}
+        if key not in old:
+            changes[key] = {"status": "added", "new_value": _json_value(new[key])}
+            continue
+
+        if key not in new:
+            changes[key] = {"status": "removed", "old_value": _json_value(old[key])}
+            continue
+
+        old_val = old[key]
+        new_val = new[key]
+
+        if old_val == new_val:
+            continue
+
+        if isinstance(old_val, dict) and isinstance(new_val, dict):
+            sub_changes = diff_reports(old_val, new_val, full_key)
+            if sub_changes:
+                changes[key] = sub_changes
+        elif isinstance(old_val, list) and isinstance(new_val, list):
+            old_set = {str(item) for item in old_val}
+            new_set = {str(item) for item in new_val}
+
+            added = sorted(new_set - old_set)
+            removed = sorted(old_set - new_set)
+
+            if added or removed:
+                changes[key] = {
+                    "status": "changed",
+                    "added": _json_value(added),
+                    "removed": _json_value(removed),
+                }
         else:
-            old_val = old_dict[key]
-            new_val = new_dict[key]
-
-            if old_val == new_val:
-                continue
-
-            if isinstance(old_val, dict) and isinstance(new_val, dict):
-                sub_changes = diff_reports(
-                    cast(SystemReport, old_val), cast(SystemReport, new_val), full_key
-                )
-                if sub_changes:
-                    changes[key] = sub_changes
-            elif isinstance(old_val, list) and isinstance(new_val, list):
-                # Simple list compare for now (added/removed items)
-                old_set = {str(i) for i in old_val}
-                new_set = {str(i) for i in new_val}
-
-                added = list(new_set - old_set)
-                removed = list(old_set - new_set)
-
-                if added or removed:
-                    changes[key] = {"status": "changed", "added": added, "removed": removed}
-            else:
-                changes[key] = {"status": "changed", "old_value": old_val, "new_value": new_val}
+            changes[key] = {
+                "status": "changed",
+                "old_value": _json_value(old_val),
+                "new_value": _json_value(new_val),
+            }
 
     return changes
 
 
-def format_diff(changes: dict[str, Any], indent: int = 0) -> list[str]:
-    """Format the diff dictionary into human-readable lines."""
+def format_diff(changes: Mapping[str, JSONValue], indent: int = 0) -> list[str]:
+    """Format a JSON-compatible diff dictionary into human-readable lines."""
     lines: list[str] = []
     pad = "  " * indent
 
@@ -106,7 +111,6 @@ def format_diff(changes: dict[str, Any], indent: int = 0) -> list[str]:
                     lines.append(f"{pad}* {key}: {val.get('old_value')} -> {val.get('new_value')}")
         elif isinstance(val, dict):
             lines.append(f"{pad}{key}:")
-            # Recursive call
             lines.extend(format_diff(val, indent + 1))
 
     return lines

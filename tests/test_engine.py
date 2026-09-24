@@ -126,6 +126,8 @@ def test_collect_all_structure_old():
             report = await collect_all()
 
             assert "timestamp" in report
+            assert report["report_schema"] == "macos-system-prose/system-report"
+            assert report["report_schema_version"] == 1
             assert "system" in report
             assert "hardware" in report
             assert "disk" in report
