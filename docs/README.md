@@ -9,7 +9,8 @@ Technical documentation for the `macos-system-prose` project.
 | Document | Size | Purpose |
 |----------|------|---------|
 | **[apple-oss-analysis.md](./apple-oss-analysis.md)** | 13 KB | Apple OSS analysis |
-| **[xnu-quick-reference.md](./xnu-quick-reference.md)** | Reference | XNU kernel reference |\n| **[oclp-reference.md](./oclp-reference.md)** | Reference | OpenCore Legacy Patcher compatibility and evidence reference |
+| **[xnu-quick-reference.md](./xnu-quick-reference.md)** | Reference | XNU kernel reference |
+| **[oclp-reference.md](./oclp-reference.md)** | Reference | OpenCore Legacy Patcher compatibility and evidence reference |
 
 ---
 
