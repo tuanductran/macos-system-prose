@@ -212,6 +212,7 @@ def _parse_filevault_status(raw: str) -> bool | None:
         return False
     return None
 
+
 async def _get_marketing_name_from_system() -> str | None:
     """Get the exact marketing name from macOS SystemProfiler preferences.
 
