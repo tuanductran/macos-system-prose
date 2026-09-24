@@ -375,7 +375,9 @@ macos-system-prose/
 └── LICENSE
 ```
 
-The repository intentionally does not keep a separate examples/ tree or a development-only run.py launcher. The packaged CLI is the single supported entry point.\n\nRepository hygiene is enforced through the root `.gitignore`; generated reports, caches, local state and credentials are intentionally excluded from version control.
+The repository intentionally does not keep a separate examples/ tree or a development-only run.py launcher. The packaged CLI is the single supported entry point.
+
+Repository hygiene is enforced through the root `.gitignore`; generated reports, caches, local state and credentials are intentionally excluded from version control.
 
 ## CI/CD
 
