@@ -22,14 +22,14 @@
 
 | Category | Details |
 |----------|---------|
-| **System** | macOS version, SIP/FileVault/Gatekeeper, thermal, memory pressure, Time Machine, EDID display parsing |
+| **System** | macOS version, model/chip architecture (Intel and Apple silicon), SIP/FileVault/Gatekeeper, thermal, memory pressure, Time Machine, EDID display parsing |
 | **Developer** | 8 languages, 10 version managers, 3 SDKs, 5 cloud tools, 5 databases, 8 browsers, 8 terminal emulators, 7 shell frameworks |
 | **Packages** | Homebrew (formula + cask + services), MacPorts, npm, yarn, pnpm, bun, pipx |
 | **Network** | DNS, VPN, firewall and interface facts; identifying network values are redacted by default |
 | **Activity** | Processes, launch agents/daemons, launchd services, login items, open ports, cron jobs |
 | **Security** | TCC permissions, code signing, security tools, antivirus detection |
 | **Hardware** | IORegistry (PCIe, USB, audio codecs), NVRAM variables |
-| **OCLP** | Structured OpenCore/OCLP detection evidence, version signals and root-patch evidence |
+| **OCLP** | Structured OpenCore/OCLP detection evidence, version signals and root-patch evidence; evaluated only when applicable to Intel/x86_64 Macs |
 | **Advanced** | Storage analysis, fonts, shell customization, system preferences, kernel parameters, logs |
 | **TUI** | Interactive terminal monitor with htop-style dashboard (requires `textual`) |
 
@@ -794,7 +794,7 @@ def diff_reports(old: Mapping[str, object], new: Mapping[str, object]) -> dict[s
 7. Run tests (`pytest --cov=src/prose`)
 8. Upload coverage
 
-**Platform**: `macos-latest` (GitHub-hosted runners)
+**Platform**: `macos-latest` (current standard Apple-silicon/arm64 runner) plus an explicit `macos-15-intel` compatibility smoke test. The product must remain useful on both Intel and Apple-silicon Macs; OCLP compatibility is a separate Intel-specific layer.
 
 ### Renovate Configuration
 
