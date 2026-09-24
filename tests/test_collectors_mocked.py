@@ -195,6 +195,14 @@ class TestAppleSiliconHardwareParsing:
             {"SPHardwareDataType": [{"cpu_type": "Intel Core i7"}]}
         ) is None
         assert _extract_chip_type({}) is None
+        from prose.collectors.system import _extract_cpu_label
+
+        assert _extract_cpu_label(
+            {"SPHardwareDataType": [{"chip_type": "Apple M4 Pro"}]}
+        ) == "Apple M4 Pro"
+        assert _extract_cpu_label(
+            {"SPHardwareDataType": [{"cpu_type": "Intel Core i7"}]}
+        ) == "Intel Core i7"
 
 
 class TestEnvironmentCollectorMocked:
