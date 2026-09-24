@@ -26,10 +26,10 @@ Built with **zero runtime dependencies** using only Python 3.9+ standard library
 | Metric | Count | Details |
 |--------|-------|---------|
 | **Production Code** | 7,096 lines | 25 Python modules |
-| **Test Code** | 2,412 lines | 12 test modules |
+| **Test Suite** | CI source of truth | Tests and coverage are reported by GitHub Actions |
 | **Functions** | 105 total | 62 collectors + 43 utilities |
 | **TypedDict Schemas** | 49 | Strict type contracts |
-| **Test Coverage** | 93 tests | 100% pass rate, 64% coverage |
+| **Test Results** | CI source of truth | Pass count and coverage are reported by GitHub Actions |
 | **Data Sections** | 28 | SystemReport output |
 | **Dependencies** | 0 runtime | Pure Python stdlib |
 
@@ -403,9 +403,10 @@ macos-system-prose/
 Automated testing on every push via GitHub Actions:
 
 - **Python Versions**: 3.9, 3.10, 3.11, 3.12, 3.13, 3.14
-- **Platform**: macOS-latest
-- **Checks**: Linting (Ruff), Type checking (MyPy), Tests (Pytest), Coverage
-- **Matrix**: 6 Python versions × full test suite
+- **Platforms**: macOS arm64 plus an explicit macOS Intel compatibility smoke test
+- **Checks**: Linting (Ruff), formatting, type checking (MyPy), tests (Pytest), integration report, and security scan
+- **Coverage**: generated as `coverage.xml` and retained as a GitHub Actions artifact
+- **Matrix**: 6 Python versions × full test suite, plus Intel compatibility
 
 ## Roadmap
 
