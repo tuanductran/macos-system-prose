@@ -23,8 +23,6 @@ from prose.schema import (
 )
 from prose.utils import verbose_log
 
-# Backward-compatible import for callers that used the old module path.
-__all__ = ["collect_opencore_patcher"]
 
 
 def collect_storage_analysis() -> StorageAnalysis:
