@@ -302,9 +302,7 @@ def collect_system_preferences() -> SystemPreferences:
             pass
 
     # Key repeat rate
-    key_repeat_output = utils.run(
-        ["defaults", "read", "-g", "KeyRepeat"], log_errors=False
-    )
+    key_repeat_output = utils.run(["defaults", "read", "-g", "KeyRepeat"], log_errors=False)
     if key_repeat_output:
         try:
             key_repeat_rate = int(key_repeat_output.strip())
@@ -419,11 +417,9 @@ def collect_system_logs() -> SystemLogs:
     )
 
     if warning_output:
-        lines = [
-            line
-            for line in warning_output.strip().split("\n")
-            if "warning" in line.lower()
-        ][-10:]
+        lines = [line for line in warning_output.strip().split("\n") if "warning" in line.lower()][
+            -10:
+        ]
         for line in lines:
             if len(line) > 100:
                 line = line[:97] + "..."
