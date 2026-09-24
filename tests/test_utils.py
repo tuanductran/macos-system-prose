@@ -135,7 +135,7 @@ class TestUtilityFunctions:
         assert args[0] == ["printf", "%s", "value; touch /tmp/should-not-run"]
         assert kwargs["capture_output"] is True
         assert kwargs["text"] is True
-        assert kwargs["shell"] is not True
+        assert kwargs.get("shell", False) is False
 
 
     def test_run_command_timeout(self):
