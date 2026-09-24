@@ -17,6 +17,7 @@ from prose.schema import (
     DiskInfo,
     DisplayInfo,
     HardwareInfo,
+    JSONValue,
     MemoryPressure,
     SystemInfo,
     TimeMachineInfo,
@@ -560,13 +561,22 @@ async def collect_memory_pressure() -> MemoryPressure:
     return pressure
 
 
-def _extract_cpu_label(hw_data: dict[str, list[dict[str, str | int | float]]]) -> str:
+def _extract_cpu_label(hw_data: JSONValue) -> str:
     """Extract Apple silicon chip or Intel CPU label from hardware JSON."""
-    entries = hw_data.get("SPHardwareDataType", [])
-    if not entries:
+    if not isinstance(hw_data, dict):
         return ""
+
+    entries = hw_data.get("SPHardwareDataType")
+    if not isinstance(entries, list) or not entries:
+        return ""
+
     info = entries[0]
-    return str(info.get("chip_type") or info.get("cpu_type") or "")
+    if not isinstance(info, dict):
+        return ""
+
+    chip_type = info.get("chip_type")
+    cpu_type = info.get("cpu_type")
+    return str(chip_type or cpu_type or "")
 
 
 async def collect_hardware_info() -> HardwareInfo:
