@@ -104,9 +104,7 @@ def format_diff(changes: Mapping[str, JSONValue], indent: int = 0) -> list[str]:
                         for item in added_items:
                             lines.append(f"{pad}  + {item}")
                 else:
-                    lines.append(
-                        f"{pad}* {key}: {val.get('old_value')} -> {val.get('new_value')}"
-                    )
+                    lines.append(f"{pad}* {key}: {val.get('old_value')} -> {val.get('new_value')}")
         elif isinstance(val, dict):
             lines.append(f"{pad}{key}:")
             lines.extend(format_diff(val, indent + 1))
