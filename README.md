@@ -168,7 +168,7 @@ macos-prose --mode deep
 
 ```bash
 # Run without manually activating .venv
-uv run python run.py --help
+uv run macos-prose --help
 
 # Run the CLI
 uv run macos-prose --help
@@ -340,63 +340,42 @@ uv run ruff check . && uv run ruff format --check . && uv run mypy src/prose --c
 
 ```text
 macos-system-prose/
-├── src/prose/                    # Production code (6,965 lines)
-│   ├── __init__.py               # Package exports (__version__, __author__)
-│   ├── main.py                   # CLI entry point
-│   ├── engine.py                 # Orchestration & AI prompt generation (4 functions)
-│   ├── schema.py                 # 49 TypedDict schemas for type safety
-│   ├── utils.py                  # Command execution & utilities (11 functions)
-│   ├── exceptions.py             # Custom exception classes (4 types)
-│   ├── iokit.py                  # NVRAM access via subprocess (8 functions)
-│   ├── macos_versions.py         # macOS version detection (6 functions)
-│   ├── diff.py                   # Report comparison (2 functions)
-│   ├── parsers.py                # Text parsing utilities (11 functions)
-│   ├── constants.py              # Application constants & defaults
-│   ├── py.typed                  # PEP 561 type marker
-│   ├── collectors/               # Data collection modules (62 functions)
-│   │   ├── __init__.py           # Collector exports
-│   │   ├── system.py             # OS, hardware, displays, disk (9 functions)
-│   │   ├── network.py            # Network, DNS, firewall, VPN (4 functions)
-│   │   ├── packages.py           # Package managers (9 functions)
-│   │   ├── developer.py          # Languages, SDKs, tools (12 functions)
-│   │   ├── environment.py        # Processes, security, apps (17 functions)
-│   │   ├── advanced.py           # Storage, fonts, OCLP, logs (7 functions)
-│   │   └── ioregistry.py         # IORegistry parsing (4 functions)
-│   ├── datasets/
-│   │   ├── __init__.py           # Dataset exports
-│   │   └── smbios.py             # Legacy Mac detection
-│   └── tui/                      # Terminal UI (optional)
-│       ├── __init__.py           # TUI exports
-│       ├── app.py                # Basic TUI implementation
-│       └── app_enhanced.py       # Enhanced TUI with Apple HIG design
-├── tests/                        # Test suite (2,412 lines, 93 tests)
-│   ├── conftest.py               # Pytest fixtures (5 profiles)
-│   ├── test_smbios.py            # Legacy Mac detection tests
-│   ├── test_utils.py             # Utility tests (25 tests)
-│   ├── test_display.py           # EDID parsing tests (12 tests)
-│   ├── test_ioregistry.py        # IORegistry tests (13 tests)
-│   ├── test_fixtures.py          # Schema validation (22 tests)
-│   ├── test_engine.py            # Engine tests (4 tests)
-│   ├── test_diff.py              # Diff tests (3 tests)
-│   ├── test_exceptions.py        # Exception tests (4 tests)
-│   ├── test_collectors_mocked.py # Collector mocks (7 tests)
-│   └── test_collection.py        # Integration tests (3 tests)
-├── data/                         # Reference data (DO NOT EDIT MANUALLY)
-│   └── macos_versions.json       # 22 macOS versions (10.0 - 15.x)
-├── scripts/                      # Maintenance scripts
-│   └── scrape_macos_versions.py  # Update macOS version data
-├── examples/                     # Example scripts
-│   ├── README.md                 # Examples documentation
-│   └── tui_demo.py               # TUI demo with mock data
-├── .github/workflows/
-│   └── ci.yml                    # CI/CD: Python 3.9-3.14 matrix
-├── run.py                        # Development entry point
-├── pyproject.toml                # PEP 621 metadata, build config
-├── README.md                     # This file
-├── AGENTS.md                     # AI agent instructions
-├── LICENSE                       # MIT License
-└── .gitignore                    # Git ignore rules
+├── src/prose/
+│   ├── main.py                 # CLI entry point
+│   ├── engine.py               # report orchestration and AI prompt rendering
+│   ├── schema.py               # typed report contracts
+│   ├── utils.py                # stable utility facade
+│   ├── collectors/             # focused system data collectors
+│   │   ├── system.py
+│   │   ├── environment.py
+│   │   ├── developer.py
+│   │   ├── network.py
+│   │   ├── packages.py
+│   │   ├── advanced.py
+│   │   ├── oclp.py             # isolated OpenCore/OCLP detection
+│   │   └── ioregistry.py
+│   ├── tui/                    # optional Textual UI
+│   ├── datasets/               # bundled reference data
+│   ├── diff.py                 # report comparison
+│   ├── oclp.py                 # OCLP compatibility model
+│   ├── iokit.py                # IOKit/NVRAM access
+│   ├── macos_versions.py       # macOS version metadata
+│   ├── constants.py
+│   └── exceptions.py
+├── tests/                      # unit, mocked and integration tests
+├── data/                       # versioned reference datasets
+├── docs/                       # maintained project documentation
+├── scripts/                    # explicit maintenance tooling
+├── .github/workflows/          # CI and autofix workflows
+├── pyproject.toml
+├── uv.lock
+├── README.md
+├── AGENTS.md
+├── SECURITY.md
+└── LICENSE
 ```
+
+The repository intentionally does not keep a separate examples/ tree or a development-only run.py launcher. The packaged CLI is the single supported entry point.
 
 ## CI/CD
 
