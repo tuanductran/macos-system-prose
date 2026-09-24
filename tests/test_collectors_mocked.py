@@ -184,6 +184,48 @@ class TestGitConfigPrivacy:
         assert info["aliases"]["safe"] == "log --oneline"
 
 
+class TestCommandExecutionSafety:
+    @patch("prose.collectors.advanced.utils.run", return_value="")
+    def test_preferences_use_direct_commands(self, mock_run):
+        from prose.collectors.advanced import collect_system_preferences
+
+        collect_system_preferences()
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        assert commands
+        assert all(command[0] != "bash" for command in commands)
+
+    @patch("prose.collectors.advanced.utils.run", return_value="")
+    def test_system_logs_use_direct_commands(self, mock_run):
+        from prose.collectors.advanced import collect_system_logs
+
+        collect_system_logs()
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        assert commands
+        assert all(command[0] != "bash" for command in commands)
+
+
+class TestAppleSiliconHardwareParsing:
+    def test_extract_chip_type_from_system_profiler(self):
+        from prose.collectors.system import _extract_chip_type
+
+        assert (
+            _extract_chip_type({"SPHardwareDataType": [{"chip_type": "Apple M4 Pro"}]})
+            == "Apple M4 Pro"
+        )
+        assert _extract_chip_type({"SPHardwareDataType": [{"cpu_type": "Intel Core i7"}]}) is None
+        assert _extract_chip_type({}) is None
+        from prose.collectors.system import _extract_cpu_label
+
+        assert (
+            _extract_cpu_label({"SPHardwareDataType": [{"chip_type": "Apple M4 Pro"}]})
+            == "Apple M4 Pro"
+        )
+        assert (
+            _extract_cpu_label({"SPHardwareDataType": [{"cpu_type": "Intel Core i7"}]})
+            == "Intel Core i7"
+        )
+
+
 class TestEnvironmentCollectorMocked:
     @patch("prose.collectors.environment.run")
     @patch("prose.collectors.environment.collect_launchd_services")
@@ -198,6 +240,49 @@ class TestEnvironmentCollectorMocked:
             info = collect_environment_info()
             assert info["shell"] == "/bin/zsh"
             assert "Python 3.12.1" in info["python_version"]
+
+
+class TestNVRAMCollectorPrivacy:
+    @patch("prose.collectors.environment.verbose_log")
+    @patch("prose.collectors.environment.run")
+    @patch("prose.collectors.environment.read_nvram")
+    @patch("prose.collectors.environment.get_csr_active_config")
+    @patch("prose.collectors.environment.get_boot_args")
+    def test_collect_nvram_does_not_log_raw_values(
+        self, mock_boot_args, mock_csr, mock_read_nvram, mock_run, mock_verbose
+    ):
+        mock_boot_args.return_value = "amfi=0x80 secret-boot-value"
+        mock_csr.return_value = "0x67"
+        mock_read_nvram.side_effect = lambda name, _uuid: {
+            "OCLP-Version": "2.5.1",
+            "OCLP-Settings": "secret-settings-bitmask",
+            "HardwareModel": "J174AP-secret",
+        }.get(name)
+        mock_run.return_value = "boot-args\tsecret-boot-value\n"
+
+        from prose.collectors.environment import collect_nvram_variables
+
+        info = collect_nvram_variables()
+        assert info["boot_args"] == "amfi=0x80 secret-boot-value"
+        assert info["csr_active_config"] == "0x67"
+        assert info["oclp_version"] == "2.5.1"
+        assert info["oclp_settings"] == "secret-settings-bitmask"
+        assert info["hardware_model"] == "J174AP-secret"
+
+        messages = [call.args[0] for call in mock_verbose.call_args_list]
+        assert "NVRAM variable collected: boot-args" in messages
+        assert "NVRAM variable collected: csr-active-config" in messages
+        assert "NVRAM variable collected: OCLP-Version" in messages
+        assert "NVRAM variable collected: OCLP-Settings" in messages
+        assert "NVRAM variable collected: HardwareModel" in messages
+        assert all(
+            secret not in "\n".join(messages)
+            for secret in (
+                "secret-boot-value",
+                "secret-settings-bitmask",
+                "J174AP-secret",
+            )
+        )
 
 
 class TestAdvancedCollectorMocked:

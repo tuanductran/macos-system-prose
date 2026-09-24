@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from pathlib import Path
 
 from prose.constants import Timeouts
@@ -151,8 +152,8 @@ def collect_environment_info() -> EnvironmentInfo:
 
     return {
         "shell": os.environ.get("SHELL"),
-        "python_executable": "/usr/bin/python3",  # System Python, not venv
-        "python_version": run(["/usr/bin/python3", "--version"]),
+        "python_executable": sys.executable,
+        "python_version": run([sys.executable, "--version"]),
         "path_entries": path_entries,
         "path_duplicates": list(set(duplicates)),
         "listening_ports": sorted(ports),
@@ -592,7 +593,7 @@ def collect_nvram_variables() -> NVRAMInfo:
         boot_args = get_boot_args()
         if boot_args:
             nvram_info["boot_args"] = boot_args
-            verbose_log(f"Boot args: {boot_args}")
+            verbose_log("NVRAM variable collected: boot-args")
 
         # Get CSR (System Integrity Protection) configuration
         csr_config = get_csr_active_config()
@@ -602,7 +603,7 @@ def collect_nvram_variables() -> NVRAMInfo:
             # Common values: 0x0 (enabled), 0x3 (disabled), 0x67 (partially disabled)
             if csr_config.lower() not in ["0x0", "0x00"]:
                 nvram_info["sip_disabled"] = True
-            verbose_log(f"CSR config: {csr_config} (SIP disabled: {nvram_info['sip_disabled']})")
+            verbose_log("NVRAM variable collected: csr-active-config")
 
         # Get OpenCore Patcher version from NVRAM
         from prose.iokit import OCLP_NVRAM_UUID
@@ -612,14 +613,14 @@ def collect_nvram_variables() -> NVRAMInfo:
             # Clean null bytes (OCLP returns "2.4.1%00")
             oclp_version = oclp_version.replace("%00", "").replace("\x00", "")
             nvram_info["oclp_version"] = oclp_version
-            verbose_log(f"OCLP version (NVRAM): {oclp_version}")
+            verbose_log("NVRAM variable collected: OCLP-Version")
 
         # Get OCLP settings bitmask
         oclp_settings = read_nvram("OCLP-Settings", OCLP_NVRAM_UUID)
         if oclp_settings:
             oclp_settings = oclp_settings.replace("%00", "").replace("\x00", "").strip()
             nvram_info["oclp_settings"] = oclp_settings
-            verbose_log(f"OCLP settings: {oclp_settings}")
+            verbose_log("NVRAM variable collected: OCLP-Settings")
 
         # Get HardwareModel from Apple Secure Boot NVRAM UUID
         from prose.iokit import SECURE_BOOT_UUID
@@ -629,7 +630,7 @@ def collect_nvram_variables() -> NVRAMInfo:
             hardware_model = hardware_model.replace("%00", "").replace("\x00", "").strip()
             nvram_info["secure_boot_model"] = hardware_model
             nvram_info["hardware_model"] = hardware_model
-            verbose_log(f"HardwareModel: {hardware_model}")
+            verbose_log("NVRAM variable collected: HardwareModel")
 
         # Count total NVRAM variables
         nvram_all = run(["nvram", "-p"], timeout=Timeouts.FAST, log_errors=False)

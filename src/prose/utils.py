@@ -149,7 +149,7 @@ def run(
         )
         if result.returncode != 0:
             if log_errors:
-                verbose_log(f"Command failed: {' '.join(cmd)}\nError: {result.stderr.strip()}")
+                verbose_log(f"Command failed: {' '.join(cmd)}")
             # For commands that write to stderr (like codesign), return stderr even on error
             if capture_stderr and result.stderr:
                 return result.stderr.strip()
@@ -227,7 +227,7 @@ async def async_run_command(
 
         if process.returncode != 0:
             if log_errors:
-                verbose_log(f"Command failed: {' '.join(cmd)}\nError: {stderr_text}")
+                verbose_log(f"Command failed: {' '.join(cmd)}")
             # For commands that write to stderr (like codesign), return stderr even on error
             if capture_stderr and stderr_text:
                 return stderr_text

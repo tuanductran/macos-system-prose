@@ -1,11 +1,12 @@
 {
   "schema_version": 1,
-  "checked_at": "2026-09-22",
+  "checked_at": "2026-09-24",
   "sources": {
     "faq": "https://dortania.github.io/OpenCore-Legacy-Patcher/FAQ",
     "models": "https://dortania.github.io/OpenCore-Legacy-Patcher/MODELS.html",
     "post_install": "https://dortania.github.io/OpenCore-Legacy-Patcher/POST-INSTALL.html",
-    "patch_explain": "https://dortania.github.io/OpenCore-Legacy-Patcher/PATCHEXPLAIN.html"
+    "patch_explain": "https://dortania.github.io/OpenCore-Legacy-Patcher/PATCHEXPLAIN.html",
+    "changelog": "https://github.com/dortania/OpenCore-Legacy-Patcher/blob/main/CHANGELOG.md"
   },
   "target_os": {
     "minimum_major": 11,
@@ -141,5 +142,10 @@
       ],
       "note": "OCLP documents built-in camera root patches; absence of IORegistry evidence is unknown."
     }
+  },
+  "current_upstream_release": {
+    "version": "2.5.1",
+    "checked_at": "2026-09-24",
+    "note": "Upstream changelog currently lists 2.5.1 as the latest release entry. This is source metadata only and does not imply that a given installed Mac should upgrade."
   }
 }

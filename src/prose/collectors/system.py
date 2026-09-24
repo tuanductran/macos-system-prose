@@ -17,6 +17,7 @@ from prose.schema import (
     DiskInfo,
     DisplayInfo,
     HardwareInfo,
+    JSONValue,
     MemoryPressure,
     SystemInfo,
     TimeMachineInfo,
@@ -228,6 +229,15 @@ async def _get_board_id_from_ioreg() -> str | None:
     return None
 
 
+def _extract_chip_type(hw_data: dict[str, list[dict[str, str | int | float]]]) -> str | None:
+    """Extract Apple silicon chip type from SPHardwareDataType JSON."""
+    entries = hw_data.get("SPHardwareDataType", [])
+    if not entries:
+        return None
+    chip = entries[0].get("chip_type")
+    return str(chip) if chip else None
+
+
 async def collect_system_info() -> SystemInfo:
     log("Collecting system information...")
 
@@ -267,6 +277,7 @@ async def collect_system_info() -> SystemInfo:
 
     # Parse hardware data
     model_name, model_id = "Unknown Mac", "Unknown"
+    chip_type = _extract_chip_type(hw_data)
     if hw_data and isinstance(hw_data, dict) and "SPHardwareDataType" in hw_data:
         sp_hard = hw_data["SPHardwareDataType"]
         if isinstance(sp_hard, list) and len(sp_hard) > 0:
@@ -294,6 +305,7 @@ async def collect_system_info() -> SystemInfo:
         board_id=system_board_id,
         kernel=kernel,
         architecture=architecture,
+        chip=chip_type,
         uptime=_parse_uptime(uptime_raw.split("load")[0]),
         uptime_seconds=uptime_seconds,
         boot_time=_parse_boot_time(boot_time_raw),
@@ -549,6 +561,24 @@ async def collect_memory_pressure() -> MemoryPressure:
     return pressure
 
 
+def _extract_cpu_label(hw_data: JSONValue) -> str:
+    """Extract Apple silicon chip or Intel CPU label from hardware JSON."""
+    if not isinstance(hw_data, dict):
+        return ""
+
+    entries = hw_data.get("SPHardwareDataType")
+    if not isinstance(entries, list) or not entries:
+        return ""
+
+    info = entries[0]
+    if not isinstance(info, dict):
+        return ""
+
+    chip_type = info.get("chip_type")
+    cpu_type = info.get("cpu_type")
+    return str(chip_type or cpu_type or "")
+
+
 async def collect_hardware_info() -> HardwareInfo:
     log("Collecting hardware information...")
 
@@ -578,6 +608,14 @@ async def collect_hardware_info() -> HardwareInfo:
         collect_display_info(),
         collect_memory_pressure(),
     )
+
+    # Apple silicon does not expose the Intel machdep.cpu.brand_string; fall back
+    # to the architecture-neutral SPHardwareDataType chip_type/cpu_type fields.
+    if not cpu.strip():
+        hardware_data = await async_get_json_output(
+            ["system_profiler", "SPHardwareDataType", "-json"]
+        )
+        cpu = _extract_cpu_label(hardware_data)
 
     return {
         "cpu": cpu,

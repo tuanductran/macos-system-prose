@@ -126,6 +126,21 @@ class TestUtilityFunctions:
         result = utils.run(["sleep", "10"], timeout=1)
         assert result == ""
 
+    def test_run_command_failure_does_not_log_stderr(self, capsys):
+        """Command stderr must not be exposed through verbose logging."""
+        utils.VERBOSE = True
+        utils.QUIET = False
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 1
+            mock_run.return_value.stderr = "secret-token=abc123"
+            mock_run.return_value.stdout = ""
+            assert utils.run(["example-command"]) == ""
+
+        captured = capsys.readouterr()
+        assert "Command failed: example-command" in captured.out
+        assert "secret-token=abc123" not in captured.out
+        utils.VERBOSE = False
+
     def test_run_command_failure(self):
         """Test run() with failing command."""
         result = utils.run(["false"])

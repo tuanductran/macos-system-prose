@@ -224,7 +224,9 @@ async def collect_all(
     for spec, result in zip(registry, results):
         if isinstance(result, BaseException):
             error_message = f"{type(result).__name__}: {result!s}"
-            status = "timeout" if isinstance(result, TimeoutError) else "error"
+            status: Literal["ok", "error", "timeout", "skipped"] = (
+                "timeout" if isinstance(result, TimeoutError) else "error"
+            )
             collection_errors.append(f"{spec.name}: {error_message}")
             collection_status[spec.name] = {
                 "status": status,
@@ -485,8 +487,9 @@ making remediation advice.
         oclp_context = """
 ## Standard macOS Configuration
 
-This system is running standard macOS without OpenCore Legacy Patcher.
-Standard security recommendations apply (SIP enabled, signed kexts only, etc.).
+This system does not show the collected OpenCore Legacy Patcher signals.
+Do not infer SIP, code-signing, root-patch, or other security state from OCLP non-detection;
+Use the collected security and system fields as the evidence source.
 """
 
     # Generate prompt
