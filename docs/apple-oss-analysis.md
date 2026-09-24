@@ -2,9 +2,10 @@
 
 **Analysis of Apple's open source components for potential integration with macos-system-prose**
 
-Date: 2026-02-08  
+Initial analysis: 2026-02-08  
+Review: 2026-09-24  
 Repository: https://github.com/apple-oss-distributions/distribution-macOS  
-Scope: macOS Catalina (10.15) through Sequoia (15.x)
+Scope: Apple OSS reference material relevant to the project's macOS collectors; current macOS 26/Tahoe is treated as a runtime version in project data, while OCLP support is tracked separately.
 
 ## Executive Summary
 
@@ -398,5 +399,6 @@ If community demand exists:
 
 ---
 
-**Decision**: No immediate integration required. Keep zero-dependency approach.  
-**Review Date**: Q4 2026 (after v1.x is stable)
+**Decision**: Keep Apple OSS as source-backed reference material; do not integrate native frameworks solely to obtain these references.  
+**Review**: 2026-09-24  
+**Next review trigger**: major macOS release, collector behavior change, or Apple OSS layout/API change.
