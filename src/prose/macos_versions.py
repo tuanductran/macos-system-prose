@@ -210,7 +210,6 @@ def get_macos_version_info() -> MacOSVersion:
     }
 
 
-
 __all__ = [
     "VERSION_NAMES",
     "MacOSVersion",
