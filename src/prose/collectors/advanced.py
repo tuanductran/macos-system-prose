@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 
 from prose import utils
+from prose.collectors.oclp import collect_opencore_patcher
 from prose.constants import Timeouts
 from prose.schema import (
     FontInfo,
@@ -21,7 +22,6 @@ from prose.schema import (
     SystemPreferences,
 )
 from prose.utils import verbose_log
-from prose.collectors.oclp import collect_opencore_patcher
 
 
 def collect_storage_analysis() -> StorageAnalysis:
