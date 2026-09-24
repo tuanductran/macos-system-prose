@@ -123,7 +123,7 @@ jobs:
 
       - name: Run full system report
         run: |
-          uv run python run.py --verbose
+          uv run macos-prose --verbose
 
       - name: Verify JSON output
         run: |
