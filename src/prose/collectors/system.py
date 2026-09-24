@@ -172,21 +172,45 @@ def _humanize_connector_type(raw: str) -> str:
     return _CONNECTOR_TYPE_MAP.get(raw, raw)
 
 
-async def _check_sip_enabled() -> bool:
-    """Check SIP status from the first line of csrutil output only.
-
-    csrutil status output can contain 'enabled' in sub-field descriptions
-    even when SIP itself is disabled/unknown. Only the first line is authoritative:
-      "System Integrity Protection status: enabled."
-      "System Integrity Protection status: disabled."
-      "System Integrity Protection status: unknown (Custom Configuration)."
-    """
+async def _check_sip_enabled() -> bool | None:
+    """Return SIP state, preserving unavailable or unknown status as ``None``."""
     output = await async_run_command(["csrutil", "status"])
     if not output:
-        return False
+        return None
     first_line = output.splitlines()[0].lower()
-    return "enabled" in first_line and "unknown" not in first_line
+    if "unknown" in first_line:
+        return None
+    if "status:" not in first_line:
+        return None
+    if "enabled" in first_line:
+        return True
+    if "disabled" in first_line:
+        return False
+    return None
 
+
+def _parse_gatekeeper_status(raw: str) -> bool | None:
+    """Parse ``spctl --status`` without treating missing output as disabled."""
+    text = raw.strip().lower()
+    if not text:
+        return None
+    if "assessments enabled" in text:
+        return True
+    if "assessments disabled" in text:
+        return False
+    return None
+
+
+def _parse_filevault_status(raw: str) -> bool | None:
+    """Parse ``fdesetup status`` without treating missing output as disabled."""
+    text = raw.strip().lower()
+    if not text:
+        return None
+    if "filevault is on" in text:
+        return True
+    if "filevault is off" in text:
+        return False
+    return None
 
 async def _get_marketing_name_from_system() -> str | None:
     """Get the exact marketing name from macOS SystemProfiler preferences.
@@ -311,8 +335,8 @@ async def collect_system_info() -> SystemInfo:
         boot_time=_parse_boot_time(boot_time_raw),
         load_average=_parse_load_average(load_avg_raw),
         sip_enabled=sip_enabled,
-        gatekeeper_enabled="enabled" in gatekeeper_raw.lower(),
-        filevault_enabled="on" in filevault_raw.lower(),
+        gatekeeper_enabled=_parse_gatekeeper_status(gatekeeper_raw),
+        filevault_enabled=_parse_filevault_status(filevault_raw),
         time_machine=time_machine,
     )
 
