@@ -228,6 +228,15 @@ async def _get_board_id_from_ioreg() -> str | None:
     return None
 
 
+def _extract_chip_type(hw_data: dict[str, list[dict[str, str | int | float]]]) -> str | None:
+    """Extract Apple silicon chip type from SPHardwareDataType JSON."""
+    entries = hw_data.get("SPHardwareDataType", [])
+    if not entries:
+        return None
+    chip = entries[0].get("chip_type")
+    return str(chip) if chip else None
+
+
 async def collect_system_info() -> SystemInfo:
     log("Collecting system information...")
 
@@ -267,7 +276,7 @@ async def collect_system_info() -> SystemInfo:
 
     # Parse hardware data
     model_name, model_id = "Unknown Mac", "Unknown"
-    chip_type: str | None = None
+    chip_type = _extract_chip_type(hw_data)
     if hw_data and isinstance(hw_data, dict) and "SPHardwareDataType" in hw_data:
         sp_hard = hw_data["SPHardwareDataType"]
         if isinstance(sp_hard, list) and len(sp_hard) > 0:
@@ -275,9 +284,6 @@ async def collect_system_info() -> SystemInfo:
             if isinstance(info, dict):
                 model_name = str(info.get("machine_name", "Mac"))
                 model_id = str(info.get("machine_model", "Unknown"))
-                raw_chip = info.get("chip_type")
-                if raw_chip:
-                    chip_type = str(raw_chip)
 
     if system_marketing_name:
         verbose_log(f"Model: {system_marketing_name} (source: system, Board: {system_board_id})")
