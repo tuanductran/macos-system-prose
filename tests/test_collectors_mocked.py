@@ -343,7 +343,7 @@ class TestAdvancedCollectorPrivacy:
 
 class TestAdvancedCollectorMocked:
     @patch("prose.collectors.advanced.utils.run")
-    @patch("prose.collectors.advanced.get_oclp_nvram_version")
+    @patch("prose.collectors.oclp.get_oclp_nvram_version")
     def test_collect_opencore_patcher(self, mock_oclp_nvram, mock_run):
         mock_run.return_value = "MacBookAir6,2"
         mock_oclp_nvram.return_value = "2.2.0"
