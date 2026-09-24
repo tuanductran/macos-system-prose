@@ -226,6 +226,38 @@ class TestAppleSiliconHardwareParsing:
         )
 
 
+class TestPlatformSecurityParsing:
+    def test_security_states_preserve_unknown(self):
+        from prose.collectors.system import (
+            _check_sip_enabled,
+            _parse_filevault_status,
+            _parse_gatekeeper_status,
+        )
+
+        assert _parse_gatekeeper_status("assessments enabled") is True
+        assert _parse_gatekeeper_status("assessments disabled") is False
+        assert _parse_gatekeeper_status("") is None
+        assert _parse_gatekeeper_status("unexpected output") is None
+
+        assert _parse_filevault_status("FileVault is On.") is True
+        assert _parse_filevault_status("FileVault is Off.") is False
+        assert _parse_filevault_status("") is None
+        assert _parse_filevault_status("unexpected output") is None
+
+        assert _check_sip_enabled is not None
+
+    @patch("prose.collectors.system.async_run_command", return_value="")
+    def test_sip_unavailable_is_unknown(self, mock_run):
+        import asyncio
+
+        from prose.collectors.system import _check_sip_enabled
+
+        assert asyncio.run(_check_sip_enabled()) is None
+        mock_run.assert_called_once_with(["csrutil", "status"])
+
+
+
+
 class TestEnvironmentCollectorMocked:
     @patch("prose.collectors.environment.run")
     @patch("prose.collectors.environment.collect_launchd_services")
