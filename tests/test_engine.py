@@ -332,23 +332,26 @@ async def _failing_collector() -> object:
 
 
 def test_failure_injection_covers_every_registered_collector():
-    """Every registry entry must degrade to its default and expose failure metadata."""
+    """Every registered collector must degrade without breaking dependent report assembly."""
     from prose.engine import CollectorSpec, _build_collector_registry
 
-    async def run_case(spec: CollectorSpec) -> None:
-        with patch("prose.engine._build_collector_registry", return_value=(spec,)):
+    async def run_case(registry: tuple[CollectorSpec, ...], target: CollectorSpec) -> None:
+        failing = CollectorSpec(name=target.name, run=_failing_collector, default=target.default)
+        patched = tuple(failing if spec.name == target.name else spec for spec in registry)
+        with patch("prose.engine._build_collector_registry", return_value=patched):
             report = await collect_all()
-        assert report[spec.name] == spec.default
-        assert report["collection_status"][spec.name]["status"] == "error"
-        assert report["collection_status"][spec.name]["error"] == (
+        assert report[target.name] == target.default
+        assert report["collection_status"][target.name]["status"] == "error"
+        assert report["collection_status"][target.name]["error"] == (
             "RuntimeError: injected collector failure"
         )
         assert report["collection_errors"] == [
-            f"{spec.name}: RuntimeError: injected collector failure"
+            f"{target.name}: RuntimeError: injected collector failure"
         ]
 
     async def run_all() -> None:
-        for spec in _build_collector_registry(include_sensitive_network=False):
-            await run_case(spec)
+        registry = _build_collector_registry(include_sensitive_network=False)
+        for target in registry:
+            await run_case(registry, target)
 
     asyncio.run(run_all())
