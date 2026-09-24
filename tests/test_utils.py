@@ -137,7 +137,6 @@ class TestUtilityFunctions:
         assert kwargs["text"] is True
         assert kwargs.get("shell", False) is False
 
-
     def test_run_command_timeout(self):
         """Test run() with command timeout."""
         result = utils.run(["sleep", "10"], timeout=1)
