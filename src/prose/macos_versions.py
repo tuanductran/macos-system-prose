@@ -210,23 +210,10 @@ def get_macos_version_info() -> MacOSVersion:
     }
 
 
-def get_all_macos_versions() -> list[dict[str, object]]:
-    """
-    Get list of all known macOS versions with metadata.
-
-    Data is loaded from data/macos_versions.json. To update, run:
-        python3 scripts/scrape_macos_versions.py
-
-    Returns:
-        List of dictionaries with version info
-    """
-    return _VERSIONS_DATA.get("versions", [])  # type: ignore[no-any-return]
-
 
 __all__ = [
     "VERSION_NAMES",
     "MacOSVersion",
-    "get_all_macos_versions",
     "get_macos_version_info",
     "get_version_name_from_number",
     "get_version_name_from_system",
