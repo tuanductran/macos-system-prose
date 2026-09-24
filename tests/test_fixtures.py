@@ -25,6 +25,8 @@ class TestFixtureSchema:
     def test_fixture_top_level_keys(self, fixtures_data):
         """All fixtures should have required top-level keys."""
         required_keys = {
+            "report_schema",
+            "report_schema_version",
             "timestamp",
             "system",
             "hardware",
@@ -195,6 +197,12 @@ class TestFixtureSchema:
 
 class TestFixtureValues:
     """Test that fixture values are reasonable and valid."""
+
+    def test_report_schema_metadata(self, fixtures_data):
+        """Every fixture declares the machine-readable report schema contract."""
+        for fixture in fixtures_data:
+            assert fixture["report_schema"] == "macos-system-prose/system-report"
+            assert fixture["report_schema_version"] == 1
 
     def test_timestamp_is_positive(self, fixtures_data):
         """Timestamp should be a positive number."""
