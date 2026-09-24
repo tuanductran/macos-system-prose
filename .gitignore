@@ -1,256 +1,102 @@
-# ============================================================================
-# PROJECT-SPECIFIC FILES (WORK IN PROGRESS)
-# ============================================================================
-# ============================================================================
-# PYTHON BYTECODE & COMPILED FILES
-# ============================================================================
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
 *.so
 .Python
-
-# ============================================================================
-# PYTHON PACKAGE DISTRIBUTION
-# ============================================================================
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-pip-log.txt
-pip-delete-this-directory.txt
-
-# ============================================================================
-# VIRTUAL ENVIRONMENTS
-# ============================================================================
-venv/
 .venv/
+venv/
 env/
-.env/
 ENV/
-env.bak/
-venv.bak/
-pythonenv*/
+build/
+dist/
+*.egg-info/
+*.egg
+*.whl
+*.tar.gz
 
-# ============================================================================
-# TESTING & COVERAGE
-# ============================================================================
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-coverage.json
-*.cover
-*.py,cover
-.hypothesis/
+# Test, coverage and type-checker caches
 .pytest_cache/
-htmlcov/
-.testmondata
-
-# ============================================================================
-# TYPE CHECKING & LINTING
-# ============================================================================
+.ruff_cache/
 .mypy_cache/
 .dmypy.json
-dmypy.json
-.pyre/
-.pytype/
-.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.cache/
+coverage.xml
 
-# ============================================================================
-# IDEs & EDITORS
-# ============================================================================
-# PyCharm
+# Generated reports and local output
+*_report.json
+*_report.txt
+*_report.md
+*_report.html
+*_report.pdf
+report-*.json
+report-*.txt
+report-*.html
+logs/
+*.log
+*.pid
+*.pid.lock
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+
+# Local project state
+.macos-prose/
+.prose.yml
+.prose.yaml
+prose.local.yml
+data/.cache/
+scripts/.cache/
+scripts/output/
+
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+secrets.json
+*.pem
+*.key
+*.cert
+*.p12
+.pypirc
+id_rsa
+id_rsa.pub
+
+# IDEs and editors
 .idea/
-*.iml
-
-# VS Code
 .vscode/
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# Vim
+*.iml
+*.sublime-project
+*.sublime-workspace
 *.swp
 *.swo
 *~
 .netrwhist
 
-# Emacs
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-
-# Sublime Text
-*.sublime-project
-*.sublime-workspace
-
-# Eclipse
-.project
-.pydevproject
-.settings/
-
-# ============================================================================
-# macOS SYSTEM FILES
-# ============================================================================
+# macOS / filesystem metadata
 .DS_Store
-.DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
 .AppleDouble
 .LSOverride
 Icon
+.fseventsd/
+.TemporaryItems/
+.VolumeIcon.icns
 
-# Thumbnails
-ehthumbs.db
-Thumbs.db
-
-# ============================================================================
-# PROJECT OUTPUT FILES (Generated Reports)
-# ============================================================================
-# Default report names
-macos_system_report.json
-macos_system_report.txt
-macos_system_report.md
-macos_system_report.pdf
-
-# Custom report names
-*_report.json
-*_report.txt
-*_report.html
-*_report.md
-*_report.pdf
-*_system_report.*
-report-*.json
-report-*.txt
-report-*.html
-
-# ============================================================================
-# PROJECT SPECIFIC - DOCUMENTATION
-# ============================================================================
-# Ignore ALL files in docs/ by default
-docs/*
-
-# EXCEPT these 3 production-ready files
-!docs/README.md
-!docs/apple-oss-analysis.md
-!docs/xnu-quick-reference.md
-
-# ============================================================================
-# PROJECT SPECIFIC - DATA & DATABASES
-# ============================================================================
-# Historical tracking database (if implemented in v1.3)
-.macos-prose/
-*.db
-*.sqlite
-*.sqlite3
-
-# Local configuration
-.prose.yml
-.prose.yaml
-prose.local.yml
-
-# ============================================================================
-# PROJECT SPECIFIC - SCRIPTS & TOOLS
-# ============================================================================
-# Scraper cache
-data/.cache/
-scripts/.cache/
-
-# Temporary scraper outputs
-data/*_temp.json
-data/*_backup.json
-scripts/output/
-
-# ============================================================================
-# LOGS & TEMPORARY FILES
-# ============================================================================
-*.log
-*.log.*
-logs/
-*.pid
-*.seed
-*.pid.lock
-
-# Temporary files
-*.tmp
-*.temp
-*.bak
-*.orig
-*.rej
-*.swp
-~*
-.#*
-
-# ============================================================================
-# SECURITY & SECRETS
-# ============================================================================
-# Never commit secrets
-.env
-.env.local
-.env.*.local
-secrets.json
-*.pem
-*.key
-*.cert
-*.p12
-id_rsa
-id_rsa.pub
-
-# PyPI credentials
-.pypirc
-
-# ============================================================================
-# CI/CD & DEPLOYMENT
-# ============================================================================
-# GitHub Actions artifacts
-.github/artifacts/
-
-# Build artifacts
-*.whl
-*.tar.gz
-
-# ============================================================================
-# MISCELLANEOUS
-# ============================================================================
-# Jupyter Notebooks
-.ipynb_checkpoints
-*.ipynb
-
-# Archives
+# Archives and local artifacts
 *.zip
 *.tar
 *.gz
 *.bz2
 *.7z
 *.dmg
-
-# Documentation builds (if using Sphinx)
-docs/_build/
-docs/_static/
-docs/_templates/
-
-# macOS Finder metadata
-.fseventsd/
-.TemporaryItems/
-.VolumeIcon.icns
+.ipynb_checkpoints/
