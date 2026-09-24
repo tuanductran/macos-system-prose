@@ -22,7 +22,6 @@ from prose.schema import (
 )
 
 
-
 def collect_storage_analysis() -> StorageAnalysis:
     """Analyze storage usage of key user directories."""
     home = Path.home()
