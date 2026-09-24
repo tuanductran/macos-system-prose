@@ -78,6 +78,8 @@ from prose.schema import (
     SystemLogs,
     SystemPreferences,
     SystemReport,
+    REPORT_SCHEMA,
+    REPORT_SCHEMA_VERSION,
 )
 
 
@@ -373,6 +375,8 @@ async def collect_all(
     # All results are runtime-validated above and guaranteed to be correct types
     # The type:ignore comments document this limitation rather than hide bugs
     return {
+        "report_schema": REPORT_SCHEMA,
+        "report_schema_version": REPORT_SCHEMA_VERSION,
         "timestamp": timestamp,
         "system": system_info,
         "hardware": hardware_info,
