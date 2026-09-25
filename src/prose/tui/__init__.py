@@ -1,13 +1,1 @@
-"""Terminal User Interface for macOS System Prose.
-
-This package provides interactive TUI components built with Textual:
-- app: Basic TUI implementation
-- app_enhanced: Live htop-style TUI implementation
-"""
-
-from __future__ import annotations
-
-from prose.tui.app import run_tui_sync
-
-
-__all__ = ["run_tui_sync"]
+"""Terminal User Interface for macOS System Prose.\n\nThe package exposes the enhanced Textual application as its public TUI API.\nThe legacy implementation remains available only through the compatibility\nmodule ``prose.tui.app``.\n"""\n\nfrom __future__ import annotations\n\nfrom prose.tui.app_enhanced import run_tui_enhanced, run_tui_enhanced_sync\n\n\nrun_tui = run_tui_enhanced\nrun_tui_sync = run_tui_enhanced_sync\n\n__all__ = [\n    "run_tui",\n    "run_tui_enhanced",\n    "run_tui_enhanced_sync",\n    "run_tui_sync",\n]\n
