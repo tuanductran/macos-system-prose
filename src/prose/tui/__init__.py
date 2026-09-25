@@ -1,1 +1,21 @@
-"""Terminal User Interface for macOS System Prose.\n\nThe package exposes the enhanced Textual application as its public TUI API.\nThe legacy implementation remains available only through the compatibility\nmodule ``prose.tui.app``.\n"""\n\nfrom __future__ import annotations\n\nfrom prose.tui.app_enhanced import run_tui_enhanced, run_tui_enhanced_sync\n\n\nrun_tui = run_tui_enhanced\nrun_tui_sync = run_tui_enhanced_sync\n\n__all__ = [\n    "run_tui",\n    "run_tui_enhanced",\n    "run_tui_enhanced_sync",\n    "run_tui_sync",\n]\n
+"""Terminal User Interface for macOS System Prose.
+
+The package exposes the enhanced Textual application as its public TUI API.
+The legacy implementation remains available only through the compatibility
+module prose.tui.app.
+"""
+
+from __future__ import annotations
+
+from prose.tui.app_enhanced import run_tui_enhanced, run_tui_enhanced_sync
+
+
+run_tui = run_tui_enhanced
+run_tui_sync = run_tui_enhanced_sync
+
+__all__ = [
+    "run_tui",
+    "run_tui_enhanced",
+    "run_tui_enhanced_sync",
+    "run_tui_sync",
+]
