@@ -6,7 +6,7 @@ to ensure type safety and clear data contracts.
 
 from __future__ import annotations
 
-from typing import Literal, TypedDict, Union
+from typing import Literal, TypedDict
 
 
 JSONValue = None | bool | int | float | str | list["JSONValue"] | dict[str, "JSONValue"]
