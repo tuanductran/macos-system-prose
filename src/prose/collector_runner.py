@@ -11,9 +11,6 @@ from typing import Literal
 from prose import utils
 from prose.schema import CollectionStatus
 
-CollectionMode = Literal["fast", "deep"]
-
-
 @dataclass(frozen=True)
 class CollectorSpec:
     """Typed registration for one independent report collector."""
