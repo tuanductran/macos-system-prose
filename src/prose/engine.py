@@ -12,13 +12,13 @@ import time
 from typing import cast
 
 from prose import prompt as _prompt
+from prose import utils
 from prose.collector_runner import (
-    CollectorSpec,
     CollectionMode,
+    CollectorSpec,
     _async_collector,
     run_registered_collectors,
 )
-from prose import utils
 from prose.cli import build_parser
 from prose.collectors.advanced import (
     collect_fonts,
@@ -138,18 +138,6 @@ async def collect_all(
     registry = _build_collector_registry(
         include_sensitive_network=include_sensitive_network, mode=mode
     )
-
-    async def run_collector(spec: CollectorSpec) -> tuple[object, float]:
-        started = time.perf_counter()
-        try:
-            result = await asyncio.wait_for(spec.run(), timeout=spec.timeout_seconds)
-        except TimeoutError as exc:
-            duration_ms = (time.perf_counter() - started) * 1000
-            raise CollectorTimeoutError(
-                f"collector exceeded {spec.timeout_seconds:g}s timeout",
-                duration_ms,
-            ) from exc
-        return result, (time.perf_counter() - started) * 1000
 
     deep_registry = (
         _build_collector_registry(
