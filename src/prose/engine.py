@@ -7,6 +7,7 @@ the final system report in both JSON and AI-optimized text formats.
 from __future__ import annotations
 
 import argparse
+import json
 import asyncio
 import sys
 import time
