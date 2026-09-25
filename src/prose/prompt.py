@@ -160,4 +160,3 @@ The following JSON object contains the complete system state snapshot.
 """
 
     return prompt.strip()
-
