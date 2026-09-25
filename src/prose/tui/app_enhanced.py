@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import ClassVar, cast
 
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
@@ -31,25 +31,6 @@ from textual.widgets import (
 )
 
 from prose.schema import SystemReport
-
-
-if TYPE_CHECKING:
-    from prose.schema import SystemReport
-
-
-# Apple HIG Colors (macOS system colors)
-COLORS = {
-    "blue": "#007AFF",  # Primary action color
-    "green": "#34C759",  # Success, enabled states
-    "red": "#FF3B30",  # Destructive, alerts
-    "orange": "#FF9500",  # Warnings
-    "yellow": "#FFCC00",  # Attention
-    "purple": "#AF52DE",  # Secondary action
-    "pink": "#FF2D55",  # Tertiary action
-    "gray": "#8E8E93",  # Disabled, placeholder
-    "background": "#1C1C1E",  # Dark mode background
-    "surface": "#2C2C2E",  # Card background
-}
 
 
 class StatsCard(Static):
