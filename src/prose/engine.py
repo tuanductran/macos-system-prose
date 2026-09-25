@@ -11,7 +11,6 @@ import sys
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Literal, cast
 
 from prose import utils
@@ -45,10 +44,8 @@ from prose.collectors.oclp import collect_opencore_patcher
 from prose.collectors.packages import collect_package_managers
 from prose.collectors.system import collect_disk_info, collect_hardware_info, collect_system_info
 from prose.datasets.smbios import SMBIOS_DATABASE
-from prose.diff import diff_reports, format_diff
 from prose.oclp import build_oclp_compatibility
-from prose.output import load_json_report, save_json_report, save_text
-from prose.prompt import generate_ai_prompt
+from prose.report_finalization import finalize_report
 from prose.schema import (
     REPORT_SCHEMA,
     REPORT_SCHEMA_VERSION,
@@ -449,43 +446,14 @@ async def async_main() -> int:
         include_sensitive_network=args.include_sensitive_network, mode=args.mode
     )
 
-    try:
-        output_path = save_json_report(report, args.output)
-        utils.log(f"Report saved to: {output_path.resolve()}", "success")
-    except Exception as e:
-        utils.log(f"Failed to save report: {e}", "error")
-        return 1
+    return finalize_report(
+        report,
+        output=args.output,
+        no_prompt=args.no_prompt,
+        diff=args.diff,
+    )
 
-    if not args.no_prompt:
-        prompt_file = Path(args.output).with_suffix(".txt")
-        try:
-            prompt_content = generate_ai_prompt(report)
-            prompt_path = save_text(prompt_content, prompt_file)
-            utils.log(f"AI Prompt saved to: {prompt_path.resolve()}", "success")
-        except Exception as e:
-            utils.log(f"Failed to save AI prompt: {e}", "error")
 
-    if args.diff:
-        diff_path = Path(args.diff)
-        if diff_path.exists():
-            try:
-                old_data = load_json_report(diff_path)
-
-                utils.log(f"Comparing with: {args.diff}", "header")
-                changes = diff_reports(old_data, report)
-                if changes:
-                    diff_lines = format_diff(changes)
-                    for line in diff_lines:
-                        utils.log(line, "info")
-                else:
-                    utils.log("No differences found.", "success")
-            except Exception as e:
-                utils.log(f"Failed to compare reports: {e}", "error")
-        else:
-            utils.log(f"Diff target not found: {args.diff}", "error")
-
-    utils.log("Collection complete.", "success")
-    return 0
 
 
 def main() -> int:
