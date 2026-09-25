@@ -421,8 +421,6 @@ async def async_main() -> int:
     Returns:
         Exit code (0 for success, 1 for error).
     """
-    from prose import __version__
-
     parser = build_parser()
     args = parser.parse_args()
 
