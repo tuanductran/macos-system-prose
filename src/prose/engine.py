@@ -81,6 +81,7 @@ from prose.schema import (
     SystemPreferences,
     SystemReport,
 )
+from prose.tui_dispatch import run_tui_mode
 
 
 CollectionMode = Literal["fast", "deep"]
@@ -432,33 +433,17 @@ async def async_main() -> int:
         utils.log("This tool only supports macOS.", "error")
         return 1
 
-    # TUI mode: launch interactive terminal interface
     if args.tui:
-        try:
-            from prose.tui.app_enhanced import run_tui_enhanced
-        except ImportError:
-            utils.log(
-                "TUI mode requires textual. Install with: uv sync --extra tui",
-                "error",
-            )
-            return 1
-
         utils.log("🚀 Launching Enhanced Terminal UI...", "header")
         if args.live:
             utils.log(f"Live mode enabled (refresh every {args.refresh_interval}s)", "info")
         utils.log("Collecting system data...", "info")
         report = await collect_all()
-        utils.log("✓ Data collected. Starting TUI...", "success")
-
-        try:
-            # Use async version since we're already in an async context
-            await run_tui_enhanced(
-                report, live_mode=args.live, refresh_interval=args.refresh_interval
-            )
-            return 0
-        except Exception as e:
-            utils.log(f"TUI failed: {e}", "error")
-            return 1
+        return await run_tui_mode(
+            report,
+            live_mode=args.live,
+            refresh_interval=args.refresh_interval,
+        )
 
     utils.log(" Starting macOS System Prose Report Collection...", "header")
     report = await collect_all(
