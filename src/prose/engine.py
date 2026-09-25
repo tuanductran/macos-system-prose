@@ -11,7 +11,7 @@ import sys
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Literal, cast
+from typing import Literal, cast, cast
 
 from prose import prompt as _prompt
 from prose import utils
@@ -50,7 +50,11 @@ from prose.report_builder import build_report
 from prose.report_finalization import finalize_report
 from prose.schema import (
     CollectionStatus,
+    HardwareInfo,
+    IORegistryInfo,
+    KernelExtensionsInfo,
     OpenCorePatcherInfo,
+    SystemInfo,
     SystemReport,
 )
 from prose.tui_dispatch import run_tui_mode
@@ -223,6 +227,12 @@ async def collect_all(
                 "timeout_seconds": spec.timeout_seconds,
             }
             collected[spec.name] = value
+
+    # These four typed views remain local because OCLP enrichment depends on them.
+    system_info = cast(SystemInfo, collected["system_info"])
+    hardware_info = cast(HardwareInfo, collected["hardware_info"])
+    kext_info = cast(KernelExtensionsInfo, collected["kext_info"])
+    ioregistry = cast(IORegistryInfo, collected["ioregistry"])
 
     # Collect opencore_patcher with dependency on kext_info
     # This must run after kexts are collected
