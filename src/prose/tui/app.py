@@ -1,1 +1,20 @@
-"""Compatibility wrapper for the consolidated Textual TUI.\n\nThe original basic TUI implementation has been retired. Public imports from\n``prose.tui.app`` continue to resolve to the enhanced application.\n"""\n\nfrom __future__ import annotations\n\nfrom prose.tui.app_enhanced import run_tui_enhanced, run_tui_enhanced_sync\n\n\nrun_tui = run_tui_enhanced\nrun_tui_sync = run_tui_enhanced_sync\n\n__all__ = [\n    "run_tui",\n    "run_tui_enhanced",\n    "run_tui_enhanced_sync",\n    "run_tui_sync",\n]\n
+"""Compatibility wrapper for the consolidated Textual TUI.
+
+The original basic TUI implementation has been retired. Public imports from
+prose.tui.app continue to resolve to the enhanced application.
+"""
+
+from __future__ import annotations
+
+from prose.tui.app_enhanced import run_tui_enhanced, run_tui_enhanced_sync
+
+
+run_tui = run_tui_enhanced
+run_tui_sync = run_tui_enhanced_sync
+
+__all__ = [
+    "run_tui",
+    "run_tui_enhanced",
+    "run_tui_enhanced_sync",
+    "run_tui_sync",
+]
