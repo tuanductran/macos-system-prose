@@ -9,13 +9,16 @@ from __future__ import annotations
 import asyncio
 import sys
 import time
-from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
 from typing import Literal, cast
 
 from prose import prompt as _prompt
 from prose import utils
 from prose.cli import build_parser
+from prose.collector_runner import (
+    CollectorSpec,
+    _async_collector,
+    run_registered_collectors,
+)
 from prose.collectors.advanced import (
     collect_fonts,
     collect_kernel_parameters,
@@ -49,7 +52,6 @@ from prose.oclp import build_oclp_compatibility
 from prose.report_builder import build_report
 from prose.report_finalization import finalize_report
 from prose.schema import (
-    CollectionStatus,
     HardwareInfo,
     IORegistryInfo,
     KernelExtensionsInfo,
@@ -64,33 +66,6 @@ generate_ai_prompt = _prompt.generate_ai_prompt
 
 
 CollectionMode = Literal["fast", "deep"]
-
-
-@dataclass(frozen=True)
-class CollectorSpec:
-    """Typed registration for one independent report collector."""
-
-    name: str
-    run: Callable[[], Awaitable[object]]
-    default: object
-    timeout_seconds: float
-
-
-class CollectorTimeoutError(TimeoutError):
-    """Raised when a collector exceeds its configured execution timeout."""
-
-    def __init__(self, message: str, duration_ms: float) -> None:
-        super().__init__(message)
-        self.duration_ms = duration_ms
-
-
-def _async_collector(collector: Callable[[], object]) -> Callable[[], Awaitable[object]]:
-    """Adapt a synchronous collector to the async collector registry."""
-
-    async def run_collector() -> object:
-        return await asyncio.to_thread(collector)
-
-    return run_collector
 
 
 def _build_collector_registry(
@@ -165,68 +140,18 @@ async def collect_all(
         include_sensitive_network=include_sensitive_network, mode=mode
     )
 
-    async def run_collector(spec: CollectorSpec) -> tuple[object, float]:
-        started = time.perf_counter()
-        try:
-            result = await asyncio.wait_for(spec.run(), timeout=spec.timeout_seconds)
-        except TimeoutError as exc:
-            duration_ms = (time.perf_counter() - started) * 1000
-            raise CollectorTimeoutError(
-                f"collector exceeded {spec.timeout_seconds:g}s timeout",
-                duration_ms,
-            ) from exc
-        return result, (time.perf_counter() - started) * 1000
-
-    results = await asyncio.gather(
-        *(run_collector(spec) for spec in registry),
-        return_exceptions=True,
-    )
-
-    collection_errors: list[str] = []
-    collection_status: dict[str, CollectionStatus] = {}
-    collected: dict[str, object] = {}
-
-    if mode == "fast":
-        deep_registry = _build_collector_registry(
-            include_sensitive_network=include_sensitive_network, mode="deep"
+    deep_registry = (
+        _build_collector_registry(
+            include_sensitive_network=include_sensitive_network,
+            mode="deep",
         )
-        active_names = {spec.name for spec in registry}
-        for spec in deep_registry:
-            if spec.name not in active_names:
-                collection_status[spec.name] = {
-                    "status": "skipped",
-                    "error": None,
-                    "duration_ms": None,
-                    "timeout_seconds": spec.timeout_seconds,
-                }
-                collected[spec.name] = spec.default
-
-    for spec, result in zip(registry, results, strict=False):
-        if isinstance(result, BaseException):
-            error_message = f"{type(result).__name__}: {result!s}"
-            status: Literal["ok", "error", "timeout", "skipped"] = (
-                "timeout" if isinstance(result, TimeoutError) else "error"
-            )
-            collection_errors.append(f"{spec.name}: {error_message}")
-            collection_status[spec.name] = {
-                "status": status,
-                "error": error_message,
-                "duration_ms": round(result.duration_ms, 3)
-                if isinstance(result, CollectorTimeoutError)
-                else None,
-                "timeout_seconds": spec.timeout_seconds,
-            }
-            utils.verbose_log(f"Collector failed: {spec.name}: {error_message}")
-            collected[spec.name] = spec.default
-        else:
-            value, duration_ms = result
-            collection_status[spec.name] = {
-                "status": "ok",
-                "error": None,
-                "duration_ms": round(duration_ms, 3),
-                "timeout_seconds": spec.timeout_seconds,
-            }
-            collected[spec.name] = value
+        if mode == "fast"
+        else None
+    )
+    collected, collection_errors, collection_status = await run_registered_collectors(
+        registry,
+        deep_registry=deep_registry,
+    )
 
     # These four typed views remain local because OCLP enrichment depends on them.
     system_info = cast(SystemInfo, collected["system_info"])
