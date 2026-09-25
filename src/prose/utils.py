@@ -10,8 +10,8 @@ import asyncio
 import json
 import shutil
 import subprocess
-from pathlib import Path
 from collections.abc import Callable
+from pathlib import Path
 
 
 VERBOSE = False
