@@ -7,6 +7,7 @@ from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from prose.engine import collect_all, generate_ai_prompt
+from prose.prompt import generate_ai_prompt as generate_ai_prompt_from_prompt
 
 
 async def async_test_collect_all_structure():
@@ -136,6 +137,11 @@ def test_collect_all_structure_old():
             assert "opencore_patcher" in report
 
     asyncio.run(run_test())
+
+
+def test_generate_ai_prompt_is_reexported_by_engine() -> None:
+    """Keep the historical engine import path as a compatibility re-export."""
+    assert generate_ai_prompt is generate_ai_prompt_from_prompt
 
 
 def test_generate_ai_prompt_without_oclp():
