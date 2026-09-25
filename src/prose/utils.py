@@ -11,7 +11,7 @@ import json
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Callable
+from collections.abc import Callable
 
 
 VERBOSE = False
@@ -207,7 +207,7 @@ async def async_run_command(
                 process.communicate(),
                 timeout=timeout,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             try:
                 process.kill()
                 await process.wait()
