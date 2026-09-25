@@ -6,9 +6,11 @@ import asyncio
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from typing import Literal
 
 from prose import utils
 from prose.schema import CollectionStatus
+
 
 @dataclass(frozen=True)
 class CollectorSpec:
