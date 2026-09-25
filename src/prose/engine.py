@@ -7,7 +7,6 @@ the final system report in both JSON and AI-optimized text formats.
 from __future__ import annotations
 
 import asyncio
-import json
 import sys
 import time
 from collections.abc import Awaitable, Callable
