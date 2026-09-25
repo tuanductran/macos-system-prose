@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import cast
 
+from prose.oclp import OCLPCompatibilityInfo
 from prose.schema import (
     ApplicationsInfo,
     BatteryInfo,
@@ -44,7 +45,7 @@ def build_report(
     collection_errors: list[str],
     collection_status: dict[str, CollectionStatus],
     opencore_patcher: OpenCorePatcherInfo,
-    oclp_compatibility: object,
+    oclp_compatibility: OCLPCompatibilityInfo,
 ) -> SystemReport:
     """Assemble collected values and derived metadata into the public report."""
     system_info = cast(SystemInfo, collected["system_info"])
