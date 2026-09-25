@@ -434,6 +434,10 @@ async def async_main() -> int:
         return 1
 
     if args.tui:
+        utils.log("🚀 Launching Enhanced Terminal UI...", "header")
+        if args.live:
+            utils.log(f"Live mode enabled (refresh every {args.refresh_interval}s)", "info")
+        utils.log("Collecting system data...", "info")
         report = await collect_all()
         return await run_tui_mode(
             report,
