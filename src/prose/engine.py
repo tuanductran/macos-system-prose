@@ -50,35 +50,6 @@ from prose.oclp import build_oclp_compatibility
 from prose.output import load_json_report, save_json_report, save_text
 from prose.prompt import generate_ai_prompt
 from prose.schema import (
-    REPORT_SCHEMA,
-    REPORT_SCHEMA_VERSION,
-    ApplicationsInfo,
-    BatteryInfo,
-    CloudInfo,
-    CollectionStatus,
-    CronInfo,
-    DeveloperToolsInfo,
-    DiagnosticsInfo,
-    DiskInfo,
-    EnvironmentInfo,
-    FontInfo,
-    HardwareInfo,
-    IORegistryInfo,
-    KernelExtensionsInfo,
-    KernelParameters,
-    LaunchItems,
-    NetworkInfo,
-    NVRAMInfo,
-    OpenCorePatcherInfo,
-    PackageManagers,
-    ProcessInfo,
-    SecurityInfo,
-    ShellCustomization,
-    StorageAnalysis,
-    SystemInfo,
-    SystemLogs,
-    SystemPreferences,
-    SystemReport,
 )
 from prose.tui_dispatch import run_tui_mode
 
@@ -248,168 +219,14 @@ async def collect_all(
             }
             collected[spec.name] = value
 
-    # The registry above guarantees these keys exist; casts document each report field.
-    system_info = cast(SystemInfo, collected["system_info"])
-    hardware_info = cast(HardwareInfo, collected["hardware_info"])
-    disk_info = cast(DiskInfo, collected["disk_info"])
-    top_processes = cast(list[ProcessInfo], collected["top_processes"])
-    startup = cast(LaunchItems, collected["startup"])
-    login_items = cast(list[str], collected["login_items"])
-    package_managers = cast(PackageManagers, collected["package_managers"])
-    developer_tools = cast(DeveloperToolsInfo, collected["developer_tools"])
-    kext_info = cast(KernelExtensionsInfo, collected["kext_info"])
-    applications = cast(ApplicationsInfo, collected["applications"])
-    environment = cast(EnvironmentInfo, collected["environment"])
-    network = cast(NetworkInfo, collected["network"])
-    battery = cast(BatteryInfo, collected["battery"])
-    cron = cast(CronInfo, collected["cron"])
-    diagnostics = cast(DiagnosticsInfo, collected["diagnostics"])
-    security = cast(SecurityInfo, collected["security"])
-    cloud = cast(CloudInfo, collected["cloud"])
-    nvram = cast(NVRAMInfo, collected["nvram"])
-    storage_analysis = cast(StorageAnalysis, collected["storage_analysis"])
-    fonts = cast(FontInfo, collected["fonts"])
-    shell_customization = cast(ShellCustomization, collected["shell_customization"])
-    system_preferences = cast(SystemPreferences, collected["system_preferences"])
-    kernel_params = cast(KernelParameters, collected["kernel_params"])
-    system_logs = cast(SystemLogs, collected["system_logs"])
-    ioregistry = cast(IORegistryInfo, collected["ioregistry"])
-
-    # Collect opencore_patcher with dependency on kext_info
-    # This must run after kexts are collected
-    # kext_info is guaranteed to be a dict (KernelExtensionsInfo) after exception handling
-    opencore_started = time.perf_counter()
-    opencore_timeout = 60.0
-    try:
-        third_party_kexts = kext_info.get("third_party_kexts", [])
-        opencore_patcher = await asyncio.wait_for(
-            asyncio.to_thread(
-                collect_opencore_patcher,
-                third_party_kexts,
-            ),
-            timeout=opencore_timeout,
-        )
-    except TimeoutError:
-        duration_ms = (time.perf_counter() - opencore_started) * 1000
-        error_message = f"TimeoutError: collector exceeded {opencore_timeout:g}s timeout"
-        collection_errors.append(f"opencore_patcher: {error_message}")
-        collection_status["opencore_patcher"] = {
-            "status": "timeout",
-            "error": error_message,
-            "duration_ms": round(duration_ms, 3),
-            "timeout_seconds": opencore_timeout,
-        }
-        utils.verbose_log(f"Collector failed: opencore_patcher: {error_message}")
-        opencore_patcher = OpenCorePatcherInfo(
-            detected=False,
-            detection_confidence="none",
-            detection_signals=[],
-            version=None,
-            nvram_version=None,
-            opencore_version=None,
-            unsupported_os_detected=False,
-            root_patch_marker_detected=False,
-            loaded_kexts=[],
-            patched_frameworks=[],
-            amfi_configuration=None,
-            boot_args=None,
-        )
-    except Exception as e:
-        duration_ms = (time.perf_counter() - opencore_started) * 1000
-        error_msg = f"opencore_patcher: {type(e).__name__} - {e!s}"
-        collection_errors.append(error_msg)
-        collection_status["opencore_patcher"] = {
-            "status": "error",
-            "error": f"{type(e).__name__}: {e!s}",
-            "duration_ms": round(duration_ms, 3),
-            "timeout_seconds": opencore_timeout,
-        }
-        utils.verbose_log(f"Collector failed: {error_msg}")
-        opencore_patcher = OpenCorePatcherInfo(
-            detected=False,
-            detection_confidence="none",
-            detection_signals=[],
-            version=None,
-            nvram_version=None,
-            opencore_version=None,
-            unsupported_os_detected=False,
-            root_patch_marker_detected=False,
-            loaded_kexts=[],
-            patched_frameworks=[],
-            amfi_configuration=None,
-            boot_args=None,
-        )
-    else:
-        duration_ms = (time.perf_counter() - opencore_started) * 1000
-        collection_status["opencore_patcher"] = {
-            "status": "ok",
-            "error": None,
-            "duration_ms": round(duration_ms, 3),
-            "timeout_seconds": opencore_timeout,
-        }
-
-    system_identifier = str(system_info.get("model_identifier", ""))
-    smbios_data = SMBIOS_DATABASE.get(system_identifier)
-    raw_gpu_models = hardware_info.get("gpu", [])
-    gpu_models = (
-        [str(model) for model in raw_gpu_models] if isinstance(raw_gpu_models, list) else []
+    return build_report(
+        timestamp=timestamp,
+        collected=collected,
+        collection_errors=collection_errors,
+        collection_status=collection_status,
+        opencore_patcher=opencore_patcher,
+        oclp_compatibility=oclp_compatibility,
     )
-    oclp_model_supported = bool(smbios_data) and system_info.get("architecture") == "x86_64"
-    oclp_compatibility = build_oclp_compatibility(
-        model_identifier=system_identifier,
-        architecture=str(system_info.get("architecture", "")),
-        current_macos_version=str(system_info.get("macos_version", "")),
-        gpu_models=gpu_models,
-        max_os_supported=smbios_data.get("max_os_supported") if smbios_data else None,
-        oclp_model_supported=oclp_model_supported,
-        root_patch_marker_detected=bool(opencore_patcher.get("root_patch_marker_detected", False)),
-        root_patch_evidence=bool(opencore_patcher.get("patched_frameworks", [])),
-        hardware_evidence={
-            "wifi": ioregistry["wifi"]["present"],
-            "bluetooth": ioregistry["bluetooth"]["present"],
-            "t1": ioregistry["t1"]["present"],
-            "usb": ioregistry["usb_1_1"]["present"],
-            "camera": ioregistry["camera"]["present"],
-        },
-    )
-
-    # mypy cannot infer types from asyncio.gather with return_exceptions=True
-    # All results are runtime-validated above and guaranteed to be correct types
-    # The type:ignore comments document this limitation rather than hide bugs
-    return {
-        "report_schema": REPORT_SCHEMA,
-        "report_schema_version": REPORT_SCHEMA_VERSION,
-        "timestamp": timestamp,
-        "system": system_info,
-        "hardware": hardware_info,
-        "disk": disk_info,
-        "top_processes": top_processes,
-        "startup": startup,
-        "login_items": login_items,
-        "package_managers": package_managers,
-        "developer_tools": developer_tools,
-        "kexts": kext_info,
-        "applications": applications,
-        "environment": environment,
-        "network": network,
-        "battery": battery,
-        "cron": cron,
-        "diagnostics": diagnostics,
-        "security": security,
-        "cloud": cloud,
-        "nvram": nvram,
-        "storage_analysis": storage_analysis,
-        "fonts": fonts,
-        "shell_customization": shell_customization,
-        "opencore_patcher": opencore_patcher,
-        "oclp_compatibility": oclp_compatibility,
-        "system_preferences": system_preferences,
-        "kernel_params": kernel_params,
-        "system_logs": system_logs,
-        "ioregistry": ioregistry,
-        "collection_errors": collection_errors,
-        "collection_status": collection_status,
-    }
 
 
 async def async_main() -> int:
