@@ -328,7 +328,7 @@ ruff format .
 uv run mypy src/prose
 
 # Full CI simulation
-uv run ruff check . && uv run ruff format --check . && uv run mypy src/prose --check-untyped-defs && uv run pytest
+uv run ruff check . && uv run ruff format --check . && uv run mypy src/prose && uv run pytest
 ```
 
 ### Project Structure
