@@ -142,7 +142,7 @@ def _compare_versions(a: str, b: str) -> int:
     """Compare two version strings. Returns >0 if a > b."""
     pa = [int(x) for x in a.split(".")]
     pb = [int(x) for x in b.split(".")]
-    for x, y in zip(pa, pb):
+    for x, y in zip(pa, pb, strict=False):
         if x != y:
             return x - y
     return len(pa) - len(pb)
