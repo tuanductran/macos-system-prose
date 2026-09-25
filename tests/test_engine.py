@@ -364,7 +364,8 @@ async def _slow_collector() -> object:
 
 def test_collector_timeout_and_execution_metadata():
     """A timed-out collector must use its default and expose measured metadata."""
-    from prose.engine import CollectorSpec, _build_collector_registry
+    from prose.collector_runner import CollectorSpec
+    from prose.engine import _build_collector_registry
 
     def _default_collector_factory(default: object):
         async def run_default() -> object:
@@ -440,7 +441,8 @@ def test_fast_mode_skips_expensive_collectors():
 
 def test_fast_mode_reports_skipped_collectors():
     """Fast mode must retain typed defaults and explicit skipped metadata."""
-    from prose.engine import CollectorSpec, _build_collector_registry
+    from prose.collector_runner import CollectorSpec
+    from prose.engine import _build_collector_registry
 
     deep = _build_collector_registry(include_sensitive_network=False, mode="deep")
 
