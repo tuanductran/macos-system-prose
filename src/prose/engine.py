@@ -16,7 +16,8 @@ from collections.abc import Awaitable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Literal, cast
+from collections.abc import Callable
+from typing import Literal, cast
 
 from prose import utils
 from prose.collectors.advanced import (
@@ -189,7 +190,7 @@ async def collect_all(
         started = time.perf_counter()
         try:
             result = await asyncio.wait_for(spec.run(), timeout=spec.timeout_seconds)
-        except asyncio.TimeoutError as exc:
+        except TimeoutError as exc:
             duration_ms = (time.perf_counter() - started) * 1000
             raise CollectorTimeoutError(
                 f"collector exceeded {spec.timeout_seconds:g}s timeout",
@@ -221,7 +222,7 @@ async def collect_all(
                 }
                 collected[spec.name] = spec.default
 
-    for spec, result in zip(registry, results):
+    for spec, result in zip(registry, results, strict=False):
         if isinstance(result, BaseException):
             error_message = f"{type(result).__name__}: {result!s}"
             status: Literal["ok", "error", "timeout", "skipped"] = (
