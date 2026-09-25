@@ -55,7 +55,7 @@ uv run mypy src/prose
 uv run pytest
 ```
 
-The supported Python range is 3.9–3.14. Runtime dependencies remain zero; optional TUI/development dependencies belong in the appropriate extras.
+The supported Python range is 3.11–3.14. Runtime dependencies remain zero; optional TUI/development dependencies belong in the appropriate extras.
 
 ## Code standards
 
