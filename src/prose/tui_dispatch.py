@@ -22,7 +22,6 @@ async def run_tui_mode(
         )
         return 1
 
-    utils.log("🚀 Launching Enhanced Terminal UI...", "header")
     if live_mode:
         utils.log(f"Live mode enabled (refresh every {refresh_interval}s)", "info")
     utils.log("✓ Data collected. Starting TUI...", "success")
