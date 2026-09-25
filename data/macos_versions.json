@@ -25,166 +25,28 @@
     "10.15": "Catalina"
   },
   "versions": [
-    {
-      "major": 27,
-      "version": "27",
-      "name": "Golden Gate",
-      "release_year": 2026,
-      "latest": "27.0"
-    },
-    {
-      "major": 26,
-      "version": "26",
-      "name": "Tahoe",
-      "release_year": 2025,
-      "latest": "26.2"
-    },
-    {
-      "major": 15,
-      "version": "15",
-      "name": "Sequoia",
-      "release_year": 2024,
-      "latest": "15.7.3"
-    },
-    {
-      "major": 14,
-      "version": "14",
-      "name": "Sonoma",
-      "release_year": 2023,
-      "latest": "14.8.3"
-    },
-    {
-      "major": 13,
-      "version": "13",
-      "name": "Ventura",
-      "release_year": 2022,
-      "latest": "13.7.8"
-    },
-    {
-      "major": 12,
-      "version": "12",
-      "name": "Monterey",
-      "release_year": 2021,
-      "latest": "12.7.6"
-    },
-    {
-      "major": 11,
-      "version": "11",
-      "name": "Big Sur",
-      "release_year": 2020,
-      "latest": "11.7.11"
-    },
-    {
-      "major": 10,
-      "version": "10.15",
-      "name": "Catalina",
-      "release_year": 2019,
-      "latest": "10.15.8"
-    },
-    {
-      "major": 10,
-      "version": "10.14",
-      "name": "Mojave",
-      "release_year": 2018,
-      "latest": "10.14.6"
-    },
-    {
-      "major": 10,
-      "version": "10.13",
-      "name": "High Sierra",
-      "release_year": 2017,
-      "latest": "10.13.6"
-    },
-    {
-      "major": 10,
-      "version": "10.12",
-      "name": "Sierra",
-      "release_year": 2016,
-      "latest": "10.12.6"
-    },
-    {
-      "major": 10,
-      "version": "10.11",
-      "name": "El Capitan",
-      "release_year": 2015,
-      "latest": "10.11.0"
-    },
-    {
-      "major": 10,
-      "version": "10.10",
-      "name": "Yosemite",
-      "release_year": 2014,
-      "latest": "10.10.0"
-    },
-    {
-      "major": 10,
-      "version": "10.9",
-      "name": "Mavericks",
-      "release_year": 2013,
-      "latest": "10.9.0"
-    },
-    {
-      "major": 10,
-      "version": "10.8",
-      "name": "Mountain Lion",
-      "release_year": 2012,
-      "latest": "10.8.0"
-    },
-    {
-      "major": 10,
-      "version": "10.7",
-      "name": "Lion",
-      "release_year": 2011,
-      "latest": "10.7.0"
-    },
-    {
-      "major": 10,
-      "version": "10.6",
-      "name": "Snow Leopard",
-      "release_year": 2009,
-      "latest": "10.6.0"
-    },
-    {
-      "major": 10,
-      "version": "10.5",
-      "name": "Leopard",
-      "release_year": 2007,
-      "latest": "10.5.0"
-    },
-    {
-      "major": 10,
-      "version": "10.4",
-      "name": "Tiger",
-      "release_year": 2005,
-      "latest": "10.4.0"
-    },
-    {
-      "major": 10,
-      "version": "10.3",
-      "name": "Panther",
-      "release_year": 2003,
-      "latest": "10.3.0"
-    },
-    {
-      "major": 10,
-      "version": "10.2",
-      "name": "Jaguar",
-      "release_year": 2002,
-      "latest": "10.2.0"
-    },
-    {
-      "major": 10,
-      "version": "10.1",
-      "name": "Puma",
-      "release_year": 2001,
-      "latest": "10.1.0"
-    },
-    {
-      "major": 10,
-      "version": "10.0",
-      "name": "Cheetah",
-      "release_year": 2001,
-      "latest": "10.0.0"
-    }
+    {"major": 27, "version": "27", "name": "Golden Gate", "release_year": 2026, "latest": "27.0"},
+    {"major": 26, "version": "26", "name": "Tahoe", "release_year": 2025, "latest": "26.7"},
+    {"major": 15, "version": "15", "name": "Sequoia", "release_year": 2024, "latest": "15.8"},
+    {"major": 14, "version": "14", "name": "Sonoma", "release_year": 2023, "latest": "14.8.9"},
+    {"major": 13, "version": "13", "name": "Ventura", "release_year": 2022, "latest": "13.7.8"},
+    {"major": 12, "version": "12", "name": "Monterey", "release_year": 2021, "latest": "12.7.6"},
+    {"major": 11, "version": "11", "name": "Big Sur", "release_year": 2020, "latest": "11.7.11"},
+    {"major": 10, "version": "10.15", "name": "Catalina", "release_year": 2019, "latest": "10.15.8"},
+    {"major": 10, "version": "10.14", "name": "Mojave", "release_year": 2018, "latest": "10.14.6"},
+    {"major": 10, "version": "10.13", "name": "High Sierra", "release_year": 2017, "latest": "10.13.6"},
+    {"major": 10, "version": "10.12", "name": "Sierra", "release_year": 2016, "latest": "10.12.6"},
+    {"major": 10, "version": "10.11", "name": "El Capitan", "release_year": 2015, "latest": "10.11.6"},
+    {"major": 10, "version": "10.10", "name": "Yosemite", "release_year": 2014, "latest": "10.10.5"},
+    {"major": 10, "version": "10.9", "name": "Mavericks", "release_year": 2013, "latest": "10.9.5"},
+    {"major": 10, "version": "10.8", "name": "Mountain Lion", "release_year": 2012, "latest": "10.8.5"},
+    {"major": 10, "version": "10.7", "name": "Lion", "release_year": 2011, "latest": "10.7.5"},
+    {"major": 10, "version": "10.6", "name": "Snow Leopard", "release_year": 2009, "latest": "10.6.8"},
+    {"major": 10, "version": "10.5", "name": "Leopard", "release_year": 2007, "latest": "10.5.8"},
+    {"major": 10, "version": "10.4", "name": "Tiger", "release_year": 2005, "latest": "10.4.11"},
+    {"major": 10, "version": "10.3", "name": "Panther", "release_year": 2003, "latest": "10.3.9"},
+    {"major": 10, "version": "10.2", "name": "Jaguar", "release_year": 2002, "latest": "10.2.8"},
+    {"major": 10, "version": "10.1", "name": "Puma", "release_year": 2001, "latest": "10.1.5"},
+    {"major": 10, "version": "10.0", "name": "Cheetah", "release_year": 2001, "latest": "10.0.4"}
   ]
 }

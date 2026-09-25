@@ -169,9 +169,6 @@ macos-prose --mode deep
 ```bash
 # Run without manually activating .venv
 uv run macos-prose --help
-
-# Run the CLI
-uv run macos-prose --help
 ```
 
 ### Python API
@@ -296,9 +293,7 @@ The text output is specifically formatted for AI/LLM analysis with:
 ```bash
 git clone https://github.com/tuanductran/macos-system-prose.git
 cd macos-system-prose
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev,tui]"
+uv sync --all-extras
 ```
 
 ### Testing
@@ -330,10 +325,10 @@ ruff check . --fix
 ruff format .
 
 # Type check with MyPy
-mypy src/prose --check-untyped-defs
+uv run mypy src/prose
 
 # Full CI simulation
-uv run ruff check . && uv run ruff format --check . && uv run mypy src/prose --check-untyped-defs && uv run pytest
+uv run ruff check . && uv run ruff format --check . && uv run mypy src/prose && uv run pytest
 ```
 
 ### Project Structure
@@ -409,7 +404,7 @@ Contributions welcome! Please:
 - **Type Safety**: All functions must have type hints
 - **Testing**: Maintain 100% test pass rate
 - **Linting**: Ruff clean (`ruff check .`)
-- **Type Checking**: MyPy clean (`mypy src/prose`)
+- **Type Checking**: MyPy clean (`uv run mypy src/prose`)
 - **Documentation**: Docstrings for public APIs
 - **Python**: 3.9+ compatible (use `from __future__ import annotations`)
 

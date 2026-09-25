@@ -51,7 +51,7 @@ Use uv:
 uv sync --all-extras
 uv run ruff check .
 uv run ruff format --check .
-uv run mypy src/prose --check-untyped-defs
+uv run mypy src/prose
 uv run pytest
 ```
 

@@ -49,6 +49,7 @@ KNOWN_VERSIONS: dict[str, str] = {
     "14": "Sonoma",
     "15": "Sequoia",
     "26": "Tahoe",
+    "27": "Golden Gate",
 }
 
 # Approximate release years
@@ -75,6 +76,7 @@ RELEASE_YEARS: dict[str, int] = {
     "14": 2023,
     "15": 2024,
     "26": 2025,
+    "27": 2026,
 }
 
 

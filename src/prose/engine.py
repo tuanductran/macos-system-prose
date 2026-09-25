@@ -655,7 +655,7 @@ async def async_main() -> int:
             from prose.tui.app_enhanced import run_tui_enhanced
         except ImportError:
             utils.log(
-                "TUI mode requires textual. Install with: pip install -e '.[tui]'",
+                "TUI mode requires textual. Install with: uv sync --extra tui",
                 "error",
             )
             return 1
