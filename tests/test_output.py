@@ -5,8 +5,17 @@ from __future__ import annotations
 import json
 from typing import cast
 
-from prose.output import save_json_report, save_text
+from prose.output import load_json_report, save_json_report, save_text
 from prose.schema import SystemReport
+
+
+def test_load_json_report_reads_report(tmp_path):
+    output = tmp_path / "report.json"
+    output.write_text('{"report_schema": "test", "timestamp": 1.0}', encoding="utf-8")
+
+    result = load_json_report(output)
+
+    assert result == {"report_schema": "test", "timestamp": 1.0}
 
 
 def test_save_json_report_writes_formatted_report(tmp_path):
