@@ -16,7 +16,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - name: Checkout code
@@ -34,7 +34,7 @@ jobs:
         run: uv lock --check
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --locked --all-extras
 
       - name: Lint with ruff
         run: |
@@ -76,7 +76,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --locked --all-extras
 
       - name: Verify Intel architecture and run tests
         run: |
@@ -99,7 +99,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --locked --all-extras
 
       - name: Verify Apple silicon architecture and run tests
         run: |
@@ -122,7 +122,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --locked
 
       - name: Run full system report
         run: |

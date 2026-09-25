@@ -10,8 +10,8 @@ import asyncio
 import json
 import shutil
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 
 VERBOSE = False
@@ -207,7 +207,7 @@ async def async_run_command(
                 process.communicate(),
                 timeout=timeout,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             try:
                 process.kill()
                 await process.wait()
