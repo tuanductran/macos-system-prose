@@ -17,7 +17,7 @@ def test_save_json_report_writes_formatted_report(tmp_path):
 
     assert result == output
     assert json.loads(output.read_text(encoding="utf-8")) == report
-    assert output.read_text(encoding="utf-8").endswith("}\n")
+    assert output.read_text(encoding="utf-8").endswith("}")
 
 
 def test_save_text_writes_content(tmp_path):
