@@ -11,7 +11,7 @@ import sys
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Literal, cast, cast
+from typing import Literal, cast
 
 from prose import prompt as _prompt
 from prose import utils
