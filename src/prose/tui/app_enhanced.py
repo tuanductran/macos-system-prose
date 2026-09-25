@@ -33,7 +33,6 @@ from textual.widgets import (
 from prose.schema import SystemReport
 
 
-
 class StatsCard(Static):
     """Base card class with Apple HIG styling."""
 
