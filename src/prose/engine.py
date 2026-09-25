@@ -9,17 +9,16 @@ from __future__ import annotations
 import asyncio
 import sys
 import time
-from typing import cast
+from typing import Literal, cast
 
 from prose import prompt as _prompt
 from prose import utils
+from prose.cli import build_parser
 from prose.collector_runner import (
-    CollectionMode,
     CollectorSpec,
     _async_collector,
     run_registered_collectors,
 )
-from prose.cli import build_parser
 from prose.collectors.advanced import (
     collect_fonts,
     collect_kernel_parameters,
@@ -65,6 +64,9 @@ from prose.tui_dispatch import run_tui_mode
 
 
 generate_ai_prompt = _prompt.generate_ai_prompt
+
+
+CollectionMode = Literal["fast", "deep"]
 
 
 def _build_collector_registry(
