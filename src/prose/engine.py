@@ -45,6 +45,7 @@ from prose.collectors.packages import collect_package_managers
 from prose.collectors.system import collect_disk_info, collect_hardware_info, collect_system_info
 from prose.datasets.smbios import SMBIOS_DATABASE
 from prose.oclp import build_oclp_compatibility
+from prose.prompt import generate_ai_prompt
 from prose.report_finalization import finalize_report
 from prose.schema import (
     REPORT_SCHEMA,
