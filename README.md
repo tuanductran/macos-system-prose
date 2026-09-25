@@ -1,13 +1,13 @@
 # macOS System Prose
 
 [![CI/CD](https://github.com/tuanductran/macos-system-prose/workflows/CI%2FCD/badge.svg)](https://github.com/tuanductran/macos-system-prose/actions)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
 A **read-only** macOS introspection tool that collects system facts through specialized collectors and generates structured reports for AI analysis, security auditing, and development-environment inspection.
 
-Built with **zero runtime dependencies** using only Python 3.9+ standard library.
+Built with **zero runtime dependencies** using only Python 3.11+ standard library.
 
 ## Key Features
 
@@ -110,12 +110,12 @@ The AI prompt also avoids blanket SIP advice: OCLP documentation states that SIP
 ### Requirements
 
 - **Platform**: macOS 10.15 Catalina or later
-- **Python**: 3.9 - 3.14
+- **Python**: 3.11 - 3.14
 - **Permissions**: Standard user (no root/sudo)
 
 ### Quick Start
 
-This project uses **uv** for Python environment and dependency management. uv manages the project virtual environment and can install the required Python version automatically. The repository pins Python 3.14 as the local default while CI explicitly tests Python 3.9 through 3.14.
+This project uses **uv** for Python environment and dependency management. uv manages the project virtual environment and can install the required Python version automatically. The repository pins Python 3.14 as the local default while CI explicitly tests Python 3.11 through 3.14.
 
 ```bash
 git clone https://github.com/tuanductran/macos-system-prose.git
@@ -378,11 +378,11 @@ Repository hygiene is enforced through the root `.gitignore`; generated reports,
 
 Automated testing on every push via GitHub Actions:
 
-- **Python Versions**: 3.9, 3.10, 3.11, 3.12, 3.13, 3.14
+- **Python Versions**: 3.11, 3.12, 3.13, 3.14
 - **Platforms**: macOS arm64 plus an explicit macOS Intel compatibility smoke test
 - **Checks**: Linting (Ruff), formatting, type checking (MyPy), tests (Pytest), integration report, and security scan
 - **Coverage**: generated as `coverage.xml` and retained as a GitHub Actions artifact
-- **Matrix**: 6 Python versions × full test suite, plus Intel compatibility
+- **Matrix**: 4 Python versions × full test suite, plus Intel compatibility
 
 ## Roadmap
 
@@ -406,7 +406,7 @@ Contributions welcome! Please:
 - **Linting**: Ruff clean (`ruff check .`)
 - **Type Checking**: MyPy clean (`uv run mypy src/prose`)
 - **Documentation**: Docstrings for public APIs
-- **Python**: 3.9+ compatible (use `from __future__ import annotations`)
+- **Python**: 3.11+ compatible (use `from __future__ import annotations`)
 
 ## License
 
