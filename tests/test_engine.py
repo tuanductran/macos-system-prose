@@ -7,7 +7,6 @@ from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from prose.engine import collect_all, generate_ai_prompt
-from prose.prompt import generate_ai_prompt as generate_ai_prompt_from_prompt
 
 
 async def async_test_collect_all_structure():
