@@ -11,7 +11,7 @@ import sys
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 from prose import prompt as _prompt
 from prose import utils
@@ -223,6 +223,104 @@ async def collect_all(
                 "timeout_seconds": spec.timeout_seconds,
             }
             collected[spec.name] = value
+
+    # Collect opencore_patcher with dependency on kext_info
+    # This must run after kexts are collected
+    # kext_info is guaranteed to be a dict (KernelExtensionsInfo) after exception handling
+    opencore_started = time.perf_counter()
+    opencore_timeout = 60.0
+    try:
+        third_party_kexts = kext_info.get("third_party_kexts", [])
+        opencore_patcher = await asyncio.wait_for(
+            asyncio.to_thread(
+                collect_opencore_patcher,
+                third_party_kexts,
+            ),
+            timeout=opencore_timeout,
+        )
+    except TimeoutError:
+        duration_ms = (time.perf_counter() - opencore_started) * 1000
+        error_message = f"TimeoutError: collector exceeded {opencore_timeout:g}s timeout"
+        collection_errors.append(f"opencore_patcher: {error_message}")
+        collection_status["opencore_patcher"] = {
+            "status": "timeout",
+            "error": error_message,
+            "duration_ms": round(duration_ms, 3),
+            "timeout_seconds": opencore_timeout,
+        }
+        utils.verbose_log(f"Collector failed: opencore_patcher: {error_message}")
+        opencore_patcher = OpenCorePatcherInfo(
+            detected=False,
+            detection_confidence="none",
+            detection_signals=[],
+            version=None,
+            nvram_version=None,
+            opencore_version=None,
+            unsupported_os_detected=False,
+            root_patch_marker_detected=False,
+            loaded_kexts=[],
+            patched_frameworks=[],
+            amfi_configuration=None,
+            boot_args=None,
+        )
+    except Exception as e:
+        duration_ms = (time.perf_counter() - opencore_started) * 1000
+        error_msg = f"opencore_patcher: {type(e).__name__} - {e!s}"
+        collection_errors.append(error_msg)
+        collection_status["opencore_patcher"] = {
+            "status": "error",
+            "error": f"{type(e).__name__}: {e!s}",
+            "duration_ms": round(duration_ms, 3),
+            "timeout_seconds": opencore_timeout,
+        }
+        utils.verbose_log(f"Collector failed: {error_msg}")
+        opencore_patcher = OpenCorePatcherInfo(
+            detected=False,
+            detection_confidence="none",
+            detection_signals=[],
+            version=None,
+            nvram_version=None,
+            opencore_version=None,
+            unsupported_os_detected=False,
+            root_patch_marker_detected=False,
+            loaded_kexts=[],
+            patched_frameworks=[],
+            amfi_configuration=None,
+            boot_args=None,
+        )
+    else:
+        duration_ms = (time.perf_counter() - opencore_started) * 1000
+        collection_status["opencore_patcher"] = {
+            "status": "ok",
+            "error": None,
+            "duration_ms": round(duration_ms, 3),
+            "timeout_seconds": opencore_timeout,
+        }
+
+    system_identifier = str(system_info.get("model_identifier", ""))
+    smbios_data = SMBIOS_DATABASE.get(system_identifier)
+    raw_gpu_models = hardware_info.get("gpu", [])
+    gpu_models = (
+        [str(model) for model in raw_gpu_models] if isinstance(raw_gpu_models, list) else []
+    )
+    oclp_model_supported = bool(smbios_data) and system_info.get("architecture") == "x86_64"
+    oclp_compatibility = build_oclp_compatibility(
+        model_identifier=system_identifier,
+        architecture=str(system_info.get("architecture", "")),
+        current_macos_version=str(system_info.get("macos_version", "")),
+        gpu_models=gpu_models,
+        max_os_supported=smbios_data.get("max_os_supported") if smbios_data else None,
+        oclp_model_supported=oclp_model_supported,
+        root_patch_marker_detected=bool(opencore_patcher.get("root_patch_marker_detected", False)),
+        root_patch_evidence=bool(opencore_patcher.get("patched_frameworks", [])),
+        hardware_evidence={
+            "wifi": ioregistry["wifi"]["present"],
+            "bluetooth": ioregistry["bluetooth"]["present"],
+            "t1": ioregistry["t1"]["present"],
+            "usb": ioregistry["usb_1_1"]["present"],
+            "camera": ioregistry["camera"]["present"],
+        },
+    )
 
     return build_report(
         timestamp=timestamp,
