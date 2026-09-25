@@ -169,9 +169,6 @@ macos-prose --mode deep
 ```bash
 # Run without manually activating .venv
 uv run macos-prose --help
-
-# Run the CLI
-uv run macos-prose --help
 ```
 
 ### Python API
@@ -296,9 +293,7 @@ The text output is specifically formatted for AI/LLM analysis with:
 ```bash
 git clone https://github.com/tuanductran/macos-system-prose.git
 cd macos-system-prose
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev,tui]"
+uv sync --all-extras
 ```
 
 ### Testing
