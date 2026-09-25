@@ -9,7 +9,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import os
 import sys
 import time
 from collections.abc import Awaitable, Callable
@@ -49,6 +48,7 @@ from prose.collectors.system import collect_disk_info, collect_hardware_info, co
 from prose.datasets.smbios import SMBIOS_DATABASE
 from prose.diff import diff_reports, format_diff
 from prose.oclp import build_oclp_compatibility
+from prose.output import save_json_report, save_text
 from prose.prompt import generate_ai_prompt
 from prose.schema import (
     REPORT_SCHEMA,
@@ -529,9 +529,8 @@ async def async_main() -> int:
     )
 
     try:
-        with open(args.output, "w", encoding="utf-8") as f:
-            json.dump(report, f, indent=2)
-        utils.log(f"Report saved to: {os.path.abspath(args.output)}", "success")
+        output_path = save_json_report(report, args.output)
+        utils.log(f"Report saved to: {output_path.resolve()}", "success")
     except Exception as e:
         utils.log(f"Failed to save report: {e}", "error")
         return 1
@@ -540,9 +539,8 @@ async def async_main() -> int:
         prompt_file = Path(args.output).with_suffix(".txt")
         try:
             prompt_content = generate_ai_prompt(report)
-            with open(prompt_file, "w", encoding="utf-8") as f:
-                f.write(prompt_content)
-            utils.log(f"AI Prompt saved to: {os.path.abspath(prompt_file)}", "success")
+            prompt_path = save_text(prompt_content, prompt_file)
+            utils.log(f"AI Prompt saved to: {prompt_path.resolve()}", "success")
         except Exception as e:
             utils.log(f"Failed to save AI prompt: {e}", "error")
 
