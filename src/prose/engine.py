@@ -14,6 +14,7 @@ from typing import cast
 from prose import prompt as _prompt
 from prose.collector_runner import (
     CollectorSpec,
+    CollectionMode,
     _async_collector,
     run_registered_collectors,
 )
