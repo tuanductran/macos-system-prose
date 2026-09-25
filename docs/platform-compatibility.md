@@ -7,7 +7,7 @@
 | macOS 15 | arm64 (Apple silicon) | 3.14 smoke + 3.9–3.14 matrix on `macos-latest` | Full tests / integration |
 | macOS 15 | x86_64 (Intel) | 3.14 smoke | Full test suite |
 
-`macos-latest` is currently an Apple-silicon runner in GitHub-hosted standard runners. The workflow also uses the explicit `macos-15` arm64 label and `macos-15-intel` label so architecture coverage is not inferred solely from `macos-latest`.
+`macos-latest` currently maps to an Apple-silicon runner. The repository keeps `macos-15` and `macos-15-intel` as deterministic compatibility baselines. GitHub also provides `macos-26` and `macos-26-intel`; those are current OS labels but are not yet part of this project's required compatibility baseline.
 
 ## Scope
 
