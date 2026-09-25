@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Literal, TypedDict, Union
 
 
-JSONValue = Union[None, bool, int, float, str, list["JSONValue"], dict[str, "JSONValue"]]
+JSONValue = None | bool | int | float | str | list["JSONValue"] | dict[str, "JSONValue"]
 
 REPORT_SCHEMA = "macos-system-prose/system-report"
 REPORT_SCHEMA_VERSION = 1
