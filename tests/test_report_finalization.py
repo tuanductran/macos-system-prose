@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import cast
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from prose.report_finalization import finalize_report
 from prose.schema import SystemReport
