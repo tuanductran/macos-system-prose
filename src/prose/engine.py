@@ -454,8 +454,6 @@ async def async_main() -> int:
     )
 
 
-
-
 def main() -> int:
     """Synchronous wrapper for the async main entry point.
 
