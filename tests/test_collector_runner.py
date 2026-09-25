@@ -44,7 +44,7 @@ def test_runner_records_timeout() -> None:
 
 def test_runner_records_skipped_collectors() -> None:
     active = (CollectorSpec("active", _ok, {}, 1),)
-    deep = active + (CollectorSpec("skipped", _ok, [], 2),)
+    deep = (*active, CollectorSpec("skipped", _ok, [], 2))
     collected, errors, status = asyncio.run(
         run_registered_collectors(active, deep_registry=deep)
     )
