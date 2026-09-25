@@ -6,7 +6,6 @@ the final system report in both JSON and AI-optimized text formats.
 
 from __future__ import annotations
 
-import argparse
 import asyncio
 import json
 import sys
@@ -17,6 +16,7 @@ from pathlib import Path
 from typing import Literal, cast
 
 from prose import utils
+from prose.cli import build_parser
 from prose.collectors.advanced import (
     collect_fonts,
     collect_kernel_parameters,
@@ -421,71 +421,7 @@ async def async_main() -> int:
     Returns:
         Exit code (0 for success, 1 for error).
     """
-    from prose import __version__
-
-    parser = argparse.ArgumentParser(description="macOS System Prose Collector")
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=f"macos-system-prose {__version__}",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Enable verbose logging output",
-    )
-    parser.add_argument(
-        "-q",
-        "--quiet",
-        action="store_true",
-        help="Suppress all console output",
-    )
-    parser.add_argument(
-        "--include-sensitive-network",
-        action="store_true",
-        help="Opt in to collecting network identity data and public IP (default: redacted)",
-    )
-    parser.add_argument(
-        "--mode",
-        choices=("fast", "deep"),
-        default="deep",
-        help=(
-            "Collection depth: fast skips expensive filesystem/log collectors; "
-            "deep collects all sections"
-        ),
-    )
-    parser.add_argument(
-        "--no-prompt",
-        action="store_true",
-        help="Skip generating AI-optimized text prompt",
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        default="macos_system_report.json",
-        help="Output JSON file path (default: %(default)s)",
-    )
-    parser.add_argument(
-        "--diff",
-        help="Compare current report with a previous JSON report",
-    )
-    parser.add_argument(
-        "--tui",
-        action="store_true",
-        help="Launch interactive terminal UI",
-    )
-    parser.add_argument(
-        "--live",
-        action="store_true",
-        help="Enable live refresh mode in TUI",
-    )
-    parser.add_argument(
-        "--refresh-interval",
-        type=int,
-        default=30,
-        help="Refresh interval in seconds for live TUI mode (default: %(default)s)",
-    )
+    parser = build_parser()
     args = parser.parse_args()
 
     utils.VERBOSE = args.verbose
