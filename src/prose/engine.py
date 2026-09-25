@@ -46,36 +46,15 @@ from prose.collectors.packages import collect_package_managers
 from prose.collectors.system import collect_disk_info, collect_hardware_info, collect_system_info
 from prose.datasets.smbios import SMBIOS_DATABASE
 from prose.oclp import build_oclp_compatibility
+from prose.report_builder import build_report
 from prose.report_finalization import finalize_report
 from prose.schema import (
-    REPORT_SCHEMA,
-    REPORT_SCHEMA_VERSION,
-    ApplicationsInfo,
-    BatteryInfo,
-    CloudInfo,
     CollectionStatus,
-    CronInfo,
-    DeveloperToolsInfo,
-    DiagnosticsInfo,
-    DiskInfo,
-    EnvironmentInfo,
-    FontInfo,
     HardwareInfo,
     IORegistryInfo,
     KernelExtensionsInfo,
-    KernelParameters,
-    LaunchItems,
-    NetworkInfo,
-    NVRAMInfo,
     OpenCorePatcherInfo,
-    PackageManagers,
-    ProcessInfo,
-    SecurityInfo,
-    ShellCustomization,
-    StorageAnalysis,
     SystemInfo,
-    SystemLogs,
-    SystemPreferences,
     SystemReport,
 )
 from prose.tui_dispatch import run_tui_mode
@@ -249,31 +228,10 @@ async def collect_all(
             }
             collected[spec.name] = value
 
-    # The registry above guarantees these keys exist; casts document each report field.
+    # These four typed views remain local because OCLP enrichment depends on them.
     system_info = cast(SystemInfo, collected["system_info"])
     hardware_info = cast(HardwareInfo, collected["hardware_info"])
-    disk_info = cast(DiskInfo, collected["disk_info"])
-    top_processes = cast(list[ProcessInfo], collected["top_processes"])
-    startup = cast(LaunchItems, collected["startup"])
-    login_items = cast(list[str], collected["login_items"])
-    package_managers = cast(PackageManagers, collected["package_managers"])
-    developer_tools = cast(DeveloperToolsInfo, collected["developer_tools"])
     kext_info = cast(KernelExtensionsInfo, collected["kext_info"])
-    applications = cast(ApplicationsInfo, collected["applications"])
-    environment = cast(EnvironmentInfo, collected["environment"])
-    network = cast(NetworkInfo, collected["network"])
-    battery = cast(BatteryInfo, collected["battery"])
-    cron = cast(CronInfo, collected["cron"])
-    diagnostics = cast(DiagnosticsInfo, collected["diagnostics"])
-    security = cast(SecurityInfo, collected["security"])
-    cloud = cast(CloudInfo, collected["cloud"])
-    nvram = cast(NVRAMInfo, collected["nvram"])
-    storage_analysis = cast(StorageAnalysis, collected["storage_analysis"])
-    fonts = cast(FontInfo, collected["fonts"])
-    shell_customization = cast(ShellCustomization, collected["shell_customization"])
-    system_preferences = cast(SystemPreferences, collected["system_preferences"])
-    kernel_params = cast(KernelParameters, collected["kernel_params"])
-    system_logs = cast(SystemLogs, collected["system_logs"])
     ioregistry = cast(IORegistryInfo, collected["ioregistry"])
 
     # Collect opencore_patcher with dependency on kext_info
@@ -374,43 +332,14 @@ async def collect_all(
         },
     )
 
-    # mypy cannot infer types from asyncio.gather with return_exceptions=True
-    # All results are runtime-validated above and guaranteed to be correct types
-    # The type:ignore comments document this limitation rather than hide bugs
-    return {
-        "report_schema": REPORT_SCHEMA,
-        "report_schema_version": REPORT_SCHEMA_VERSION,
-        "timestamp": timestamp,
-        "system": system_info,
-        "hardware": hardware_info,
-        "disk": disk_info,
-        "top_processes": top_processes,
-        "startup": startup,
-        "login_items": login_items,
-        "package_managers": package_managers,
-        "developer_tools": developer_tools,
-        "kexts": kext_info,
-        "applications": applications,
-        "environment": environment,
-        "network": network,
-        "battery": battery,
-        "cron": cron,
-        "diagnostics": diagnostics,
-        "security": security,
-        "cloud": cloud,
-        "nvram": nvram,
-        "storage_analysis": storage_analysis,
-        "fonts": fonts,
-        "shell_customization": shell_customization,
-        "opencore_patcher": opencore_patcher,
-        "oclp_compatibility": oclp_compatibility,
-        "system_preferences": system_preferences,
-        "kernel_params": kernel_params,
-        "system_logs": system_logs,
-        "ioregistry": ioregistry,
-        "collection_errors": collection_errors,
-        "collection_status": collection_status,
-    }
+    return build_report(
+        timestamp=timestamp,
+        collected=collected,
+        collection_errors=collection_errors,
+        collection_status=collection_status,
+        opencore_patcher=opencore_patcher,
+        oclp_compatibility=oclp_compatibility,
+    )
 
 
 async def async_main() -> int:
