@@ -13,6 +13,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Literal, cast
 
+from prose import prompt as _prompt
 from prose import utils
 from prose.cli import build_parser
 from prose.collectors.advanced import (
@@ -45,7 +46,7 @@ from prose.collectors.packages import collect_package_managers
 from prose.collectors.system import collect_disk_info, collect_hardware_info, collect_system_info
 from prose.datasets.smbios import SMBIOS_DATABASE
 from prose.oclp import build_oclp_compatibility
-from prose.prompt import generate_ai_prompt  # noqa: F401
+from prose import prompt as _prompt
 from prose.report_finalization import finalize_report
 from prose.schema import (
     REPORT_SCHEMA,
@@ -80,6 +81,9 @@ from prose.schema import (
 )
 from prose.tui_dispatch import run_tui_mode
 
+
+
+generate_ai_prompt = _prompt.generate_ai_prompt
 
 
 CollectionMode = Literal["fast", "deep"]
