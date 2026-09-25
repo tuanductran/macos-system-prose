@@ -48,7 +48,7 @@ from prose.collectors.system import collect_disk_info, collect_hardware_info, co
 from prose.datasets.smbios import SMBIOS_DATABASE
 from prose.diff import diff_reports, format_diff
 from prose.oclp import build_oclp_compatibility
-from prose.output import save_json_report, save_text
+from prose.output import load_json_report, save_json_report, save_text
 from prose.prompt import generate_ai_prompt
 from prose.schema import (
     REPORT_SCHEMA,
@@ -470,8 +470,7 @@ async def async_main() -> int:
         diff_path = Path(args.diff)
         if diff_path.exists():
             try:
-                with open(diff_path, encoding="utf-8") as f:
-                    old_data = json.load(f)
+                old_data = load_json_report(diff_path)
 
                 utils.log(f"Comparing with: {args.diff}", "header")
                 changes = diff_reports(old_data, report)
