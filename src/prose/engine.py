@@ -12,11 +12,10 @@ import json
 import os
 import sys
 import time
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from collections.abc import Callable
 from typing import Literal, cast
 
 from prose import utils
@@ -290,7 +289,7 @@ async def collect_all(
             ),
             timeout=opencore_timeout,
         )
-    except asyncio.TimeoutError:
+    except TimeoutError:
         duration_ms = (time.perf_counter() - opencore_started) * 1000
         error_message = f"TimeoutError: collector exceeded {opencore_timeout:g}s timeout"
         collection_errors.append(f"opencore_patcher: {error_message}")
