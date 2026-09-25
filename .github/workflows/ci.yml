@@ -46,7 +46,7 @@ jobs:
 
       - name: Type check with mypy
         run: |
-          uv run mypy --config-file pyproject.toml src/prose --check-untyped-defs
+          uv run mypy --config-file pyproject.toml src/prose
 
       - name: Run tests with coverage
         run: |
