@@ -52,7 +52,6 @@ from prose.oclp import build_oclp_compatibility
 from prose.report_builder import build_report
 from prose.report_finalization import finalize_report
 from prose.schema import (
-    CollectionStatus,
     HardwareInfo,
     IORegistryInfo,
     KernelExtensionsInfo,
