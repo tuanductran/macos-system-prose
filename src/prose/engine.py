@@ -423,8 +423,6 @@ async def async_main() -> int:
     """
     from prose import __version__
 
-    from prose import __version__
-
     args = build_parser(__version__).parse_args()
 
     utils.VERBOSE = args.verbose
