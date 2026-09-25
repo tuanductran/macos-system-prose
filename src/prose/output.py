@@ -4,8 +4,16 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import cast
 
 from prose.schema import SystemReport
+
+
+def load_json_report(input_path: str | Path) -> dict[str, object]:
+    """Read a JSON report from disk and return its decoded object."""
+    path = Path(input_path)
+    with path.open(encoding="utf-8") as file:
+        return cast(dict[str, object], json.load(file))
 
 
 def save_json_report(report: SystemReport, output_path: str | Path) -> Path:
