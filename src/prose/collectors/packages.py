@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from concurrent.futures import ThreadPoolExecutor
 
 from prose.constants import Timeouts
 from prose.schema import BrewService, NotInstalled, PackageManagers, PackageVersionInfo
@@ -218,13 +219,37 @@ def collect_homebrew_services() -> list[BrewService]:
 
 
 def collect_package_managers() -> PackageManagers:
-    return {
-        "homebrew": homebrew_info(),
-        "macports": macports_info(),
-        "pipx": pipx_info(),
-        "npm": npm_global_info(),
-        "yarn": yarn_global_info(),
-        "pnpm": pnpm_global_info(),
-        "bun": bun_global_info(),
-        "homebrew_services": collect_homebrew_services(),
+    """Collect info for all supported package managers.
+
+    Each package manager check is independent (its own subprocess calls with
+    their own timeouts) but they used to be run one after another. Homebrew
+    alone can spend up to ``2 * Timeouts.SLOW`` seconds (formula + casks), so
+    running every manager sequentially could add up to well over this
+    collector's overall timeout on a slow disk/older Mac, surfacing as a
+    spurious "package_managers" timeout even though every individual command
+    finished within its own budget. Running the independent checks
+    concurrently bounds the total wall-clock time to roughly the slowest
+    single check instead of the sum of all of them.
+    """
+    checks: dict[str, object] = {
+        "homebrew": homebrew_info,
+        "macports": macports_info,
+        "pipx": pipx_info,
+        "npm": npm_global_info,
+        "yarn": yarn_global_info,
+        "pnpm": pnpm_global_info,
+        "bun": bun_global_info,
+        "homebrew_services": collect_homebrew_services,
     }
+
+    results: dict[str, object] = {}
+    with ThreadPoolExecutor(max_workers=len(checks)) as executor:
+        futures = {name: executor.submit(func) for name, func in checks.items()}
+        for name, future in futures.items():
+            try:
+                results[name] = future.result()
+            except Exception as e:  # noqa: BLE001 - a single manager must not sink the rest
+                verbose_log(f"Failed to collect {name}: {e}")
+                results[name] = NotInstalled(installed=False) if name != "homebrew_services" else []
+
+    return results  # type: ignore[return-value]
