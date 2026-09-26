@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import sys
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -136,6 +137,37 @@ class TestUtilityFunctions:
         assert kwargs["capture_output"] is True
         assert kwargs["text"] is True
         assert kwargs.get("shell", False) is False
+
+    def test_run_disables_corepack_download_prompt(self):
+        """run() must set COREPACK_ENABLE_DOWNLOAD_PROMPT=0 so Corepack-shimmed
+        yarn/pnpm/npm calls don't block waiting for an interactive prompt that
+        our non-tty subprocess can never answer."""
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+            mock_run.return_value.stdout = "ok"
+            mock_run.return_value.stderr = ""
+
+            utils.run(["yarn", "--version"])
+
+        _, kwargs = mock_run.call_args
+        assert kwargs["env"]["COREPACK_ENABLE_DOWNLOAD_PROMPT"] == "0"
+
+    def test_async_run_command_disables_corepack_download_prompt(self):
+        """async_run_command() must set the same env var for the async path."""
+
+        async def _call() -> None:
+            with patch("asyncio.create_subprocess_exec") as mock_exec:
+                process = AsyncMock()
+                process.communicate.return_value = (b"ok", b"")
+                process.returncode = 0
+                mock_exec.return_value = process
+
+                await utils.async_run_command(["pnpm", "--version"])
+
+            _, kwargs = mock_exec.call_args
+            assert kwargs["env"]["COREPACK_ENABLE_DOWNLOAD_PROMPT"] == "0"
+
+        asyncio.run(_call())
 
     def test_run_command_timeout(self):
         """Test run() with command timeout."""

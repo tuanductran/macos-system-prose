@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import shutil
 import subprocess
 from collections.abc import Callable
@@ -16,6 +17,17 @@ from pathlib import Path
 
 VERBOSE = False
 QUIET = False
+
+# Corepack (bundled with modern Node.js) intercepts `yarn`/`pnpm`/`npm` shims
+# and, on first invocation, blocks waiting for an interactive y/n prompt to
+# download the package manager before it will print anything -- even for a
+# read-only call like `--version`. Since our subprocess calls never attach a
+# tty and don't feed stdin, that prompt can never be answered: the shim exits
+# non-zero (or hangs until our timeout), so collectors silently see an empty
+# version string instead of a real one. Setting this disables the prompt so
+# Corepack proceeds non-interactively, matching the read-only, non-interactive
+# nature of every command this tool runs.
+_SUBPROCESS_ENV = {**os.environ, "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0"}
 
 # SECURITY: This tool is strictly read-only.
 # It must NEVER modify system settings, write to system files, or execute destructive commands.
@@ -146,6 +158,7 @@ def run(
             capture_output=True,
             text=True,
             timeout=timeout,
+            env=_SUBPROCESS_ENV,
         )
         if result.returncode != 0:
             if log_errors:
@@ -200,6 +213,7 @@ async def async_run_command(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            env=_SUBPROCESS_ENV,
         )
 
         try:
