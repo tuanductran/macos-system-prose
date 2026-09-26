@@ -335,6 +335,25 @@ def _text(device: HardwareComponentEvidence) -> str:
     )
 
 
+def _is_pcie_network_controller(device: HardwareComponentEvidence) -> bool:
+    """Return True if the device's PCI class code indicates a network controller (0x0002xxxx).
+
+    Broadcom Wi-Fi cards (e.g. BCM4360/BCM43602) appear in IORegistry as ``pci14e4,XXXX``
+    with class code ``0x00028000``.  Their IOName does not contain "wifi" or "airport",
+    so name-token matching alone misses them.  Checking the PCI Network Controller class
+    (major class byte 0x02) is the authoritative, hardware-level discriminator.
+    """
+    class_name = device.get("class_name") or ""
+    if not class_name.startswith("0x"):
+        return False
+    try:
+        class_int = int(class_name, 16)
+        major_class = (class_int >> 16) & 0xFF
+        return major_class == 0x02
+    except ValueError:
+        return False
+
+
 def _build_hardware_evidence(
     pcie_devices: list[PCIeDevice],
     usb_devices: list[USBDevice],
@@ -351,6 +370,7 @@ def _build_hardware_evidence(
             token in _text(device)
             for token in ("wifi", "wi-fi", "airport", "bcm943", "atheros", "wireless")
         )
+        or _is_pcie_network_controller(device)
     ]
     bluetooth = [
         device
