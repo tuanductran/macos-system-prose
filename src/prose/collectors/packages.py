@@ -249,7 +249,7 @@ def collect_package_managers() -> PackageManagers:
         for name, future in futures.items():
             try:
                 results[name] = future.result()
-            except Exception as e:  # noqa: BLE001 - a single manager must not sink the rest
+            except Exception as e:
                 verbose_log(f"Failed to collect {name}: {e}")
                 results[name] = NotInstalled(installed=False) if name != "homebrew_services" else []
 
