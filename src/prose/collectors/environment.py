@@ -566,6 +566,24 @@ def collect_cloud_sync() -> CloudInfo:
     return {"sync_status": sync_info}
 
 
+def _parse_csr_active_config(raw: str) -> int | None:
+    """Parse csr-active-config into an integer, whatever format it arrived in.
+
+    The `nvram` CLI renders this variable's binary payload as percent-encoded
+    bytes, little-endian (e.g. "%03%08%00%00" -> 0x0803), which is what real
+    Macs report. Also accept a plain "0x.." hex string for robustness/tests.
+    """
+    text = raw.strip()
+    try:
+        if "%" in text:
+            byte_strs = [part for part in text.split("%") if part]
+            data = bytes(int(part, 16) for part in byte_strs)
+            return int.from_bytes(data, "little")
+        return int(text, 16) if text.lower().startswith("0x") else int(text)
+    except ValueError:
+        return None
+
+
 def collect_nvram_variables() -> NVRAMInfo:
     """
     Collect NVRAM (Non-Volatile RAM) variables for boot configuration analysis.
@@ -599,10 +617,15 @@ def collect_nvram_variables() -> NVRAMInfo:
         csr_config = get_csr_active_config()
         if csr_config:
             nvram_info["csr_active_config"] = csr_config
-            # SIP is disabled if csr-active-config is non-zero
-            # Common values: 0x0 (enabled), 0x3 (disabled), 0x67 (partially disabled)
-            if csr_config.lower() not in ["0x0", "0x00"]:
-                nvram_info["sip_disabled"] = True
+            # SIP is disabled if csr-active-config is non-zero.
+            # The `nvram` CLI prints this variable's binary data as
+            # percent-encoded bytes (e.g. "%03%08%00%00"), not as a "0x.."
+            # hex string, so a plain string comparison against "0x0"/"0x00"
+            # never matches and previously left sip_disabled stuck at True
+            # for virtually any real system, enabled or not.
+            csr_value = _parse_csr_active_config(csr_config)
+            if csr_value is not None:
+                nvram_info["sip_disabled"] = csr_value != 0
             verbose_log("NVRAM variable collected: csr-active-config")
 
         # Get OpenCore Patcher version from NVRAM
