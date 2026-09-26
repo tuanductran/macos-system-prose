@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from concurrent.futures import ThreadPoolExecutor
+from collections.abc import Callable
+from concurrent.futures import Future, ThreadPoolExecutor
 
 from prose.constants import Timeouts
 from prose.schema import BrewService, NotInstalled, PackageManagers, PackageVersionInfo
@@ -231,20 +232,20 @@ def collect_package_managers() -> PackageManagers:
     concurrently bounds the total wall-clock time to roughly the slowest
     single check instead of the sum of all of them.
     """
-    checks: dict[str, object] = {
-        "homebrew": homebrew_info,
-        "macports": macports_info,
-        "pipx": pipx_info,
-        "npm": npm_global_info,
-        "yarn": yarn_global_info,
-        "pnpm": pnpm_global_info,
-        "bun": bun_global_info,
-        "homebrew_services": collect_homebrew_services,
-    }
+    checks: list[tuple[str, Callable[[], object]]] = [
+        ("homebrew", homebrew_info),
+        ("macports", macports_info),
+        ("pipx", pipx_info),
+        ("npm", npm_global_info),
+        ("yarn", yarn_global_info),
+        ("pnpm", pnpm_global_info),
+        ("bun", bun_global_info),
+        ("homebrew_services", collect_homebrew_services),
+    ]
 
     results: dict[str, object] = {}
     with ThreadPoolExecutor(max_workers=len(checks)) as executor:
-        futures = {name: executor.submit(func) for name, func in checks.items()}
+        futures: dict[str, Future[object]] = {name: executor.submit(func) for name, func in checks}
         for name, future in futures.items():
             try:
                 results[name] = future.result()

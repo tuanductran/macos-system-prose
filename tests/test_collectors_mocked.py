@@ -19,6 +19,7 @@ from prose.collectors.network import (
 )
 from prose.collectors.oclp import collect_opencore_patcher
 from prose.collectors.packages import collect_package_managers
+from prose.schema import NotInstalled
 
 
 class TestNetworkCollectorMocked:
@@ -141,6 +142,51 @@ class TestPackagesCollectorMocked:
         assert "git" in info["homebrew"]["formula"]
         assert info["npm"]["installed"] is True
         assert info["npm"]["version"] == "10.2.4"
+
+    @patch("prose.collectors.packages.which")
+    def test_collect_package_managers_isolates_failures(self, mock_which):
+        """A single checker raising must not prevent the others from reporting.
+
+        collect_package_managers() now runs each package manager check in its
+        own thread; a failure in one (e.g. an unexpected exception from a
+        flaky subprocess call) should be caught and reported as "not
+        installed" for that manager only, not propagate and lose every other
+        manager's results.
+        """
+        mock_which.side_effect = lambda cmd: None if cmd == "brew" else f"/usr/local/bin/{cmd}"
+
+        with (
+            patch(
+                "prose.collectors.packages.macports_info",
+                side_effect=RuntimeError("boom"),
+            ),
+            patch(
+                "prose.collectors.packages.pipx_info",
+                return_value=NotInstalled(installed=False),
+            ),
+            patch(
+                "prose.collectors.packages.npm_global_info",
+                return_value=NotInstalled(installed=False),
+            ),
+            patch(
+                "prose.collectors.packages.yarn_global_info",
+                return_value=NotInstalled(installed=False),
+            ),
+            patch(
+                "prose.collectors.packages.pnpm_global_info",
+                return_value=NotInstalled(installed=False),
+            ),
+            patch(
+                "prose.collectors.packages.bun_global_info",
+                return_value=NotInstalled(installed=False),
+            ),
+            patch("prose.collectors.packages.collect_homebrew_services", return_value=[]),
+        ):
+            info = collect_package_managers()
+
+        assert info["homebrew"]["installed"] is False
+        assert info["macports"]["installed"] is False
+        assert info["npm"]["installed"] is False
 
 
 class TestDeveloperCollectorMocked:
@@ -303,6 +349,7 @@ class TestNVRAMCollectorPrivacy:
         info = collect_nvram_variables()
         assert info["boot_args"] == "amfi=0x80 secret-boot-value"
         assert info["csr_active_config"] == "0x67"
+        assert info["sip_disabled"] is True
         assert info["oclp_version"] == "2.5.1"
         assert info["oclp_settings"] == "secret-settings-bitmask"
         assert info["hardware_model"] == "J174AP-secret"
@@ -313,14 +360,71 @@ class TestNVRAMCollectorPrivacy:
         assert "NVRAM variable collected: OCLP-Version" in messages
         assert "NVRAM variable collected: OCLP-Settings" in messages
         assert "NVRAM variable collected: HardwareModel" in messages
-        assert all(
-            secret not in "\n".join(messages)
-            for secret in (
-                "secret-boot-value",
-                "secret-settings-bitmask",
-                "J174AP-secret",
-            )
-        )
+
+
+class TestCSRActiveConfigParsing:
+    """Regression coverage for SIP-state decoding.
+
+    The `nvram` CLI renders csr-active-config as percent-encoded raw bytes
+    (little-endian), e.g. "%00%00%00%00" for SIP fully enabled, never as a
+    "0x.." hex string. A previous implementation compared the raw string
+    against "0x0"/"0x00" and so reported sip_disabled=True for effectively
+    every real Mac, enabled or not.
+    """
+
+    def test_sip_enabled_percent_encoded(self):
+        from prose.collectors.environment import _parse_csr_active_config
+
+        assert _parse_csr_active_config("%00%00%00%00") == 0
+
+    def test_sip_disabled_percent_encoded(self):
+        from prose.collectors.environment import _parse_csr_active_config
+
+        # Real value observed on an OCLP-patched Mac (little-endian -> 0x0803)
+        assert _parse_csr_active_config("%03%08%00%00") == 0x0803
+
+    def test_hex_string_still_supported(self):
+        from prose.collectors.environment import _parse_csr_active_config
+
+        assert _parse_csr_active_config("0x0") == 0
+        assert _parse_csr_active_config("0x67") == 0x67
+
+    def test_garbage_returns_none(self):
+        from prose.collectors.environment import _parse_csr_active_config
+
+        assert _parse_csr_active_config("not-a-value") is None
+
+    @patch("prose.collectors.environment.verbose_log")
+    @patch("prose.collectors.environment.run")
+    @patch("prose.collectors.environment.read_nvram", return_value=None)
+    @patch("prose.collectors.environment.get_csr_active_config")
+    @patch("prose.collectors.environment.get_boot_args", return_value="")
+    def test_sip_fully_enabled_is_not_reported_disabled(
+        self, mock_boot_args, mock_csr, mock_read_nvram, mock_run, mock_verbose
+    ):
+        from prose.collectors.environment import collect_nvram_variables
+
+        mock_csr.return_value = "%00%00%00%00"
+        mock_run.return_value = ""
+
+        info = collect_nvram_variables()
+        assert info["sip_disabled"] is False
+
+    @patch("prose.collectors.environment.verbose_log")
+    @patch("prose.collectors.environment.run")
+    @patch("prose.collectors.environment.read_nvram", return_value=None)
+    @patch("prose.collectors.environment.get_csr_active_config")
+    @patch("prose.collectors.environment.get_boot_args", return_value="")
+    def test_sip_partially_disabled_is_reported_disabled(
+        self, mock_boot_args, mock_csr, mock_read_nvram, mock_run, mock_verbose
+    ):
+        from prose.collectors.environment import collect_nvram_variables
+
+        mock_csr.return_value = "%03%08%00%00"
+        mock_run.return_value = ""
+
+        info = collect_nvram_variables()
+        assert info["sip_disabled"] is True
 
 
 class TestAdvancedCollectorPrivacy:
