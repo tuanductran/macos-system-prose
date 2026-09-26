@@ -359,6 +359,7 @@ macos-system-prose/
 │   └── exceptions.py
 ├── tests/                      # unit, mocked and integration tests
 ├── data/                       # versioned reference datasets
+├── templates/                  # editable Markdown prose for the AI prompt (prose.prompt)
 ├── docs/                       # maintained project documentation
 ├── scripts/                    # explicit maintenance tooling
 ├── .github/workflows/          # CI and autofix workflows

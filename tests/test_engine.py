@@ -189,6 +189,58 @@ def test_generate_ai_prompt_with_oclp():
     assert "Hardware patch requirements" in prompt
 
 
+def test_generate_ai_prompt_reads_templates_from_disk():
+    """The prose in generated prompts must come from templates/*.md, not
+    hard-coded Python strings, so editing wording doesn't require touching
+    prompt.py. Prove it by editing a template file on disk and checking the
+    edit shows up in the next generated prompt."""
+    import importlib
+
+    from prose import prompt as prompt_module
+
+    template_path = prompt_module._TEMPLATES_DIR / "oclp_standard.md"
+    original = template_path.read_text(encoding="utf-8")
+    marker = "UNIQUE_TEMPLATE_EDIT_MARKER_FOR_TEST"
+    try:
+        template_path.write_text(original + f"\n{marker}\n", encoding="utf-8")
+        prompt_module._load_template.cache_clear()
+
+        from typing import cast
+
+        from prose.schema import SystemReport
+
+        data = cast(
+            SystemReport,
+            {
+                "timestamp": 1738908295.123,
+                "system": {"sip_enabled": True},
+                "opencore_patcher": {"detected": False},
+                "oclp_compatibility": {
+                    "apple_native_supported": True,
+                    "oclp_model_supported": False,
+                    "oclp_os_supported": False,
+                    "oclp_target_os_min": 11,
+                    "oclp_target_os_max": 15,
+                    "root_patch_required": None,
+                    "root_patch_state": "unknown",
+                    "root_patch_domains": [],
+                    "required_packages": [],
+                    "hardware_evidence": {},
+                    "knowledge_schema_version": 1,
+                    "knowledge_checked_at": "2026-09-22",
+                    "knowledge_sources": [],
+                },
+            },
+        )
+
+        prompt = generate_ai_prompt(data)
+        assert marker in prompt
+    finally:
+        template_path.write_text(original, encoding="utf-8")
+        prompt_module._load_template.cache_clear()
+        importlib.reload(prompt_module)
+
+
 def test_collect_all_exception_handling():
     """Test that exceptions are replaced with type-appropriate defaults."""
     patches = {
