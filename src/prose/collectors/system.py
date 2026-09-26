@@ -254,8 +254,19 @@ async def _get_board_id_from_ioreg() -> str | None:
     return None
 
 
-def _extract_chip_type(hw_data: dict[str, list[dict[str, str | int | float]]]) -> str | None:
-    """Extract Apple silicon chip type from SPHardwareDataType JSON."""
+def _extract_chip_type(
+    hw_data: dict[str, list[dict[str, str | int | float]]] | None,
+) -> str | None:
+    """Extract Apple silicon chip type from SPHardwareDataType JSON.
+
+    ``hw_data`` is ``None`` whenever ``system_profiler SPHardwareDataType
+    -json`` fails, times out, or returns output that isn't valid JSON
+    (``async_get_json_output`` returns ``None`` on any of those), so this
+    must tolerate a missing payload instead of crashing the whole
+    system-info collector over one flaky command.
+    """
+    if not hw_data:
+        return None
     entries = hw_data.get("SPHardwareDataType", [])
     if not entries:
         return None
@@ -287,7 +298,7 @@ async def collect_system_info() -> SystemInfo:
     )
 
     # Explicit type assignments to help mypy
-    hw_data = cast("dict[str, list[dict[str, str | int | float]]]", results[0])
+    hw_data = cast("dict[str, list[dict[str, str | int | float]]] | None", results[0])
     system_marketing_name = cast("str | None", results[1])
     system_board_id = cast("str | None", results[2])
     kernel_raw = cast(str, results[3])

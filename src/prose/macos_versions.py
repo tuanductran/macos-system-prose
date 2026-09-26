@@ -50,17 +50,30 @@ def parse_version_string(version: str) -> tuple[int, int, int]:
     Returns:
         Tuple of (major, minor, patch)
 
+    Malformed or missing components (including an empty string, which
+    ``sw_vers -productVersion`` can return if the command fails or times out
+    on a loaded system) fall back to ``0`` instead of raising, so a single
+    unparsable version never takes down the whole system-info collector.
+
     Example:
         >>> parse_version_string("12.7.6")
         (12, 7, 6)
         >>> parse_version_string("10.15.7")
         (10, 15, 7)
+        >>> parse_version_string("")
+        (0, 0, 0)
     """
-    parts = version.split(".")
-    major = int(parts[0]) if len(parts) > 0 else 0
-    minor = int(parts[1]) if len(parts) > 1 else 0
-    patch = int(parts[2]) if len(parts) > 2 else 0
-    return (major, minor, patch)
+    parts = version.split(".") if version else []
+
+    def _part(index: int) -> int:
+        if index >= len(parts):
+            return 0
+        try:
+            return int(parts[index])
+        except ValueError:
+            return 0
+
+    return (_part(0), _part(1), _part(2))
 
 
 def get_version_name_from_number(version: str) -> str:

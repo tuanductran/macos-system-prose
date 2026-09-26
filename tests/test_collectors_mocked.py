@@ -260,6 +260,10 @@ class TestAppleSiliconHardwareParsing:
         )
         assert _extract_chip_type({"SPHardwareDataType": [{"cpu_type": "Intel Core i7"}]}) is None
         assert _extract_chip_type({}) is None
+        # `system_profiler SPHardwareDataType -json` can fail or time out, in
+        # which case async_get_json_output returns None; the collector must
+        # not crash on a missing payload.
+        assert _extract_chip_type(None) is None
         from prose.collectors.system import _extract_cpu_label
 
         assert (
