@@ -149,8 +149,13 @@ class MonitorHeader(Static):
         cores = hard.get("cpu_cores", 8)
         try:
             load_1min = float(load[0])
-            self.cpu_pct = min(100, (load_1min / cores) * 100)
-        except (ValueError, IndexError):
+            # cpu_cores can genuinely be 0 when the underlying `sysctl
+            # hw.ncpu` call fails or times out (see collect_hardware_info),
+            # so `.get("cpu_cores", 8)` doesn't help -- the key is present,
+            # just zero. Guard the division explicitly instead of relying
+            # on a default that only covers the "key missing" case.
+            self.cpu_pct = min(100, (load_1min / cores) * 100) if cores else 0.0
+        except (ValueError, IndexError, ZeroDivisionError):
             self.cpu_pct = 0.0
 
         mem_level = mem_pressure.get("level", "normal")
@@ -158,7 +163,10 @@ class MonitorHeader(Static):
 
         used_gb = disk.get("disk_total_gb", 0) - disk.get("disk_free_gb", 0)
         total_gb = disk.get("disk_total_gb", 1)
-        self.disk_pct = (used_gb / total_gb) * 100
+        # Same issue as cpu_pct above: disk_total_gb can be present but 0
+        # (e.g. statvfs on an unusual mount), so the dict default alone
+        # can't prevent a ZeroDivisionError here.
+        self.disk_pct = (used_gb / total_gb) * 100 if total_gb else 0.0
 
         # CPU/Mem (Left Column)
         with Vertical():
