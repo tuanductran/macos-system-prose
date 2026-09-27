@@ -19,6 +19,7 @@ def load_json_report(input_path: str | Path) -> dict[str, object]:
 def save_json_report(report: SystemReport, output_path: str | Path) -> Path:
     """Write a system report as formatted JSON and return its resolved path."""
     path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as file:
         json.dump(report, file, indent=2)
     return path
@@ -27,6 +28,7 @@ def save_json_report(report: SystemReport, output_path: str | Path) -> Path:
 def save_text(content: str, output_path: str | Path) -> Path:
     """Write text content to disk and return its resolved path."""
     path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as file:
         file.write(content)
     return path

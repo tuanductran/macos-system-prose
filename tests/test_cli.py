@@ -13,7 +13,7 @@ def test_build_parser_defaults() -> None:
     assert args.include_sensitive_network is False
     assert args.mode == "deep"
     assert args.no_prompt is False
-    assert args.output == "macos_system_report.json"
+    assert args.output == "output/macos_system_report.json"
     assert args.diff is None
     assert args.tui is False
     assert args.live is False

@@ -47,7 +47,7 @@ def build_parser(version: str) -> argparse.ArgumentParser:
     parser.add_argument(
         "-o",
         "--output",
-        default="macos_system_report.json",
+        default="output/macos_system_report.json",
         help="Output JSON file path (default: %(default)s)",
     )
     parser.add_argument(

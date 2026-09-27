@@ -29,6 +29,25 @@ def test_save_json_report_writes_formatted_report(tmp_path):
     assert output.read_text(encoding="utf-8").endswith("}")
 
 
+def test_save_json_report_creates_missing_parent_directories(tmp_path):
+    report = cast(SystemReport, {"report_schema": "test", "timestamp": 1.0})
+    output = tmp_path / "output" / "nested" / "report.json"
+
+    result = save_json_report(report, output)
+
+    assert result == output
+    assert json.loads(output.read_text(encoding="utf-8")) == report
+
+
+def test_save_text_creates_missing_parent_directories(tmp_path):
+    output = tmp_path / "output" / "nested" / "prompt.txt"
+
+    result = save_text("hello\n", output)
+
+    assert result == output
+    assert output.read_text(encoding="utf-8") == "hello\n"
+
+
 def test_save_text_writes_content(tmp_path):
     output = tmp_path / "prompt.txt"
 

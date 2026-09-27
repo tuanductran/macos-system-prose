@@ -136,7 +136,7 @@ The project requires uv 0.12.x. The `.python-version` file provides the local de
 ### Basic Commands
 
 ```bash
-# Generate JSON + TXT reports (network identity redacted by default)
+# Generate JSON + TXT reports (saved under output/, network identity redacted by default)
 macos-prose
 
 # Launch interactive TUI (htop-style monitor)
