@@ -145,7 +145,7 @@
   },
   "current_upstream_release": {
     "version": "2.5.1",
-    "checked_at": "2026-09-24",
-    "note": "Upstream changelog currently lists 2.5.1 as the latest release entry. This is source metadata only and does not imply that a given installed Mac should upgrade."
+    "checked_at": "2026-09-27",
+    "note": "Confirmed from git tag 2.5.1 on github.com/dortania/OpenCore-Legacy-Patcher (tagged 2026-09-19). This is source metadata only and does not imply that a given installed Mac should upgrade."
   }
 }
