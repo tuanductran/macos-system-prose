@@ -446,7 +446,7 @@ async def collect_display_info() -> list[DisplayInfo]:
                                         refresh_str = str(refresh)
                                     else:
                                         resolution_match = re.search(
-                                            r"@\\s*([0-9]+(?:\\.[0-9]+)?)\\s*Hz",
+                                            r"@\s*([0-9]+(?:\.[0-9]+)?)\s*Hz",
                                             resolution,
                                             flags=re.IGNORECASE,
                                         )
