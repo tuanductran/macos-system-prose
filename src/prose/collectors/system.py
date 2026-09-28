@@ -436,18 +436,25 @@ async def collect_display_info() -> list[DisplayInfo]:
                                         display.get("_spdisplays_resolution", "Unknown")
                                     )
 
-                                    # Get refresh rate (may be missing for internal displays)
+                                    # Prefer the explicit refresh-rate field. Some macOS versions
+                                    # expose the rate only inside the resolution string (for example
+                                    # "2560 x 1600 @ 60.00Hz"), so recover it before falling back to
+                                    # Unknown. Never assume 60 Hz for an internal display: ProMotion
+                                    # and other high-refresh panels make that inference incorrect.
                                     refresh = display.get("spdisplays_refresh_rate")
                                     if refresh:
                                         refresh_str = str(refresh)
                                     else:
-                                        # Internal displays often don't report refresh rate
-                                        # Check if it's an internal display
-                                        conn_type = display.get("spdisplays_connection_type", "")
-                                        if "internal" in str(conn_type).lower():
-                                            refresh_str = "60 Hz"  # Default for internal displays
-                                        else:
-                                            refresh_str = "Unknown"
+                                        resolution_match = re.search(
+                                            r"@\s*([0-9]+(?:\.[0-9]+)?)\s*Hz",
+                                            resolution,
+                                            flags=re.IGNORECASE,
+                                        )
+                                        refresh_str = (
+                                            f"{resolution_match.group(1)} Hz"
+                                            if resolution_match
+                                            else "Unknown"
+                                        )
 
                                     depth = _humanize_color_depth(
                                         str(display.get("spdisplays_depth", "Unknown"))
