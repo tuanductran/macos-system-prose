@@ -17,7 +17,7 @@ Built with **zero runtime dependencies** using only the Python 3.11+ standard li
 - **⚡ Async-First** - Parallel data collection via `asyncio.gather()`
 - **🔍 OCLP-Aware** - Separates OpenCore/OCLP detection evidence from root-patch evidence
 - **🎨 Apple HIG TUI** - Professional terminal UI with Apple Human Interface Guidelines design
-- **🌐 Multi-Format** - JSON, TXT (AI-optimized), Interactive TUI
+- **🌐 Multi-Format** - HTML (default), JSON, TXT (AI-optimized), Interactive TUI
 
 ## Architecture & Statistics
 
@@ -35,9 +35,10 @@ Built with **zero runtime dependencies** using only the Python 3.11+ standard li
 
 ### Output Formats
 
-1. **JSON** (~31KB) - Structured data for programmatic analysis
-2. **TXT** (~33KB) - LLM-optimized prompt with OCLP intelligence
-3. **TUI** - Interactive htop-style terminal monitor (requires `textual`)
+1. **HTML** - Self-contained offline report (default)
+2. **JSON** - Structured data for programmatic analysis (`--json`)
+3. **TXT** - LLM-optimized prompt with OCLP intelligence (`--txt`)
+4. **TUI** - Interactive htop-style terminal monitor (requires `textual`)
 
 ## Data Collection Capabilities
 
@@ -136,8 +137,14 @@ The project requires uv 0.12.x. The `.python-version` file provides the local de
 ### Basic Commands
 
 ```bash
-# Generate JSON + TXT reports (saved under output/, network identity redacted by default)
+# Generate a self-contained HTML report (default; saved under output/)
 macos-prose
+
+# Generate only JSON
+macos-prose --json
+
+# Generate only TXT (AI-optimized prompt)
+macos-prose --txt
 
 # Launch interactive TUI (htop-style monitor)
 macos-prose --tui --live
@@ -145,8 +152,10 @@ macos-prose --tui --live
 # Quiet mode (no console output)
 macos-prose --quiet
 
-# Custom output path
-macos-prose -o /path/to/report.json
+# Custom output path (format follows the selected output mode)
+macos-prose -o /path/to/report.html
+macos-prose --json -o /path/to/report.json
+macos-prose --txt -o /path/to/report.txt
 
 # Compare two reports
 macos-prose --diff previous_report.json
