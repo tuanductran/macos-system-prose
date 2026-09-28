@@ -159,8 +159,6 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
         "root_patch_marker_detected": root_patch_marker_detected,
         "loaded_kexts": observed_kexts[:10],
         "patched_frameworks": observed_frameworks,
-        "amfi_configuration": (
-            amfi_config if amfi_config and amfi_config["amfi_value"] else None
-        ),
+        "amfi_configuration": (amfi_config if amfi_config and amfi_config["amfi_value"] else None),
         "boot_args": boot_args,
     }
