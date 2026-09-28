@@ -5,6 +5,7 @@ Detection is evidence-based and does not infer security state from absence of OC
 
 from __future__ import annotations
 
+import platform
 import re
 from pathlib import Path
 
@@ -22,16 +23,27 @@ from prose.schema import OpenCorePatcherInfo
 def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCorePatcherInfo:
     """Inspect OpenCore/OCLP signals without conflating them with root-patch state.
 
-    OCLP-Version and the OpenCore version in OCLP's NVRAM namespace are strong
-    signals. The presence of individual kexts or modified framework paths is
-    only evidence that should be reported, not proof that OCLP is installed.
+    OCLP officially supports Intel Macs only. Apple Silicon Macs are not
+    supported, so incidental evidence must never classify an arm64 host as OCLP.
     """
-    current_os = utils.run(["sw_vers", "-productVersion"], log_errors=False).strip()
+    if platform.machine() == "arm64":
+        return {
+            "detected": False,
+            "detection_confidence": "none",
+            "detection_signals": ["apple_silicon_unsupported"],
+            "version": None,
+            "nvram_version": None,
+            "opencore_version": None,
+            "unsupported_os_detected": False,
+            "root_patch_marker_detected": False,
+            "loaded_kexts": [],
+            "patched_frameworks": [],
+            "amfi_configuration": None,
+            "boot_args": None,
+        }
 
-    model_info = utils.run(
-        ["system_profiler", "SPHardwareDataType"],
-        log_errors=False,
-    )
+    current_os = utils.run(["sw_vers", "-productVersion"], log_errors=False).strip()
+    model_info = utils.run(["system_profiler", "SPHardwareDataType"], log_errors=False)
     current_model = ""
     for line in model_info.splitlines():
         if "Model Identifier" in line and ":" in line:
@@ -80,26 +92,16 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
         loaded_kexts = []
         for line in kextstat_output.splitlines():
             if "com.apple" not in line and not line.startswith("Index"):
-                match = re.search(r"([a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+)\s\(([^)]+)\)", line)
+                match = re.search(r"([a-zA-Z0-9.-]+.[a-zA-Z0-9.-]+)s(([^)]+))", line)
                 if match:
                     loaded_kexts.append(f"{match.group(1)} ({match.group(2)})")
 
     oclp_kext_patterns = [
-        "AMFIPass",
-        "RestrictEvents",
-        "Lilu",
-        "WhateverGreen",
-        "FeatureUnlock",
-        "AutoPkgInstaller",
-        "RSRHelper",
-        "AirportBrcmFixup",
-        "DebugEnhancer",
-        "CryptexFixup",
+        "AMFIPass", "RestrictEvents", "Lilu", "WhateverGreen", "FeatureUnlock",
+        "AutoPkgInstaller", "RSRHelper", "AirportBrcmFixup", "DebugEnhancer", "CryptexFixup",
     ]
     observed_kexts = [
-        kext_info
-        for kext_info in loaded_kexts
-        if any(pattern in kext_info for pattern in oclp_kext_patterns)
+        kext_info for kext_info in loaded_kexts if any(pattern in kext_info for pattern in oclp_kext_patterns)
     ]
 
     observed_frameworks: list[str] = []
@@ -113,10 +115,7 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
         if Path(path).exists():
             observed_frameworks.append(path)
 
-    unsupported_os_detected = bool(
-        current_os and current_model and is_legacy_mac(current_model, current_os)
-    )
-
+    unsupported_os_detected = bool(current_os and current_model and is_legacy_mac(current_model, current_os))
     if unsupported_os_detected and observed_kexts:
         detection_signals.append("unsupported_os_plus_oclp_like_kexts")
 
@@ -131,10 +130,7 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
     else:
         confidence = "none"
 
-    clean_nvram_version = (
-        nvram_version.replace("\x00", "").replace("%00", "") if nvram_version else None
-    )
-
+    clean_nvram_version = nvram_version.replace("\x00", "").replace("%00", "") if nvram_version else None
     return {
         "detected": detected,
         "detection_confidence": confidence,
