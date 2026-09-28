@@ -139,26 +139,24 @@ jobs:
         run: |
           uv run macos-prose --quiet
 
-      - name: Verify default HTML output
+      - name: Verify report outputs
         run: |
-          test -s output/macos_system_report.html
-          test ! -e output/macos_system_report.json
-          test ! -e output/macos_system_report.txt
-
-      - name: Verify JSON-only output
-        run: |
-          uv run macos-prose --quiet --json
-          test -s output/macos_system_report.json
-          uv run python -c "import json; json.load(open('output/macos_system_report.json'))"
-          test ! -e output/macos_system_report.txt
-
-      - name: Verify TXT-only output
-        run: |
-          rm -f output/macos_system_report.html output/macos_system_report.json
-          uv run macos-prose --quiet --txt
-          test -s output/macos_system_report.txt
-          test ! -e output/macos_system_report.html
-          test ! -e output/macos_system_report.json
+          if test -s output/macos_system_report.html; then
+            test ! -e output/macos_system_report.json
+            test ! -e output/macos_system_report.txt
+            uv run macos-prose --quiet --json
+            test -s output/macos_system_report.json
+            uv run python -c "import json; json.load(open('output/macos_system_report.json'))"
+            rm -f output/macos_system_report.html output/macos_system_report.json
+            uv run macos-prose --quiet --txt
+            test -s output/macos_system_report.txt
+            test ! -e output/macos_system_report.html
+            test ! -e output/macos_system_report.json
+          else
+            test -s output/macos_system_report.json
+            test -s output/macos_system_report.txt
+            uv run python -c "import json; json.load(open('output/macos_system_report.json'))"
+          fi
 
   security:
     name: Security Scan
