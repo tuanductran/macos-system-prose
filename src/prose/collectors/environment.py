@@ -25,7 +25,7 @@ from prose.schema import (
     SystemExtension,
     TCCPermission,
 )
-from prose.utils import get_app_version, has_full_disk_access, log, run, verbose_log
+from prose.utils import get_app_version, has_full_disk_access, log, redact_user_path, run, verbose_log
 
 
 def collect_processes() -> list[ProcessInfo]:
@@ -58,7 +58,7 @@ def collect_launch_items() -> LaunchItems:
 
     def _scan_dir(d):
         p = Path(d).expanduser()
-        return [str(f) for f in p.glob("*.plist")] if p.exists() else []
+        return [redact_user_path(str(f)) for f in p.glob("*.plist")] if p.exists() else []
 
     return {
         "user_agents": _scan_dir("~/Library/LaunchAgents"),
@@ -152,9 +152,9 @@ def collect_environment_info() -> EnvironmentInfo:
 
     return {
         "shell": os.environ.get("SHELL"),
-        "python_executable": sys.executable,
+        "python_executable": redact_user_path(sys.executable),
         "python_version": run([sys.executable, "--version"]),
-        "path_entries": path_entries,
+        "path_entries": [redact_user_path(path) for path in path_entries],
         "path_duplicates": list(set(duplicates)),
         "listening_ports": sorted(ports),
         "launchd_services": collect_launchd_services(),
