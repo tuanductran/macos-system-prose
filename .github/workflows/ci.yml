@@ -85,7 +85,7 @@ jobs:
 
       - name: Smoke test Intel report generation
         run: |
-          uv run macos-prose --quiet --no-prompt --mode fast
+          uv run macos-prose --quiet --mode fast
           uv run python -c "import json; r=json.load(open('output/macos_system_report.json')); assert r['report_schema'] == 'macos-system-prose/system-report'; assert r['report_schema_version'] == 1; assert r['system']['architecture'] == 'x86_64'"
 
   compatibility-arm64:
@@ -113,7 +113,7 @@ jobs:
 
       - name: Smoke test Apple silicon report generation
         run: |
-          uv run macos-prose --quiet --no-prompt --mode fast
+          uv run macos-prose --quiet --mode fast
           uv run python -c "import json; r=json.load(open('output/macos_system_report.json')); assert r['report_schema'] == 'macos-system-prose/system-report'; assert r['report_schema_version'] == 1; assert r['system']['architecture'] == 'arm64'"
 
   integration-test:
@@ -137,7 +137,7 @@ jobs:
 
       - name: Run full system report
         run: |
-          uv run macos-prose --quiet --no-prompt
+          uv run macos-prose --quiet
 
       - name: Verify JSON output
         run: |
