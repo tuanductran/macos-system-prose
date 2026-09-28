@@ -306,9 +306,12 @@ async def async_main() -> int:
 
     return finalize_report(
         report,
-        output=args.output or (
-            "output/macos_system_report.json" if args.json
-            else "output/macos_system_report.txt" if args.txt
+        output=args.output
+        or (
+            "output/macos_system_report.json"
+            if args.json
+            else "output/macos_system_report.txt"
+            if args.txt
             else "output/macos_system_report.html"
         ),
         report_format="json" if args.json else "txt" if args.txt else "html",
