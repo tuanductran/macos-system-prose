@@ -242,7 +242,7 @@ class TestHomebrewServicePrivacy:
 
         services = collect_homebrew_services()
 
-        assert services[0]["user"] == "private-user"
+        assert services[0]["user"] == "[REDACTED]"
         assert services[0]["file"] == "~/Library/LaunchAgents/homebrew.mxcl.demo.plist"
 
 
