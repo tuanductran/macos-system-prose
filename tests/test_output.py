@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import cast
 
-from prose.output import load_json_report, save_json_report, save_text
+from prose.output import load_json_report, save_html_report, save_json_report, save_text
 from prose.schema import SystemReport
 
 
@@ -55,3 +55,16 @@ def test_save_text_writes_content(tmp_path):
 
     assert result == output
     assert output.read_text(encoding="utf-8") == "hello\n"
+
+
+def test_save_html_report_writes_self_contained_html(tmp_path) -> None:
+    report = cast(SystemReport, {"report_schema": "test", "report_schema_version": 1})
+    output = tmp_path / "report.html"
+
+    result = save_html_report(report, output)
+
+    content = output.read_text(encoding="utf-8")
+    assert result == output
+    assert content.startswith("<!doctype html>")
+    assert "<title>macOS System Prose Report</title>" in content
+    assert '"report_schema": "test"' in content
