@@ -39,15 +39,21 @@ def build_parser(version: str) -> argparse.ArgumentParser:
             "deep collects all sections"
         ),
     )
-    parser.add_argument(
-        "--no-prompt",
+    output_format = parser.add_mutually_exclusive_group()
+    output_format.add_argument(
+        "--json",
         action="store_true",
-        help="Skip generating AI-optimized text prompt",
+        help="Write only the JSON report",
+    )
+    output_format.add_argument(
+        "--txt",
+        action="store_true",
+        help="Write only the AI-optimized text report",
     )
     parser.add_argument(
         "-o",
         "--output",
-        default="output/macos_system_report.json",
+        default=None,
         help="Output JSON file path (default: %(default)s)",
     )
     parser.add_argument(

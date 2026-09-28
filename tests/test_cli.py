@@ -12,8 +12,9 @@ def test_build_parser_defaults() -> None:
     assert args.quiet is False
     assert args.include_sensitive_network is False
     assert args.mode == "deep"
-    assert args.no_prompt is False
-    assert args.output == "output/macos_system_report.json"
+    assert args.json is False
+    assert args.txt is False
+    assert args.output is None
     assert args.diff is None
     assert args.tui is False
     assert args.live is False
@@ -28,7 +29,7 @@ def test_build_parser_accepts_all_options() -> None:
             "--include-sensitive-network",
             "--mode",
             "fast",
-            "--no-prompt",
+            "--json",
             "--output",
             "report.json",
             "--diff",
@@ -44,9 +45,24 @@ def test_build_parser_accepts_all_options() -> None:
     assert args.quiet is True
     assert args.include_sensitive_network is True
     assert args.mode == "fast"
-    assert args.no_prompt is True
+    assert args.json is True
+    assert args.txt is False
     assert args.output == "report.json"
     assert args.diff == "previous.json"
     assert args.tui is True
     assert args.live is True
     assert args.refresh_interval == 10
+
+
+def test_build_parser_accepts_txt_format() -> None:
+    args = build_parser("1.2.3").parse_args(["--txt"])
+
+    assert args.txt is True
+    assert args.json is False
+
+
+def test_build_parser_rejects_json_and_txt_together() -> None:
+    import pytest
+
+    with pytest.raises(SystemExit):
+        build_parser("1.2.3").parse_args(["--json", "--txt"])
