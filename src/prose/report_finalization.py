@@ -15,14 +15,14 @@ def finalize_report(
     report: SystemReport,
     *,
     output: str,
-    format: str = "html",
+    report_format: str = "html",
     diff: str | None = None,
 ) -> int:
     """Save exactly one report format and optionally show a diff."""
     try:
-        if format == "json":
+        if report_format == "json":
             output_path = save_json_report(report, output)
-        elif format == "txt":
+        elif report_format == "txt":
             output_path = save_text(generate_ai_prompt(report), output)
         else:
             output_path = save_html_report(report, output)
