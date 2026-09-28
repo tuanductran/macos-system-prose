@@ -37,7 +37,7 @@ from prose.schema import (
     DockerInfo,
     GitConfig,
 )
-from prose.utils import get_version, run, verbose_log, which
+from prose.utils import redact_user_path, get_version, run, verbose_log, which
 
 
 def collect_docker_info() -> DockerInfo:
@@ -297,7 +297,7 @@ def collect_sdks() -> dict[str, str]:
         sdks["flutter"] = "Not installed"
 
     android_home = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
-    sdks["android_sdk"] = android_home if android_home else "Not installed"
+    sdks["android_sdk"] = redact_user_path(android_home) if android_home else "Not installed"
 
     try:
         # Suppress errors as xcodebuild often fails if Xcode is not fully configured
