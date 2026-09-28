@@ -25,7 +25,14 @@ from prose.schema import (
     SystemExtension,
     TCCPermission,
 )
-from prose.utils import get_app_version, has_full_disk_access, log, redact_user_path, run, verbose_log
+from prose.utils import (
+    get_app_version,
+    has_full_disk_access,
+    log,
+    redact_user_path,
+    run,
+    verbose_log,
+)
 
 
 def collect_processes() -> list[ProcessInfo]:
