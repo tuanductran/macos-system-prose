@@ -205,7 +205,7 @@ def collect_homebrew_services() -> list[BrewService]:
                 status = parts[1]
                 user = parts[2] if len(parts) > 2 and parts[2] != "none" else None
                 file_path = parts[3] if len(parts) > 3 else None
-                user = redact_user_path(user) if user else None
+                user = "[REDACTED]" if user else None
                 file_path = redact_user_path(file_path) if file_path else None
 
                 service: BrewService = {
