@@ -231,13 +231,16 @@ class TestGitConfigPrivacy:
 
 
 class TestHomebrewServicePrivacy:
+    @patch("prose.collectors.packages.Path.home")
     @patch("prose.collectors.packages.run")
-    def test_homebrew_service_paths_are_redacted(self, mock_run):
+    def test_homebrew_service_paths_are_redacted(self, mock_run, mock_home):
         from prose.collectors.packages import collect_homebrew_services
 
+        mock_home.return_value = Path("/Users/private-user")
         mock_run.return_value = (
             "Name Status User File\n"
-            "demo started private-user /Users/private-user/Library/LaunchAgents/homebrew.mxcl.demo.plist"
+            "demo started private-user "
+            "/Users/private-user/Library/LaunchAgents/homebrew.mxcl.demo.plist"
         )
 
         services = collect_homebrew_services()
