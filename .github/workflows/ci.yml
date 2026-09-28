@@ -83,6 +83,11 @@ jobs:
           test "$(uname -m)" = "x86_64"
           uv run pytest -q
 
+      - name: Smoke test Intel report generation
+        run: |
+          uv run macos-prose --quiet --no-prompt --mode fast
+          uv run python -c "import json; r=json.load(open('output/macos_system_report.json')); assert r['report_schema'] == 'macos-system-prose/system-report'; assert r['report_schema_version'] == 1; assert r['system']['architecture'] == 'x86_64'"
+
   compatibility-arm64:
     name: Apple silicon compatibility smoke test
     runs-on: macos-15
@@ -105,6 +110,11 @@ jobs:
         run: |
           test "$(uname -m)" = "arm64"
           uv run pytest -q
+
+      - name: Smoke test Apple silicon report generation
+        run: |
+          uv run macos-prose --quiet --no-prompt --mode fast
+          uv run python -c "import json; r=json.load(open('output/macos_system_report.json')); assert r['report_schema'] == 'macos-system-prose/system-report'; assert r['report_schema_version'] == 1; assert r['system']['architecture'] == 'arm64'"
   integration-test:
     name: Integration Test - Full Report
     runs-on: macos-26
