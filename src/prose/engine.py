@@ -311,7 +311,7 @@ async def async_main() -> int:
             else "output/macos_system_report.txt" if args.txt
             else "output/macos_system_report.html"
         ),
-        format="json" if args.json else "txt" if args.txt else "html",
+        report_format="json" if args.json else "txt" if args.txt else "html",
         diff=args.diff,
     )
 
