@@ -92,16 +92,29 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
         loaded_kexts = []
         for line in kextstat_output.splitlines():
             if "com.apple" not in line and not line.startswith("Index"):
-                match = re.search(r"([a-zA-Z0-9.-]+.[a-zA-Z0-9.-]+)s(([^)]+))", line)
+                match = re.search(
+                    r"([a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+)\s\(([^)]+)\)",
+                    line,
+                )
                 if match:
                     loaded_kexts.append(f"{match.group(1)} ({match.group(2)})")
 
     oclp_kext_patterns = [
-        "AMFIPass", "RestrictEvents", "Lilu", "WhateverGreen", "FeatureUnlock",
-        "AutoPkgInstaller", "RSRHelper", "AirportBrcmFixup", "DebugEnhancer", "CryptexFixup",
+        "AMFIPass",
+        "RestrictEvents",
+        "Lilu",
+        "WhateverGreen",
+        "FeatureUnlock",
+        "AutoPkgInstaller",
+        "RSRHelper",
+        "AirportBrcmFixup",
+        "DebugEnhancer",
+        "CryptexFixup",
     ]
     observed_kexts = [
-        kext_info for kext_info in loaded_kexts if any(pattern in kext_info for pattern in oclp_kext_patterns)
+        kext_info
+        for kext_info in loaded_kexts
+        if any(pattern in kext_info for pattern in oclp_kext_patterns)
     ]
 
     observed_frameworks: list[str] = []
@@ -115,7 +128,9 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
         if Path(path).exists():
             observed_frameworks.append(path)
 
-    unsupported_os_detected = bool(current_os and current_model and is_legacy_mac(current_model, current_os))
+    unsupported_os_detected = bool(
+        current_os and current_model and is_legacy_mac(current_model, current_os)
+    )
     if unsupported_os_detected and observed_kexts:
         detection_signals.append("unsupported_os_plus_oclp_like_kexts")
 
@@ -130,7 +145,9 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
     else:
         confidence = "none"
 
-    clean_nvram_version = nvram_version.replace("\x00", "").replace("%00", "") if nvram_version else None
+    clean_nvram_version = (
+        nvram_version.replace("\x00", "").replace("%00", "") if nvram_version else None
+    )
     return {
         "detected": detected,
         "detection_confidence": confidence,
@@ -142,6 +159,8 @@ def collect_opencore_patcher(loaded_kexts: list[str] | None = None) -> OpenCoreP
         "root_patch_marker_detected": root_patch_marker_detected,
         "loaded_kexts": observed_kexts[:10],
         "patched_frameworks": observed_frameworks,
-        "amfi_configuration": amfi_config if amfi_config and amfi_config["amfi_value"] else None,
+        "amfi_configuration": (
+            amfi_config if amfi_config and amfi_config["amfi_value"] else None
+        ),
         "boot_args": boot_args,
     }
