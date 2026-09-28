@@ -13,7 +13,7 @@ permissions:
 jobs:
   test:
     name: Test on macOS
-    runs-on: macos-latest
+    runs-on: macos-26
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
@@ -25,7 +25,7 @@ jobs:
           persist-credentials: false
 
       - name: Install uv and set up Python ${{ matrix.python-version }}
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           version: "0.12.17"
           python-version: ${{ matrix.python-version }}
@@ -70,7 +70,7 @@ jobs:
           persist-credentials: false
 
       - name: Install uv and set up Python
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           version: "0.12.17"
           python-version: "3.14"
@@ -83,6 +83,11 @@ jobs:
           test "$(uname -m)" = "x86_64"
           uv run pytest -q
 
+      - name: Smoke test Intel report generation
+        run: |
+          uv run macos-prose --quiet --no-prompt --mode fast
+          uv run python -c "import json; r=json.load(open('output/macos_system_report.json')); assert r['report_schema'] == 'macos-system-prose/system-report'; assert r['report_schema_version'] == 1; assert r['system']['architecture'] == 'x86_64'"
+
   compatibility-arm64:
     name: Apple silicon compatibility smoke test
     runs-on: macos-15
@@ -93,7 +98,7 @@ jobs:
           persist-credentials: false
 
       - name: Install uv and set up Python
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           version: "0.12.17"
           python-version: "3.14"
@@ -105,9 +110,14 @@ jobs:
         run: |
           test "$(uname -m)" = "arm64"
           uv run pytest -q
+
+      - name: Smoke test Apple silicon report generation
+        run: |
+          uv run macos-prose --quiet --no-prompt --mode fast
+          uv run python -c "import json; r=json.load(open('output/macos_system_report.json')); assert r['report_schema'] == 'macos-system-prose/system-report'; assert r['report_schema_version'] == 1; assert r['system']['architecture'] == 'arm64'"
   integration-test:
     name: Integration Test - Full Report
-    runs-on: macos-latest
+    runs-on: macos-26
 
     steps:
       - name: Checkout code
@@ -116,7 +126,7 @@ jobs:
           persist-credentials: false
 
       - name: Install uv and set up Python
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           version: "0.12.17"
           python-version: "3.14"
@@ -130,13 +140,13 @@ jobs:
 
       - name: Verify JSON output
         run: |
-          test -f macos_system_report.json
-          uv run python -c "import json; json.load(open('macos_system_report.json'))"
+          test -f output/macos_system_report.json
+          uv run python -c "import json; json.load(open('output/macos_system_report.json'))"
 
       - name: Verify AI prompt output
         run: |
-          test -f macos_system_report.txt
-          test -s macos_system_report.txt
+          test -f output/macos_system_report.txt
+          test -s output/macos_system_report.txt
 
   security:
     name: Security Scan
@@ -160,7 +170,7 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
