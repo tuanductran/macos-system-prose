@@ -339,7 +339,10 @@ class TestUserPathPrivacy:
                 "PATH": "/Users/private-user/.local/bin:/usr/bin",
             },
         ):
-            with patch("prose.collectors.environment.sys.executable", "/Users/private-user/.venv/bin/python"):
+            with patch(
+                "prose.collectors.environment.sys.executable",
+                "/Users/private-user/.venv/bin/python",
+            ):
                 info = collect_environment_info()
 
         assert info["python_executable"] == "~/.venv/bin/python"
@@ -351,7 +354,9 @@ class TestUserPathPrivacy:
 
         mock_home.return_value = Path("/Users/private-user")
         with patch("prose.collectors.environment.Path.glob") as mock_glob:
-            mock_glob.return_value = [Path("/Users/private-user/Library/LaunchAgents/com.example.agent.plist")]
+            mock_glob.return_value = [
+                Path("/Users/private-user/Library/LaunchAgents/com.example.agent.plist")
+            ]
             info = collect_launch_items()
 
         assert info["user_agents"] == ["~/Library/LaunchAgents/com.example.agent.plist"]
