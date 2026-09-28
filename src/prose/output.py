@@ -59,18 +59,21 @@ def save_html_report(report: SystemReport, output_path: str | Path) -> Path:
 <style>
 :root {{ color-scheme: light dark; }}
 body {{ font: 15px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;
-  max-width: 1200px; margin: 0 auto; padding: 32px;\n  background: Canvas; color: CanvasText; }}
+  max-width: 1200px; margin: 0 auto; padding: 32px;
+  background: Canvas; color: CanvasText; }}
 h1 {{ font-size: 28px; margin: 0 0 8px; }}
 .meta {{ opacity: .7; margin-bottom: 24px; }}
 details {{ border: 1px solid color-mix(in srgb, CanvasText 15%, transparent);
   border-radius: 10px; margin: 10px 0; overflow: hidden; }}
 summary {{ cursor: pointer; padding: 12px 16px; font-weight: 600; }}
-pre {{ margin: 0; padding: 16px; overflow: auto;\n  background: color-mix(in srgb, CanvasText 5%, Canvas); }}
+pre {{ margin: 0; padding: 16px; overflow: auto;
+  background: color-mix(in srgb, CanvasText 5%, Canvas); }}
 </style>
 </head>
 <body>
 <h1>{title}</h1>
-<div class="meta">Schema: {html.escape(str(report.get("report_schema", "")))} ·\nVersion: {report.get("report_schema_version", "")}</div>
+<div class="meta">Schema: {html.escape(str(report.get("report_schema", "")))} ·
+Version: {report.get("report_schema_version", "")}</div>
 {"".join(sections)}
 </body>
 </html>
