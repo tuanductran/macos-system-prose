@@ -68,4 +68,4 @@ def test_save_html_report_writes_self_contained_html(tmp_path) -> None:
     assert content.startswith("<!doctype html>")
     assert "<title>macOS System Prose Report</title>" in content
     assert "<summary>report_schema</summary>" in content
-    assert "<pre>&quot;test&quot;</pre>" in content
+    assert "<pre>\"test\"</pre>" in content
