@@ -3,7 +3,7 @@
 **Analysis of Apple's open source components for potential integration with macos-system-prose**
 
 Initial analysis: 2026-02-08  
-Review: 2026-09-24  
+Review: 2026-09-28  
 Repository: https://github.com/apple-oss-distributions/distribution-macOS  
 Scope: Apple OSS reference material relevant to the project's macOS collectors; current macOS 26/Tahoe is treated as a runtime version in project data, while OCLP support is tracked separately.
 
@@ -71,10 +71,10 @@ After analyzing Apple's open source distribution repositories (including **XNU k
 
 ### Current Approach Advantages ✅
 
-1. **Zero Dependencies** - Pure Python 3.9+ stdlib
+1. **Zero Dependencies** - Pure Python 3.11+ stdlib
 2. **Stability** - Command-line tools are stable across macOS versions
 3. **Simplicity** - Easy to debug and maintain
-4. **Compatibility** - Works on macOS 10.15-15.x without changes
+4. **Compatibility** - package metadata targets macOS 10.15+, while CI continuously validates macOS 15 and macOS 26
 5. **Read-Only** - Shell commands can't accidentally modify system
 6. **Type Safety** - No C/Objective-C interop complexity
 
@@ -89,7 +89,24 @@ After analyzing Apple's open source distribution repositories (including **XNU k
 
 ## Recommended Usage of Apple OSS
 
-### 1. Reference Material
+### 1. Source map for the current collectors
+
+The runtime intentionally uses macOS command-line tools instead of linking native frameworks. The following upstream repositories are the relevant source references for the commands and APIs currently used by the collectors:
+
+| Runtime surface | Current collector usage | Upstream source |
+|---|---|---|
+| `sysctl`, `nvram` | kernel/hardware parameters and NVRAM evidence | [Apple `system_cmds`](https://github.com/apple-oss-distributions/system_cmds), [Apple `XNU`](https://github.com/apple-oss-distributions/xnu) |
+| `ps` | process inventory | [Apple `adv_cmds`](https://github.com/apple-oss-distributions/adv_cmds) |
+| `ifconfig`, `netstat`, `route` | interface and listener/network state | [Apple `network_cmds`](https://github.com/apple-oss-distributions/network_cmds) |
+| `scutil` | DNS/VPN/SystemConfiguration state | [Apple `configd`](https://github.com/apple-oss-distributions/configd), [Apple SystemConfiguration docs](https://developer.apple.com/documentation/systemconfiguration) |
+| `ioreg` | IORegistry and hardware evidence | [Apple `IOKitTools`](https://github.com/apple-oss-distributions/IOKitTools), [Apple `IOKitUser`](https://github.com/apple-oss-distributions/IOKitUser) |
+| `diskutil` | disks, APFS containers and volumes | [Apple `diskdev_cmds`](https://github.com/apple-oss-distributions/diskdev_cmds), [Apple Disk Arbitration docs](https://developer.apple.com/documentation/diskarbitration) |
+| IOKit registry APIs | reference for IORegistry properties and relationships | [Apple IOKit docs](https://developer.apple.com/documentation/iokit), [Apple `IOKitUser`](https://github.com/apple-oss-distributions/IOKitUser) |
+| Security/code-signing APIs | reference for security and signing semantics | [Apple `Security`](https://github.com/apple-oss-distributions/Security) |
+
+Apple's `distribution-macOS` repository currently publishes the macOS 26 source distribution manifest and points to these component repositories as submodules. Treat the component repositories and Apple Developer documentation as source references, not as runtime dependencies. This distinction keeps the project zero-dependency while making parser assumptions auditable.
+
+### 2. Reference Material
 
 Use Apple OSS distributions to:
 - ✅ Understand data structure formats (EDID, IORegistry, APFS)
@@ -97,7 +114,7 @@ Use Apple OSS distributions to:
 - ✅ Learn about undocumented fields and flags
 - ✅ Discover new data sources we're missing
 
-### 2. Documentation Enhancement
+### 3. Documentation Enhancement
 
 Improve our documentation by referencing:
 - IOKit property names and meanings
@@ -105,7 +122,7 @@ Improve our documentation by referencing:
 - APFS filesystem capabilities
 - Network configuration options
 
-### 3. Parsing Improvements
+### 4. Parsing Improvements
 
 Study source code to improve our parsers:
 
@@ -117,7 +134,7 @@ Study source code to improve our parsers:
 # Apple OSS Reference: IOGraphicsFamily/IOKit/graphics/IODisplay.h
 ```
 
-### 4. Future Enhancements
+### 5. Future Enhancements
 
 Consider optional native module in future:
 
@@ -186,7 +203,7 @@ def parse_edid_manufacturer_id(edid_bytes: bytes) -> str:
 - [ ] Create `prose-native` optional package
 - [ ] Implement PyObjC-based IOKit collector
 - [ ] Benchmark vs. command-line approach
-- [ ] Test across macOS 10.15-15.x
+- [ ] Test across the supported CI validation range before claiming compatibility
 
 ### Phase 3: Integration (If PoC Successful)
 - [ ] Add `[native]` extras to pyproject.toml
@@ -364,7 +381,7 @@ The Apple OSS distributions are **extremely valuable as reference material** but
 
 - Pure Python stdlib (zero dependencies)
 - Command-line tools (stable, tested, documented)
-- Works flawlessly on macOS 10.15-15.x
+- CI-validated on macOS 15 and macOS 26; older runtime targets remain package-level compatibility claims rather than continuously tested environments
 - Easy to maintain and debug
 - Type-safe with NO `Any` type
 
