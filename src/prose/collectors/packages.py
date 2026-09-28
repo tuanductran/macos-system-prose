@@ -6,7 +6,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 
 from prose.constants import Timeouts
 from prose.schema import BrewService, NotInstalled, PackageManagers, PackageVersionInfo
-from prose.utils import get_json_output, log, run, verbose_log, which
+from prose.utils import get_json_output, log, redact_user_path, run, verbose_log, which
 
 
 def homebrew_info() -> PackageVersionInfo | NotInstalled:
@@ -205,6 +205,8 @@ def collect_homebrew_services() -> list[BrewService]:
                 status = parts[1]
                 user = parts[2] if len(parts) > 2 and parts[2] != "none" else None
                 file_path = parts[3] if len(parts) > 3 else None
+                user = "[REDACTED]" if user else None
+                file_path = redact_user_path(file_path) if file_path else None
 
                 service: BrewService = {
                     "name": name,

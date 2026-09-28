@@ -230,6 +230,25 @@ class TestGitConfigPrivacy:
         assert info["aliases"]["safe"] == "log --oneline"
 
 
+class TestHomebrewServicePrivacy:
+    @patch("prose.collectors.packages.Path.home")
+    @patch("prose.collectors.packages.run")
+    def test_homebrew_service_paths_are_redacted(self, mock_run, mock_home):
+        from prose.collectors.packages import collect_homebrew_services
+
+        mock_home.return_value = Path("/Users/private-user")
+        mock_run.return_value = (
+            "Name Status User File\n"
+            "demo started private-user "
+            "/Users/private-user/Library/LaunchAgents/homebrew.mxcl.demo.plist"
+        )
+
+        services = collect_homebrew_services()
+
+        assert services[0]["user"] == "[REDACTED]"
+        assert services[0]["file"] == "~/Library/LaunchAgents/homebrew.mxcl.demo.plist"
+
+
 class TestCommandExecutionSafety:
     @patch("prose.collectors.advanced.utils.run", return_value="")
     def test_preferences_use_direct_commands(self, mock_run):
@@ -312,6 +331,54 @@ class TestPlatformSecurityParsing:
             "System Integrity Protection status: unknown (Custom Configuration)."
         )
         assert asyncio.run(_check_sip_enabled()) is None
+
+
+class TestUserPathPrivacy:
+    @patch("prose.utils.Path.home")
+    def test_redact_user_path(self, mock_home):
+        from prose.utils import redact_user_path
+
+        mock_home.return_value = Path("/Users/private-user")
+        assert redact_user_path("/Users/private-user") == "~"
+        assert redact_user_path("/Users/private-user/bin/python") == "~/bin/python"
+        assert redact_user_path("/usr/bin/python3") == "/usr/bin/python3"
+        assert redact_user_path("/Users/private-userish/tool") == "/Users/private-userish/tool"
+
+    @patch("prose.collectors.environment.run")
+    @patch("prose.collectors.environment.collect_launchd_services", return_value=[])
+    @patch("prose.collectors.environment.Path.home")
+    def test_environment_redacts_user_paths(self, mock_home, mock_services, mock_run):
+        mock_home.return_value = Path("/Users/private-user")
+        mock_run.return_value = "Python 3.12.1"
+
+        with patch.dict(
+            "prose.collectors.environment.os.environ",
+            {
+                "SHELL": "/bin/zsh",
+                "PATH": "/Users/private-user/.local/bin:/usr/bin",
+            },
+        ):
+            with patch(
+                "prose.collectors.environment.sys.executable",
+                "/Users/private-user/.venv/bin/python",
+            ):
+                info = collect_environment_info()
+
+        assert info["python_executable"] == "~/.venv/bin/python"
+        assert info["path_entries"] == ["~/.local/bin", "/usr/bin"]
+
+    @patch("prose.collectors.environment.Path.home")
+    def test_launch_items_redact_user_paths(self, mock_home):
+        from prose.collectors.environment import collect_launch_items
+
+        mock_home.return_value = Path("/Users/private-user")
+        with patch("prose.collectors.environment.Path.glob") as mock_glob:
+            mock_glob.return_value = [
+                Path("/Users/private-user/Library/LaunchAgents/com.example.agent.plist")
+            ]
+            info = collect_launch_items()
+
+        assert info["user_agents"] == ["~/Library/LaunchAgents/com.example.agent.plist"]
 
 
 class TestEnvironmentCollectorMocked:

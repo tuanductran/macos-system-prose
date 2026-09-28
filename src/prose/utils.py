@@ -78,6 +78,17 @@ def verbose_log(msg: str) -> None:
         print(f"{Colors.DIM}  -> {msg}{Colors.ENDC}")
 
 
+def redact_user_path(path: str) -> str:
+    """Replace the current user's home directory with ``~`` in a path."""
+    home = str(Path.home())
+    if path == home:
+        return "~"
+    prefix = home + os.sep
+    if path.startswith(prefix):
+        return "~" + path[len(home) :]
+    return path
+
+
 def has_full_disk_access() -> bool:
     """Check if the current process has Full Disk Access (FDA) permission.
 
