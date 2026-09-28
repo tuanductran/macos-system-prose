@@ -230,6 +230,22 @@ class TestGitConfigPrivacy:
         assert info["aliases"]["safe"] == "log --oneline"
 
 
+class TestHomebrewServicePrivacy:
+    @patch("prose.collectors.packages.run")
+    def test_homebrew_service_paths_are_redacted(self, mock_run):
+        from prose.collectors.packages import collect_homebrew_services
+
+        mock_run.return_value = (
+            "Name Status User File\n"
+            "demo started private-user /Users/private-user/Library/LaunchAgents/homebrew.mxcl.demo.plist"
+        )
+
+        services = collect_homebrew_services()
+
+        assert services[0]["user"] == "private-user"
+        assert services[0]["file"] == "~/Library/LaunchAgents/homebrew.mxcl.demo.plist"
+
+
 class TestCommandExecutionSafety:
     @patch("prose.collectors.advanced.utils.run", return_value="")
     def test_preferences_use_direct_commands(self, mock_run):
