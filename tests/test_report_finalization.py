@@ -38,7 +38,10 @@ def test_finalize_report_generates_txt(tmp_path: Path) -> None:
     prompt_path = tmp_path / "report.txt"
 
     with (
-        patch(\n            "prose.report_finalization.generate_ai_prompt",\n            return_value="generated prompt",\n        ) as generate_prompt,
+        patch(
+            "prose.report_finalization.generate_ai_prompt",
+            return_value="generated prompt",
+        ) as generate_prompt,
         patch("prose.report_finalization.save_text", return_value=prompt_path) as save_prompt,
     ):
         result = finalize_report(report, output=str(output), report_format="txt")
