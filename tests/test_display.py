@@ -216,8 +216,40 @@ class TestDisplayCollection:
 
             assert len(displays) >= 1
             display = displays[0]
-            # Internal displays should default to 60 Hz
-            assert display["refresh_rate"] == "60 Hz"
+            # Missing refresh metadata must remain unknown rather than assuming 60 Hz.
+            assert display["refresh_rate"] == "Unknown"
+
+        asyncio.run(run_test())
+
+    @patch("prose.collectors.system.async_run_command")
+    @patch("prose.collectors.system.async_get_json_output")
+    def test_collect_display_info_extracts_refresh_from_resolution(self, mock_json, mock_run):
+        """Test refresh rate fallback from the macOS resolution string."""
+
+        async def mock_run_coro(*args, **kwargs):
+            return ""
+
+        async def mock_json_coro(*args, **kwargs):
+            return {
+                "SPDisplaysDataType": [
+                    {
+                        "spdisplays_ndrvs": [
+                            {
+                                "_spdisplays_resolution": "3024 x 1964 @ 120.00Hz",
+                                "spdisplays_depth": "32-Bit Color",
+                                "spdisplays_connection_type": "Internal",
+                            }
+                        ]
+                    }
+                ]
+            }
+
+        mock_run.side_effect = mock_run_coro
+        mock_json.side_effect = mock_json_coro
+
+        async def run_test():
+            displays = await collect_display_info()
+            assert displays[0]["refresh_rate"] == "120.00 Hz"
 
         asyncio.run(run_test())
 
