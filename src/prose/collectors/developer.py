@@ -37,7 +37,7 @@ from prose.schema import (
     DockerInfo,
     GitConfig,
 )
-from prose.utils import redact_user_path, get_version, run, verbose_log, which
+from prose.utils import get_version, redact_user_path, run, verbose_log, which
 
 
 def collect_docker_info() -> DockerInfo:
