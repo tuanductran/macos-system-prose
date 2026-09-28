@@ -222,8 +222,8 @@ class TestGitConfigPrivacy:
         from prose.collectors.developer import collect_git_config
 
         info = collect_git_config()
-        assert info["user_name"] == "Test User"
-        assert info["user_email"] == "test@example.com"
+        assert info["user_name"] == "[REDACTED]"
+        assert info["user_email"] == "[REDACTED]"
         assert info["credential_helper"] == "[CONFIGURED]"
         assert info["other_settings"]["http.https://example.com.extraheader"] == "[REDACTED]"
         assert info["other_settings"]["remote.origin.url"] == "[REDACTED]"

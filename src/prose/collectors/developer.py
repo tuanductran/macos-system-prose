@@ -509,9 +509,9 @@ def collect_git_config() -> GitConfig:
             key, value = line.split("=", 1)
 
             if key == "user.name":
-                config["user_name"] = value
+                config["user_name"] = "[REDACTED]" if value else None
             elif key == "user.email":
-                config["user_email"] = value
+                config["user_email"] = "[REDACTED]" if value else None
             elif key == "core.editor":
                 config["core_editor"] = value
             elif key == "credential.helper":
