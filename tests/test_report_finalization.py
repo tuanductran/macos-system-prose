@@ -38,14 +38,14 @@ def test_finalize_report_generates_txt(tmp_path: Path) -> None:
     prompt_path = tmp_path / "report.txt"
 
     with (
-        patch("prose.report_finalization.generate_ai_prompt", return_value="generated prompt") as generate_prompt,
+        patch(\n            "prose.report_finalization.generate_ai_prompt",\n            return_value="generated prompt",\n        ) as generate_prompt,
         patch("prose.report_finalization.save_text", return_value=prompt_path) as save_prompt,
     ):
         result = finalize_report(report, output=str(output), report_format="txt")
 
     assert result == 0
     generate_prompt.assert_called_once_with(report)
-    save_prompt.assert_called_once_with("generated prompt", prompt_path)
+    save_prompt.assert_called_once_with("generated prompt", str(prompt_path))
 
 
 def test_finalize_report_returns_error_when_save_fails(tmp_path: Path) -> None:
