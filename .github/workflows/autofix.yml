@@ -14,7 +14,7 @@ env:
 jobs:
   autofix:
     name: Auto-fix Code Quality Issues
-    runs-on: macos-latest
+    runs-on: macos-26
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
