@@ -6,7 +6,7 @@ from pathlib import Path
 
 from prose import utils
 from prose.diff import diff_reports, format_diff
-from prose.output import load_json_report, save_json_report, save_text
+from prose.output import load_json_report, save_html_report, save_json_report, save_text
 from prose.prompt import generate_ai_prompt
 from prose.schema import SystemReport
 
@@ -15,25 +15,21 @@ def finalize_report(
     report: SystemReport,
     *,
     output: str,
-    no_prompt: bool = False,
+    format: str = "html",
     diff: str | None = None,
 ) -> int:
-    """Save a report, optionally generate its AI prompt, and show a diff."""
+    """Save exactly one report format and optionally show a diff."""
     try:
-        output_path = save_json_report(report, output)
+        if format == "json":
+            output_path = save_json_report(report, output)
+        elif format == "txt":
+            output_path = save_text(generate_ai_prompt(report), output)
+        else:
+            output_path = save_html_report(report, output)
         utils.log(f"Report saved to: {output_path.resolve()}", "success")
     except Exception as e:
         utils.log(f"Failed to save report: {e}", "error")
         return 1
-
-    if not no_prompt:
-        prompt_file = Path(output).with_suffix(".txt")
-        try:
-            prompt_content = generate_ai_prompt(report)
-            prompt_path = save_text(prompt_content, prompt_file)
-            utils.log(f"AI Prompt saved to: {prompt_path.resolve()}", "success")
-        except Exception as e:
-            utils.log(f"Failed to save AI prompt: {e}", "error")
 
     if diff:
         _log_report_diff(diff, report)
