@@ -1,0 +1,71 @@
+name: Native Platform Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  intel-native:
+    name: Intel Mac (native, no OCLP)
+    runs-on: macos-15-intel
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Install uv and set up Python
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12.17"
+          python-version: "3.14"
+      - name: Install dependencies
+        run: uv sync --locked --all-extras
+      - name: Verify native Intel host
+        run: |
+          test "$(uname -m)" = "x86_64"
+          test "$(sysctl -in hw.optional.arm64)" != "1"
+      - name: Run OCLP architecture tests
+        run: uv run pytest -q tests/test_oclp_architecture.py
+      - name: Generate and validate Intel JSON report
+        run: |
+          rm -f output/macos_system_report.html output/macos_system_report.json output/macos_system_report.txt
+          uv run macos-prose --quiet --mode fast --json
+          test -s output/macos_system_report.json
+          uv run python -c "import json; r=json.load(open('output/macos_system_report.json')); assert r['system']['architecture'] == 'x86_64'"
+
+  apple-silicon-native:
+    name: Apple Silicon Mac (native, no OCLP)
+    runs-on: macos-15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Install uv and set up Python
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12.17"
+          python-version: "3.14"
+      - name: Install dependencies
+        run: uv sync --locked --all-extras
+      - name: Verify native Apple Silicon host
+        run: |
+          test "$(uname -m)" = "arm64"
+          test "$(sysctl -in hw.optional.arm64)" = "1"
+      - name: Run OCLP architecture tests
+        run: uv run pytest -q tests/test_oclp_architecture.py
+      - name: Verify Apple Silicon is not classified as OCLP
+        run: |
+          uv run python -c "from prose.collectors.oclp import collect_opencore_patcher; r=collect_opencore_patcher(); assert r['detected'] is False; assert 'apple_silicon_unsupported' in r['detection_signals']"
+      - name: Generate and validate Apple Silicon JSON report
+        run: |
+          rm -f output/macos_system_report.html output/macos_system_report.json output/macos_system_report.txt
+          uv run macos-prose --quiet --mode fast --json
+          test -s output/macos_system_report.json
+          uv run python -c "import json; r=json.load(open('output/macos_system_report.json')); assert r['system']['architecture'] == 'arm64'"
