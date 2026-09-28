@@ -85,7 +85,13 @@ jobs:
 
       - name: Smoke test Intel report generation
         run: |
+          rm -f output/macos_system_report.html output/macos_system_report.json output/macos_system_report.txt
           uv run macos-prose --quiet --mode fast
+          test -s output/macos_system_report.html
+          test ! -e output/macos_system_report.json
+          test ! -e output/macos_system_report.txt
+          rm -f output/macos_system_report.html output/macos_system_report.json output/macos_system_report.txt
+          uv run macos-prose --quiet --mode fast --json
           uv run python -c "import json; r=json.load(open('output/macos_system_report.json')); assert r['report_schema'] == 'macos-system-prose/system-report'; assert r['report_schema_version'] == 1; assert r['system']['architecture'] == 'x86_64'"
 
   compatibility-arm64:
@@ -114,6 +120,10 @@ jobs:
       - name: Smoke test Apple silicon report generation
         run: |
           uv run macos-prose --quiet --mode fast
+          test -s output/macos_system_report.html
+          test ! -e output/macos_system_report.json
+          test ! -e output/macos_system_report.txt
+          uv run macos-prose --quiet --mode fast --json
           uv run python -c "import json; r=json.load(open('output/macos_system_report.json')); assert r['report_schema'] == 'macos-system-prose/system-report'; assert r['report_schema_version'] == 1; assert r['system']['architecture'] == 'arm64'"
 
   integration-test:
@@ -139,24 +149,26 @@ jobs:
         run: |
           uv run macos-prose --quiet
 
-      - name: Verify report outputs
+      - name: Verify default HTML output
         run: |
-          if test -s output/macos_system_report.html; then
-            test ! -e output/macos_system_report.json
-            test ! -e output/macos_system_report.txt
-            uv run macos-prose --quiet --json
-            test -s output/macos_system_report.json
-            uv run python -c "import json; json.load(open('output/macos_system_report.json'))"
-            rm -f output/macos_system_report.html output/macos_system_report.json
-            uv run macos-prose --quiet --txt
-            test -s output/macos_system_report.txt
-            test ! -e output/macos_system_report.html
-            test ! -e output/macos_system_report.json
-          else
-            test -s output/macos_system_report.json
-            test -s output/macos_system_report.txt
-            uv run python -c "import json; json.load(open('output/macos_system_report.json'))"
-          fi
+          test -s output/macos_system_report.html
+          test ! -e output/macos_system_report.json
+          test ! -e output/macos_system_report.txt
+
+      - name: Verify JSON-only output
+        run: |
+          uv run macos-prose --quiet --json
+          test -s output/macos_system_report.json
+          uv run python -c "import json; json.load(open('output/macos_system_report.json'))"
+          test ! -e output/macos_system_report.txt
+
+      - name: Verify TXT-only output
+        run: |
+          rm -f output/macos_system_report.html output/macos_system_report.json
+          uv run macos-prose --quiet --txt
+          test -s output/macos_system_report.txt
+          test ! -e output/macos_system_report.html
+          test ! -e output/macos_system_report.json
 
   security:
     name: Security Scan
