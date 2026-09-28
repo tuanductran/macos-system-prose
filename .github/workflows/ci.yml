@@ -115,6 +115,7 @@ jobs:
         run: |
           uv run macos-prose --quiet --no-prompt --mode fast
           uv run python -c "import json; r=json.load(open('output/macos_system_report.json')); assert r['report_schema'] == 'macos-system-prose/system-report'; assert r['report_schema_version'] == 1; assert r['system']['architecture'] == 'arm64'"
+
   integration-test:
     name: Integration Test - Full Report
     runs-on: macos-26
@@ -136,7 +137,7 @@ jobs:
 
       - name: Run full system report
         run: |
-          uv run macos-prose --verbose
+          uv run macos-prose --quiet --no-prompt
 
       - name: Verify JSON output
         run: |
