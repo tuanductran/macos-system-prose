@@ -47,7 +47,7 @@ def save_html_report(report: SystemReport, output_path: str | Path) -> Path:
         payload = json.dumps(value, indent=2, ensure_ascii=False)
         sections.append(
             f"<details open><summary>{html.escape(str(key))}</summary>"
-            f"<pre>{html.escape(payload)}</pre></details>"
+            f"<pre>{html.escape(payload, quote=False)}</pre></details>"
         )
 
     document = f"""<!doctype html>
